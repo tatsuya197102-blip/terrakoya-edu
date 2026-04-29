@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/i18n/config';
+import { AuthProvider } from '@/context/AuthContext';
 
 export default function ClientLayout({
   children,
@@ -12,20 +13,16 @@ export default function ClientLayout({
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!i18n.isInitialized) {
-      i18n.init().then(() => setReady(true));
-    } else {
-      setReady(true);
-    }
+    setReady(true);
   }, []);
 
-  if (!ready) {
-    return <>{children}</>;
-  }
+  if (!ready) return <>{children}</>;
 
   return (
     <I18nextProvider i18n={i18n}>
-      {children}
+      <AuthProvider>
+        {children}
+      </AuthProvider>
     </I18nextProvider>
   );
 }
