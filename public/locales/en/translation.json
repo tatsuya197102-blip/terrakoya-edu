@@ -1,0 +1,40 @@
+{
+  "common": {
+    "appName": "TERRAKOYA Education",
+    "welcome": "Welcome",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "language": "Language"
+  },
+  "navigation": {
+    "home": "Home",
+    "courses": "Courses",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "courses": {
+    "title": "Available Courses",
+    "description": "Browse our selection of courses to enhance your skills",
+    "enroll": "Enroll Now",
+    "enrolled": "Enrolled"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "myProgress": "My Progress",
+    "recentActivity": "Recent Activity",
+    "completedCourses": "Completed Courses"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email Address",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "signUp": "Sign Up"
+  },
+  "home": {
+    "title": "Welcome to TERRAKOYA",
+    "subtitle": "A multilingual online education platform"
+  }
+}
