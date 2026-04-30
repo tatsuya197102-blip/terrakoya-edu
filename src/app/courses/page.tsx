@@ -119,6 +119,7 @@ export default function CoursesPage() {
           {SAMPLE_COURSES.map((course) => (
             <div
               key={course.id}
+              onClick={() => router.push(`/courses/${course.id}`)}
               className="bg-white rounded-xl shadow hover:shadow-md transition cursor-pointer"
             >
               {/* サムネイル */}
