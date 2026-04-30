@@ -3,25 +3,38 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
-import { signInWithEmail, signInWithGoogle } from '@/lib/auth';
+import { signUpWithEmail, signInWithGoogle } from '@/lib/auth';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirm) {
+      setError('パスワードが一致しません');
+      return;
+    }
+    if (password.length < 6) {
+      setError('パスワードは6文字以上にしてください');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      await signInWithEmail(email, password);
+      await signUpWithEmail(email, password);
       router.push('/dashboard');
-    } catch (err) {
-      setError('メールアドレスまたはパスワードが間違っています');
+    } catch (err: any) {
+      if (err.code === 'auth/email-already-in-use') {
+        setError('このメールアドレスは既に使用されています');
+      } else {
+        setError('登録に失敗しました。もう一度お試しください');
+      }
     } finally {
       setLoading(false);
     }
@@ -45,9 +58,12 @@ export default function LoginPage() {
       <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
 
         {/* タイトル */}
-        <h1 className="text-2xl font-bold text-center text-gray-900 mb-8">
+        <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">
           {t('common.appName')}
         </h1>
+        <p className="text-center text-gray-500 text-sm mb-8">
+          新しいアカウントを作成
+        </p>
 
         {/* エラーメッセージ */}
         {error && (
@@ -68,7 +84,7 @@ export default function LoginPage() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          Google でログイン
+          Google で登録
         </button>
 
         {/* 区切り線 */}
@@ -78,8 +94,8 @@ export default function LoginPage() {
           <hr className="flex-1 border-gray-200" />
         </div>
 
-        {/* メール/パスワードフォーム */}
-        <form onSubmit={handleEmailLogin} className="space-y-4">
+        {/* 登録フォーム */}
+        <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('auth.email')}
@@ -102,7 +118,20 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
+              placeholder="6文字以上"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              パスワード確認
+            </label>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="もう一度入力"
               required
             />
           </div>
@@ -111,18 +140,20 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-blue-600 text-white rounded-lg px-4 py-3 font-medium hover:bg-blue-700 transition disabled:opacity-50"
           >
-            {loading ? t('common.loading') : t('auth.login')}
+            {loading ? t('common.loading') : t('auth.signUp')}
           </button>
         </form>
 
-<p className="text-center text-sm text-gray-500 mt-4">
-  アカウントをお持ちでない方は
-  <a href="/register" className="text-blue-600 hover:underline ml-1">
-    新規登録
-  </a>
-</p>
-        {/* ホームに戻る */}
+        {/* ログインリンク */}
         <p className="text-center text-sm text-gray-500 mt-6">
+          すでにアカウントをお持ちの方は
+          <a href="/login" className="text-blue-600 hover:underline ml-1">
+            {t('auth.login')}
+          </a>
+        </p>
+
+        {/* ホームに戻る */}
+        <p className="text-center text-sm text-gray-500 mt-2">
           <a href="/" className="text-blue-600 hover:underline">
             ← ホームに戻る
           </a>
