@@ -1,5 +1,6 @@
 import {
   doc,
+  deleteDoc,
   setDoc,
   getDoc,
   serverTimestamp,
@@ -7,7 +8,7 @@ import {
 import { db } from './firebase';
 import { User } from 'firebase/auth';
 
-// ユーザープロフィールを保存
+// 郢晢ｽｦ郢晢ｽｼ郢ｧ・ｶ郢晢ｽｼ郢晏干ﾎ溽ｹ晁ｼ斐≦郢晢ｽｼ郢晢ｽｫ郢ｧ蜑・ｽｿ譎擾ｽｭ繝ｻ
 export const saveUserProfile = async (user: User) => {
   const userRef = doc(db, 'users', user.uid);
   const userSnap = await getDoc(userRef);
@@ -28,14 +29,14 @@ export const saveUserProfile = async (user: User) => {
   }
 };
 
-// ユーザープロフィールを取得
+// 郢晢ｽｦ郢晢ｽｼ郢ｧ・ｶ郢晢ｽｼ郢晏干ﾎ溽ｹ晁ｼ斐≦郢晢ｽｼ郢晢ｽｫ郢ｧ雋槫徐陟輔・
 export const getUserProfile = async (uid: string) => {
   const userRef = doc(db, 'users', uid);
   const userSnap = await getDoc(userRef);
   return userSnap.exists() ? userSnap.data() : null;
 };
 
-// コース登録
+// 郢ｧ・ｳ郢晢ｽｼ郢ｧ・ｹ騾具ｽｻ鬪ｭ・ｲ
 export const enrollCourse = async (uid: string, courseId: string) => {
   const enrollRef = doc(db, 'users', uid, 'enrollments', courseId);
   await setDoc(enrollRef, {
@@ -46,7 +47,7 @@ export const enrollCourse = async (uid: string, courseId: string) => {
   });
 };
 
-// 登録済みコースを取得
+// 騾具ｽｻ鬪ｭ・ｲ雋ょ現竏ｩ郢ｧ・ｳ郢晢ｽｼ郢ｧ・ｹ郢ｧ雋槫徐陟輔・
 export const getEnrollments = async (uid: string) => {
   const { getDocs, collection } = await import('firebase/firestore');
   const enrollRef = collection(db, 'users', uid, 'enrollments');
@@ -54,7 +55,7 @@ export const getEnrollments = async (uid: string) => {
   return snap.docs.map(d => d.data());
 };
 
-// レッスン完了を記録
+// 郢晢ｽｬ郢昴・縺帷ｹ晢ｽｳ陞ｳ蠕｡・ｺ繝ｻ・帝坎蛟ｬ鮖ｸ
 export const completeLesson = async (
   uid: string,
   courseId: string,
@@ -81,13 +82,13 @@ export const completeLesson = async (
   return progress;
 };
 
-// お気に入り追加/削除
+// 邵ｺ鬆托ｽｰ蜉ｱ竊楢怦・･郢ｧ鬘假ｽｿ・ｽ陷会｣ｰ/陷台ｼ∝求
 export const toggleFavorite = async (uid: string, courseId: string) => {
   const favRef = doc(db, 'users', uid, 'favorites', courseId);
   const favSnap = await getDoc(favRef);
 
   if (favSnap.exists()) {
-    await favSnap.ref.delete();
+    await deleteDoc(favRef);
     return false;
   } else {
     await setDoc(favRef, {
@@ -98,7 +99,7 @@ export const toggleFavorite = async (uid: string, courseId: string) => {
   }
 };
 
-// お気に入り一覧を取得
+// 邵ｺ鬆托ｽｰ蜉ｱ竊楢怦・･郢ｧ雍具ｽｸﾂ髫包ｽｧ郢ｧ雋槫徐陟輔・
 export const getFavorites = async (uid: string) => {
   const { getDocs, collection } = await import('firebase/firestore');
   const favRef = collection(db, 'users', uid, 'favorites');
