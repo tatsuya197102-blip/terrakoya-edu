@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -60,6 +61,7 @@ export default function CourseDetailPage() {
   const course = COURSES[courseId];
   const [favorites, setFavorites] = useState<string[]>([]);
   const [enrolled, setEnrolled] = useState(false);
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -71,6 +73,7 @@ export default function CourseDetailPage() {
           const data = snap.data();
           setFavorites(data.favorites || []);
           setEnrolled((data.enrolledCourses || []).includes(courseId));
+          setCompletedLessons(data.completedLessons?.[courseId] || []);
         }
       }
       setLoading(false);
@@ -100,11 +103,7 @@ export default function CourseDetailPage() {
     setEnrolled(true);
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">
-      読み込み中...
-    </div>
-  );
+  if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">読み込み中...</div>;
 
   if (!course) return (
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center text-white gap-4">
@@ -114,6 +113,9 @@ export default function CourseDetailPage() {
   );
 
   const isFav = favorites.includes(courseId);
+  const progress = course.lessons.length > 0
+    ? Math.round((completedLessons.length / course.lessons.length) * 100)
+    : 0;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -126,11 +128,14 @@ export default function CourseDetailPage() {
               <div>
                 <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
                 <p className="text-gray-400 mb-3">{course.description}</p>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap items-center">
                   <span className="bg-blue-600 text-xs px-2 py-1 rounded">{course.level}</span>
                   <span className="bg-gray-600 text-xs px-2 py-1 rounded">{course.category}</span>
                   <span className="text-yellow-400 text-sm">⭐ {course.rating}</span>
                   <span className="text-gray-400 text-sm">👥 {course.students.toLocaleString()}人</span>
+                  {enrolled && (
+                    <span className="text-green-400 text-sm">進捗: {progress}%</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -138,6 +143,11 @@ export default function CourseDetailPage() {
               {isFav ? '❤️' : '🤍'}
             </button>
           </div>
+          {enrolled && (
+            <div className="mt-4 w-full bg-gray-700 rounded-full h-2">
+              <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${progress}%` }}></div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -146,26 +156,35 @@ export default function CourseDetailPage() {
           <div className="flex-1">
             <h2 className="text-xl font-bold mb-4">レッスン一覧（{course.lessons.length}本）</h2>
             <div className="space-y-3">
-              {course.lessons.map((lesson, index) => (
-                <div key={lesson.id} className={`flex items-center justify-between p-4 rounded-lg border ${
-                  enrolled || lesson.free
-                    ? 'bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-700'
-                    : 'bg-gray-900 border-gray-800 opacity-60'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <span className="text-gray-500 text-sm w-6">{index + 1}</span>
-                    <div>
-                      <p className="font-medium">{lesson.title}</p>
-                      <p className="text-gray-400 text-sm">⏱️ {lesson.duration}</p>
+              {course.lessons.map((lesson, index) => {
+                const isCompleted = completedLessons.includes(lesson.id);
+                const canAccess = enrolled || lesson.free;
+                return (
+                  <div key={lesson.id}
+                    className={`flex items-center justify-between p-4 rounded-lg border ${
+                      canAccess ? 'bg-gray-800 border-gray-700' : 'bg-gray-900 border-gray-800 opacity-60'
+                    }`}>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm w-6 ${isCompleted ? 'text-green-400' : 'text-gray-500'}`}>
+                        {isCompleted ? '✅' : index + 1}
+                      </span>
+                      <div>
+                        <p className="font-medium">{lesson.title}</p>
+                        <p className="text-gray-400 text-sm">⏱️ {lesson.duration}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {lesson.free && <span className="text-green-400 text-xs bg-green-900 px-2 py-1 rounded">無料</span>}
+                      {canAccess ? (
+                        <Link href={`/courses/${courseId}/lessons/${lesson.id}`}
+                          className="text-blue-400 hover:text-blue-300 text-lg transition-colors">▶️</Link>
+                      ) : (
+                        <span className="text-gray-500 text-lg">🔒</span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {lesson.free && <span className="text-green-400 text-xs bg-green-900 px-2 py-1 rounded">無料</span>}
-                    {!lesson.free && !enrolled && <span className="text-gray-500 text-lg">🔒</span>}
-                    {(lesson.free || enrolled) && <span className="text-blue-400 text-lg">▶️</span>}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -176,18 +195,14 @@ export default function CourseDetailPage() {
               {enrolled ? (
                 <div className="text-center">
                   <p className="text-green-400 font-bold mb-4">✅ 受講中</p>
-                  <button
-                    onClick={() => router.push('/dashboard')}
-                    className="w-full bg-gray-600 hover:bg-gray-500 rounded-lg py-3 transition-colors"
-                  >
-                    ダッシュボードへ
-                  </button>
+                  <Link href={`/courses/${courseId}/lessons/l1`}
+                    className="block w-full text-center bg-blue-600 hover:bg-blue-700 rounded-lg py-3 transition-colors">
+                    続きを学ぶ
+                  </Link>
                 </div>
               ) : (
-                <button
-                  onClick={handleEnroll}
-                  className="w-full bg-blue-600 hover:bg-blue-700 rounded-lg py-3 font-bold transition-colors"
-                >
+                <button onClick={handleEnroll}
+                  className="w-full bg-blue-600 hover:bg-blue-700 rounded-lg py-3 font-bold transition-colors">
                   無料で受講する
                 </button>
               )}
