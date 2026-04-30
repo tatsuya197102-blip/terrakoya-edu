@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
+import { enrollCourse, getEnrollments, completeLesson } from '@/lib/firestore';
 
 const COURSE_DETAILS = {
   '1': {
@@ -64,13 +65,26 @@ export default function CourseDetailPage() {
   const router = useRouter();
   const params = useParams();
   const [mounted, setMounted] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [completedLessons, setCompletedLessons] = useState<number[]>([]);
 
   const courseId = params.id as string;
   const course = COURSE_DETAILS[courseId as keyof typeof COURSE_DETAILS];
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+useEffect(() => {
+  setMounted(true);
+  if (user) {
+    getEnrollments(user.uid).then((enrollments) => {
+      const enrollment = enrollments.find(e => e.courseId === courseId);
+      if (enrollment) {
+        setEnrolled(true);
+        setProgress(enrollment.progress || 0);
+        setCompletedLessons(enrollment.completedLessons || []);
+      }
+    });
+  }
+}, [user, courseId]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -137,9 +151,21 @@ export default function CourseDetailPage() {
               </div>
             </div>
           </div>
-          <button className="w-full mt-6 bg-blue-600 text-white rounded-lg py-3 font-medium hover:bg-blue-700 transition">
-            {t('courses.enroll')}
-          </button>
+<button
+  onClick={async () => {
+    if (!enrolled && user) {
+      await enrollCourse(user.uid, courseId);
+      setEnrolled(true);
+    }
+  }}
+  className={`w-full mt-6 rounded-lg py-3 font-medium transition ${
+    enrolled
+      ? 'bg-green-100 text-green-700 cursor-default'
+      : 'bg-blue-600 text-white hover:bg-blue-700'
+  }`}
+>
+  {enrolled ? `✅ 登録済み（進捗 ${progress}%）` : t('courses.enroll')}
+</button>
         </div>
 
         {/* レッスン一覧 */}
@@ -164,16 +190,31 @@ export default function CourseDetailPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-500">{lesson.duration}</span>
-                  <button
-                    className={`text-sm px-3 py-1 rounded ${
-                      lesson.free
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    }`}
-                    disabled={!lesson.free}
-                  >
-                    {lesson.free ? '▶ 再生' : '🔒'}
-                  </button>
+<button
+  onClick={async () => {
+    if (lesson.free && user) {
+      const newProgress = await completeLesson(
+        user.uid,
+        courseId,
+        lesson.id,
+        course.lessons.length
+      );
+      setCompletedLessons(prev => [...prev, lesson.id]);
+      setProgress(newProgress);
+      if (!enrolled) setEnrolled(true);
+    }
+  }}
+  className={`text-sm px-3 py-1 rounded ${
+    completedLessons.includes(lesson.id)
+      ? 'bg-green-500 text-white'
+      : lesson.free
+      ? 'bg-blue-600 text-white hover:bg-blue-700'
+      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+  }`}
+  disabled={!lesson.free && !enrolled}
+>
+  {completedLessons.includes(lesson.id) ? '✅' : lesson.free ? '▶ 再生' : '🔒'}
+</button>
                 </div>
               </div>
             ))}
