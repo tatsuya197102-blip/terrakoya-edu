@@ -10,13 +10,30 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [ready, setReady] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setReady(true);
+    setMounted(true);
   }, []);
 
-  if (!ready) return <>{children}</>;
+  useEffect(() => {
+    // アラビア語の場合RTLに切り替え
+    const handleLanguageChange = (lng: string) => {
+      document.documentElement.dir = lng === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.lang = lng;
+    };
+
+    i18n.on('languageChanged', handleLanguageChange);
+    handleLanguageChange(i18n.language);
+
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, []);
+
+  if (!mounted) {
+    return <div style={{ visibility: 'hidden' }}>{children}</div>;
+  }
 
   return (
     <I18nextProvider i18n={i18n}>

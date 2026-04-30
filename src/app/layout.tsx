@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import "./globals.css";
 import ClientLayout from "./client-layout";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "TERRAKOYA 教育版",
@@ -13,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html suppressHydrationWarning>
-      <body>
+    <html lang="ja" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
