@@ -1,21 +1,21 @@
-import type { Metadata } from "next";
-import ClientLayout from "./client-layout";
-import "./globals.css";
+import type { Metadata } from 'next';
+import './globals.css';
+import ClientLayout from './client-layout';
+import Navbar from '@/components/Navbar';
 
 export const metadata: Metadata = {
-  title: "TERRAKOYA 教育版",
-  description: "多言語対応のオンライン教育プラットフォーム",
+  title: 'TERRAKOYA 寺子屋',
+  description: '漫画・アニメクリエイターのためのオンライン学習プラットフォーム',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <ClientLayout>{children}</ClientLayout>
+        <ClientLayout>
+          <Navbar />
+          {children}
+        </ClientLayout>
       </body>
     </html>
   );

@@ -1,226 +1,205 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/context/AuthContext';
-import { enrollCourse, getEnrollments, completeLesson } from '@/lib/firestore';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import Link from 'next/link';
 
-const COURSE_DETAILS = {
-  '1': {
-    title: '漫画基礎講座',
-    titleEn: 'Manga Basics Course',
-    titleAr: 'دورة أساسيات المانغا',
-    description: 'キャラクターデザインから背景まで、漫画の基礎を体系的に学びます。プロの漫画家が教える実践的なカリキュラムです。',
-    level: '初級',
+const COURSES: Record<string, {
+  id: string; title: string; description: string; level: string;
+  category: string; thumbnail: string; rating: number; students: number;
+  lessons: { id: string; title: string; duration: string; free: boolean }[];
+}> = {
+  'manga-basics': {
+    id: 'manga-basics', title: '漫画基礎講座', description: 'キャラクターデザインから背景まで、漫画の基礎を学びます',
+    level: '初級', category: 'manga', thumbnail: '🎨', rating: 4.8, students: 1250,
     lessons: [
-      { id: 1, title: 'キャラクターの基本比率', duration: '30分', free: true },
-      { id: 2, title: '表情の描き方', duration: '25分', free: true },
-      { id: 3, title: '体のポーズ入門', duration: '35分', free: false },
-      { id: 4, title: '服と布のしわ', duration: '30分', free: false },
-      { id: 5, title: '背景の基礎', duration: '40分', free: false },
-      { id: 6, title: 'コマ割りの基本', duration: '30分', free: false },
+      { id: 'l1', title: 'キャラクターの描き方基礎', duration: '30分', free: true },
+      { id: 'l2', title: '顔・表情の描き方', duration: '25分', free: true },
+      { id: 'l3', title: '体・ポーズの描き方', duration: '35分', free: false },
+      { id: 'l4', title: '背景の描き方入門', duration: '40分', free: false },
+      { id: 'l5', title: 'コマ割りの基礎', duration: '30分', free: false },
     ],
-    thumbnail: '🎨',
-    instructor: '田中 漫次',
-    totalDuration: '6時間',
   },
-  '2': {
-    title: 'デジタルイラスト入門',
-    titleEn: 'Digital Illustration Basics',
-    titleAr: 'مقدمة في الرسم الرقمي',
-    description: 'CLIPSTUDIOを使ったデジタルイラストの基礎を学びます。',
-    level: '初級',
+  'digital-illust': {
+    id: 'digital-illust', title: 'デジタルイラスト入門', description: 'CLIPSTUDIOを使ったデジタルイラストの基礎',
+    level: '初級', category: 'illustration', thumbnail: '🖌️', rating: 4.6, students: 890,
     lessons: [
-      { id: 1, title: 'ツールの基本操作', duration: '20分', free: true },
-      { id: 2, title: 'レイヤーの使い方', duration: '25分', free: true },
-      { id: 3, title: '線画の描き方', duration: '30分', free: false },
-      { id: 4, title: '色塗りの基礎', duration: '35分', free: false },
+      { id: 'l1', title: 'CLIPSTUDIOの基本操作', duration: '20分', free: true },
+      { id: 'l2', title: 'レイヤーの使い方', duration: '25分', free: true },
+      { id: 'l3', title: 'ブラシツールの活用', duration: '30分', free: false },
+      { id: 'l4', title: '色塗りの基礎', duration: '35分', free: false },
     ],
-    thumbnail: '🖌️',
-    instructor: '鈴木 彩香',
-    totalDuration: '4時間',
   },
-  '3': {
-    title: 'ストーリー構成講座',
-    titleEn: 'Story Structure Course',
-    titleAr: 'دورة بناء القصة',
-    description: '読者を引きつけるストーリーの作り方を学びます。',
-    level: '中級',
+  'story-making': {
+    id: 'story-making', title: 'ストーリー作り', description: '読者を引きつけるストーリーの作り方',
+    level: '中級', category: 'story', thumbnail: '📖', rating: 4.9, students: 650,
     lessons: [
-      { id: 1, title: 'ストーリーの三幕構成', duration: '35分', free: true },
-      { id: 2, title: 'キャラクターの動機', duration: '30分', free: false },
-      { id: 3, title: '伏線の張り方', duration: '30分', free: false },
-      { id: 4, title: 'クライマックスの作り方', duration: '35分', free: false },
+      { id: 'l1', title: 'ストーリーの基本構造', duration: '30分', free: true },
+      { id: 'l2', title: 'キャラクター設定の作り方', duration: '35分', free: false },
+      { id: 'l3', title: '起承転結の組み立て方', duration: '40分', free: false },
     ],
-    thumbnail: '📖',
-    instructor: '山田 文子',
-    totalDuration: '5時間',
+  },
+  'animation-basics': {
+    id: 'animation-basics', title: 'アニメーション基礎', description: 'キャラクターに動きをつける基礎技術',
+    level: '中級', category: 'animation', thumbnail: '🎬', rating: 4.7, students: 430,
+    lessons: [
+      { id: 'l1', title: 'アニメーションの原理', duration: '25分', free: true },
+      { id: 'l2', title: '動きのタイミングと間', duration: '30分', free: false },
+      { id: 'l3', title: 'ウォークサイクルの作り方', duration: '45分', free: false },
+      { id: 'l4', title: '表情アニメーション', duration: '35分', free: false },
+    ],
   },
 };
 
 export default function CourseDetailPage() {
-  const { t, i18n } = useTranslation();
-  const { user, loading } = useAuth();
   const router = useRouter();
   const params = useParams();
-  const [mounted, setMounted] = useState(false);
-  const [enrolled, setEnrolled] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [completedLessons, setCompletedLessons] = useState<number[]>([]);
-
   const courseId = params.id as string;
-  const course = COURSE_DETAILS[courseId as keyof typeof COURSE_DETAILS];
-
-useEffect(() => {
-  setMounted(true);
-  if (user) {
-    getEnrollments(user.uid).then((enrollments) => {
-      const enrollment = enrollments.find(e => e.courseId === courseId);
-      if (enrollment) {
-        setEnrolled(true);
-        setProgress(enrollment.progress || 0);
-        setCompletedLessons(enrollment.completedLessons || []);
-      }
-    });
-  }
-}, [user, courseId]);
+  const course = COURSES[courseId];
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [enrolled, setEnrolled] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const ref = doc(db, 'users', user.uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data = snap.data();
+          setFavorites(data.favorites || []);
+          setEnrolled((data.enrolledCourses || []).includes(courseId));
+        }
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [courseId]);
+
+  const toggleFavorite = async () => {
+    const user = auth.currentUser;
+    if (!user) { router.push('/auth/login'); return; }
+    const ref = doc(db, 'users', user.uid);
+    const isFav = favorites.includes(courseId);
+    if (isFav) {
+      await updateDoc(ref, { favorites: arrayRemove(courseId) });
+      setFavorites(prev => prev.filter(id => id !== courseId));
+    } else {
+      await updateDoc(ref, { favorites: arrayUnion(courseId) });
+      setFavorites(prev => [...prev, courseId]);
     }
-  }, [user, loading, router]);
-
-  if (!mounted || loading) {
-    return <div className="flex items-center justify-center min-h-screen"><p>読み込み中...</p></div>;
-  }
-
-  if (!course) {
-    return <div className="flex items-center justify-center min-h-screen"><p>コースが見つかりません</p></div>;
-  }
-
-  const getTitle = () => {
-    if (i18n.language === 'ar') return course.titleAr;
-    if (i18n.language === 'en') return course.titleEn;
-    return course.title;
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
-      <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
-        <h1
-          className="text-xl font-bold text-gray-900 cursor-pointer"
-          onClick={() => router.push('/courses')}
-        >
-          ← {t('navigation.courses')}
-        </h1>
-        <div className="flex gap-1">
-          {['ja', 'en', 'ar'].map((lng) => (
-            <button
-              key={lng}
-              onClick={() => i18n.changeLanguage(lng)}
-              className={`px-2 py-1 rounded text-xs font-medium ${
-                i18n.language === lng ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
-              }`}
-            >
-              {lng.toUpperCase()}
-            </button>
-          ))}
-        </div>
-      </header>
+  const handleEnroll = async () => {
+    const user = auth.currentUser;
+    if (!user) { router.push('/auth/login'); return; }
+    const ref = doc(db, 'users', user.uid);
+    await updateDoc(ref, { enrolledCourses: arrayUnion(courseId) });
+    setEnrolled(true);
+  };
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        {/* コース概要 */}
-        <div className="bg-white rounded-xl shadow p-6 mb-6">
-          <div className="flex items-start gap-6">
-            <div className="text-6xl">{course.thumbnail}</div>
-            <div className="flex-1">
-              <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                {course.level}
-              </span>
-              <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-2">
-                {getTitle()}
-              </h2>
-              <p className="text-gray-600 mb-4">{course.description}</p>
-              <div className="flex gap-4 text-sm text-gray-500">
-                <span>👨‍🏫 {course.instructor}</span>
-                <span>⏱ {course.totalDuration}</span>
-                <span>📚 {course.lessons.length}レッスン</span>
+  if (loading) return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">
+      読み込み中...
+    </div>
+  );
+
+  if (!course) return (
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center text-white gap-4">
+      <p className="text-2xl">コースが見つかりません</p>
+      <Link href="/courses" className="text-blue-400 hover:underline">コース一覧に戻る</Link>
+    </div>
+  );
+
+  const isFav = favorites.includes(courseId);
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-white">
+      <div className="bg-gray-900 border-b border-gray-800 px-8 py-6">
+        <div className="max-w-4xl mx-auto">
+          <Link href="/courses" className="text-blue-400 hover:underline text-sm mb-4 block">← コース一覧に戻る</Link>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <span className="text-5xl">{course.thumbnail}</span>
+              <div>
+                <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
+                <p className="text-gray-400 mb-3">{course.description}</p>
+                <div className="flex gap-2 flex-wrap">
+                  <span className="bg-blue-600 text-xs px-2 py-1 rounded">{course.level}</span>
+                  <span className="bg-gray-600 text-xs px-2 py-1 rounded">{course.category}</span>
+                  <span className="text-yellow-400 text-sm">⭐ {course.rating}</span>
+                  <span className="text-gray-400 text-sm">👥 {course.students.toLocaleString()}人</span>
+                </div>
+              </div>
+            </div>
+            <button onClick={toggleFavorite} className="text-2xl hover:scale-110 transition-transform mt-2">
+              {isFav ? '❤️' : '🤍'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-8 py-8">
+        <div className="flex flex-col md:flex-row gap-8">
+          <div className="flex-1">
+            <h2 className="text-xl font-bold mb-4">レッスン一覧（{course.lessons.length}本）</h2>
+            <div className="space-y-3">
+              {course.lessons.map((lesson, index) => (
+                <div key={lesson.id} className={`flex items-center justify-between p-4 rounded-lg border ${
+                  enrolled || lesson.free
+                    ? 'bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-700'
+                    : 'bg-gray-900 border-gray-800 opacity-60'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-500 text-sm w-6">{index + 1}</span>
+                    <div>
+                      <p className="font-medium">{lesson.title}</p>
+                      <p className="text-gray-400 text-sm">⏱️ {lesson.duration}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {lesson.free && <span className="text-green-400 text-xs bg-green-900 px-2 py-1 rounded">無料</span>}
+                    {!lesson.free && !enrolled && <span className="text-gray-500 text-lg">🔒</span>}
+                    {(lesson.free || enrolled) && <span className="text-blue-400 text-lg">▶️</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="md:w-72">
+            <div className="bg-gray-800 rounded-xl p-6 sticky top-8">
+              <p className="text-3xl font-bold mb-2 text-center">無料</p>
+              <p className="text-gray-400 text-sm text-center mb-6">全レッスン受け放題</p>
+              {enrolled ? (
+                <div className="text-center">
+                  <p className="text-green-400 font-bold mb-4">✅ 受講中</p>
+                  <button
+                    onClick={() => router.push('/dashboard')}
+                    className="w-full bg-gray-600 hover:bg-gray-500 rounded-lg py-3 transition-colors"
+                  >
+                    ダッシュボードへ
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleEnroll}
+                  className="w-full bg-blue-600 hover:bg-blue-700 rounded-lg py-3 font-bold transition-colors"
+                >
+                  無料で受講する
+                </button>
+              )}
+              <div className="mt-6 space-y-2 text-sm text-gray-400">
+                <p>📚 {course.lessons.length}レッスン</p>
+                <p>🏆 修了証あり</p>
+                <p>♾️ 無期限アクセス</p>
               </div>
             </div>
           </div>
-<button
-  onClick={async () => {
-    if (!enrolled && user) {
-      await enrollCourse(user.uid, courseId);
-      setEnrolled(true);
-    }
-  }}
-  className={`w-full mt-6 rounded-lg py-3 font-medium transition ${
-    enrolled
-      ? 'bg-green-100 text-green-700 cursor-default'
-      : 'bg-blue-600 text-white hover:bg-blue-700'
-  }`}
->
-  {enrolled ? `✅ 登録済み（進捗 ${progress}%）` : t('courses.enroll')}
-</button>
         </div>
-
-        {/* レッスン一覧 */}
-        <div className="bg-white rounded-xl shadow p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">レッスン一覧</h3>
-          <div className="space-y-3">
-            {course.lessons.map((lesson) => (
-              <div
-                key={lesson.id}
-                className={`flex items-center justify-between p-4 rounded-lg border ${
-                  lesson.free ? 'border-blue-200 bg-blue-50' : 'border-gray-200'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-400 text-sm w-6">{lesson.id}</span>
-                  <span className="font-medium text-gray-800">{lesson.title}</span>
-                  {lesson.free && (
-                    <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded">
-                      無料
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500">{lesson.duration}</span>
-<button
-  onClick={async () => {
-    if (lesson.free && user) {
-      const newProgress = await completeLesson(
-        user.uid,
-        courseId,
-        lesson.id,
-        course.lessons.length
-      );
-      setCompletedLessons(prev => [...prev, lesson.id]);
-      setProgress(newProgress);
-      if (!enrolled) setEnrolled(true);
-    }
-  }}
-  className={`text-sm px-3 py-1 rounded ${
-    completedLessons.includes(lesson.id)
-      ? 'bg-green-500 text-white'
-      : lesson.free
-      ? 'bg-blue-600 text-white hover:bg-blue-700'
-      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-  }`}
-  disabled={!lesson.free && !enrolled}
->
-  {completedLessons.includes(lesson.id) ? '✅' : lesson.free ? '▶ 再生' : '🔒'}
-</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
