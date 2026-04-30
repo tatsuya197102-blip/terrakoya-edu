@@ -38,6 +38,14 @@ export default function DashboardPage() {
           <span className="text-sm text-gray-600">
             {user.displayName || user.email}
           </span>
+
+<button
+  onClick={() => router.push('/courses')}
+  className="text-sm text-blue-600 hover:underline"
+>
+  {t('navigation.courses')}
+</button>
+
           <button
             onClick={() => { logout(); router.push('/'); }}
             className="text-sm text-red-600 hover:underline"
