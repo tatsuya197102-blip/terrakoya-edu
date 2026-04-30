@@ -86,9 +86,14 @@ export default function DashboardPage() {
               </button>
             ))}
           </div>
-          <span className="text-sm text-gray-600">
-            {user.displayName || user.email}
-          </span>
+
+<span
+  className="text-sm text-gray-600 cursor-pointer hover:text-blue-600"
+  onClick={() => router.push('/profile')}
+>
+  👤 {user.displayName || user.email}
+</span>
+
           <button
             onClick={() => router.push('/courses')}
             className="text-sm text-blue-600 hover:underline"
