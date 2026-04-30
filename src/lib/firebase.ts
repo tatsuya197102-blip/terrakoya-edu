@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -28,15 +28,14 @@ export const enrollCourse = async (uid: string, courseId: string) => {
   });
 };
 
-// 登録済みコースを取得
+// 受講中コース一覧取得
 export const getEnrollments = async (uid: string) => {
-  const { getDocs, collection } = await import('firebase/firestore');
   const enrollRef = collection(db, 'users', uid, 'enrollments');
   const snap = await getDocs(enrollRef);
   return snap.docs.map(d => d.data());
 };
 
-// レッスン完了を記録
+// レッスン完了・進捗管理
 export const completeLesson = async (
   uid: string,
   courseId: string,
