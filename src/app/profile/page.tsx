@@ -1,196 +1,195 @@
 'use client';
-
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/context/AuthContext';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import Link from 'next/link';
 
 export default function ProfilePage() {
-  const { t } = useTranslation();
-  const { user, loading } = useAuth();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const [displayName, setDisplayName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [userName, setUserName] = useState('');
+  const [email, setEmail] = useState('');
+  const [bio, setBio] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
+  const [enrolledCount, setEnrolledCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
 
   useEffect(() => {
-    setMounted(true);
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (!user) { router.push('/auth/login'); return; }
+      setEmail(user.email || '');
+      setAvatarUrl(user.photoURL || '');
+      setAvatarPreview(user.photoURL || '');
+      const ref = doc(db, 'users', user.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        setUserName(data.displayName || user.displayName || '');
+        setBio(data.bio || '');
+        const enrolled = data.enrolledCourses || [];
+        setEnrolledCount(enrolled.length);
+        const progressMap = data.completedLessons || {};
+        const completed = Object.values(progressMap).filter((lessons: any) => lessons.length > 0).length;
+        setCompletedCount(completed);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert('画像サイズは2MB以下にしてください');
+      return;
     }
-    if (user) {
-      setDisplayName(user.displayName || '');
-    }
-  }, [user, loading, router]);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setAvatarPreview(result);
+      setAvatarUrl(result);
+    };
+    reader.readAsDataURL(file);
+  };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async () => {
+    const user = auth.currentUser;
     if (!user) return;
     setSaving(true);
-    setError('');
     try {
-      // Firebase Auth のプロフィールを更新
-      await updateProfile(auth.currentUser!, {
-        displayName,
+      await updateProfile(user, {
+        displayName: userName,
+        photoURL: avatarUrl || user.photoURL,
       });
-      // Firestore のプロフィールを更新
-      await updateDoc(doc(db, 'users', user.uid), {
-        displayName,
+      const ref = doc(db, 'users', user.uid);
+      await updateDoc(ref, {
+        displayName: userName,
+        bio,
+        photoURL: avatarUrl || user.photoURL,
+        updatedAt: new Date(),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (err) {
-      setError('保存に失敗しました');
-    } finally {
-      setSaving(false);
+    } catch (e) {
+      console.error(e);
+      alert('保存に失敗しました');
     }
+    setSaving(false);
   };
 
-  if (!mounted || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>読み込み中...</p>
-      </div>
-    );
-  }
+  const handleLogout = async () => {
+    const { signOut } = await import('firebase/auth');
+    await signOut(auth);
+    router.push('/');
+  };
 
-  if (!user) return null;
+  if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">読み込み中...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
-      <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
-        <h1
-          className="text-xl font-bold text-gray-900 cursor-pointer"
-          onClick={() => router.push('/dashboard')}
-        >
-          ← {t('navigation.dashboard')}
-        </h1>
-        <span className="text-sm text-gray-500">{t('navigation.profile')}</span>
-      </header>
+    <div className="min-h-screen bg-gray-950 text-white p-6">
+      <div className="max-w-2xl mx-auto">
+        <Link href="/dashboard" className="text-blue-400 hover:underline text-sm mb-6 block">← ダッシュボード</Link>
+        <h1 className="text-2xl font-bold mb-6">👤 プロフィール設定</h1>
 
-      <main className="max-w-2xl mx-auto px-6 py-8">
-
-        {/* プロフィールカード */}
-        <div className="bg-white rounded-xl shadow p-8">
-
-          {/* アバター */}
-          <div className="flex flex-col items-center mb-8">
-            {user.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt="avatar"
-                className="w-24 h-24 rounded-full border-4 border-blue-100 mb-4"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center mb-4">
-                <span className="text-4xl">👤</span>
-              </div>
-            )}
-            <h2 className="text-xl font-bold text-gray-900">
-              {user.displayName || '名前未設定'}
-            </h2>
-            <p className="text-gray-500 text-sm">{user.email}</p>
-            <span className="mt-2 text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full">
-              {user.providerData[0]?.providerId === 'google.com' ? '🔵 Google アカウント' : '📧 メールアカウント'}
-            </span>
+        {/* アバター */}
+        <div className="bg-gray-800 rounded-xl p-6 mb-6">
+          <h2 className="font-bold mb-4">プロフィール画像</h2>
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="avatar"
+                  className="w-24 h-24 rounded-full object-cover border-2 border-blue-600" />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center text-3xl font-bold border-2 border-blue-500">
+                  {userName?.[0] || '?'}
+                </div>
+              )}
+              <button onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-0 right-0 bg-gray-700 hover:bg-gray-600 rounded-full w-8 h-8 flex items-center justify-center text-sm transition-colors border-2 border-gray-900">
+                ✏️
+              </button>
+            </div>
+            <div>
+              <button onClick={() => fileInputRef.current?.click()}
+                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm transition-colors block mb-2">
+                📷 画像をアップロード
+              </button>
+              <p className="text-gray-400 text-xs">JPG・PNG・GIF（2MB以下）</p>
+              {avatarPreview && avatarPreview !== auth.currentUser?.photoURL && (
+                <button onClick={() => { setAvatarPreview(auth.currentUser?.photoURL || ''); setAvatarUrl(''); }}
+                  className="text-red-400 hover:underline text-xs mt-1">
+                  削除
+                </button>
+              )}
+            </div>
           </div>
-
-          {/* 成功メッセージ */}
-          {saved && (
-            <div className="bg-green-50 text-green-600 text-sm rounded-lg p-3 mb-4 text-center">
-              ✅ プロフィールを保存しました
-            </div>
-          )}
-
-          {/* エラーメッセージ */}
-          {error && (
-            <div className="bg-red-50 text-red-600 text-sm rounded-lg p-3 mb-4">
-              {error}
-            </div>
-          )}
-
-          {/* 編集フォーム */}
-          <form onSubmit={handleSave} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                表示名
-              </label>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="表示名を入力"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                メールアドレス
-              </label>
-              <input
-                type="email"
-                value={user.email || ''}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2 text-gray-400 bg-gray-50 cursor-not-allowed"
-                disabled
-              />
-              <p className="text-xs text-gray-400 mt-1">メールアドレスは変更できません</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                アカウント作成日
-              </label>
-              <input
-                type="text"
-                value={user.metadata.creationTime
-                  ? new Date(user.metadata.creationTime).toLocaleDateString('ja-JP')
-                  : '-'}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2 text-gray-400 bg-gray-50 cursor-not-allowed"
-                disabled
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full bg-blue-600 text-white rounded-lg px-4 py-3 font-medium hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {saving ? '保存中...' : '💾 保存する'}
-            </button>
-          </form>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
         </div>
 
-        {/* 危険ゾーン */}
-        <div className="bg-white rounded-xl shadow p-6 mt-6 border border-red-100">
-          <h3 className="font-bold text-red-600 mb-4">⚠️ アカウント操作</h3>
-          <button
-            onClick={() => {
-              if (confirm('ログアウトしますか？')) {
-                import('@/lib/auth').then(({ logout }) => {
-                  logout();
-                  router.push('/');
-                });
-              }
-            }}
-            className="w-full border border-red-300 text-red-600 rounded-lg px-4 py-2 hover:bg-red-50 transition text-sm"
-          >
-            ログアウト
+        {/* 基本情報 */}
+        <div className="bg-gray-800 rounded-xl p-6 mb-6">
+          <h2 className="font-bold mb-4">基本情報</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-gray-400 block mb-1">表示名</label>
+              <input value={userName} onChange={e => setUserName(e.target.value)}
+                className="w-full bg-gray-700 rounded-lg px-4 py-2 text-sm" placeholder="表示名を入力" />
+            </div>
+            <div>
+              <label className="text-sm text-gray-400 block mb-1">メールアドレス</label>
+              <input value={email} disabled
+                className="w-full bg-gray-700 rounded-lg px-4 py-2 text-sm opacity-50 cursor-not-allowed" />
+            </div>
+            <div>
+              <label className="text-sm text-gray-400 block mb-1">自己紹介</label>
+              <textarea value={bio} onChange={e => setBio(e.target.value)}
+                className="w-full bg-gray-700 rounded-lg px-4 py-2 text-sm h-24 resize-none"
+                placeholder="自己紹介を入力してください（任意）" />
+            </div>
+          </div>
+        </div>
+
+        {/* 学習統計 */}
+        <div className="bg-gray-800 rounded-xl p-6 mb-6">
+          <h2 className="font-bold mb-4">📊 学習統計</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-700 rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-blue-400">{enrolledCount}</p>
+              <p className="text-gray-400 text-sm mt-1">登録コース数</p>
+            </div>
+            <div className="bg-gray-700 rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-green-400">{completedCount}</p>
+              <p className="text-gray-400 text-sm mt-1">学習中コース</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 保存ボタン */}
+        <div className="flex gap-3 mb-6">
+          <button onClick={handleSave} disabled={saving}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 py-3 rounded-xl font-bold transition-colors">
+            {saving ? '保存中...' : saved ? '✅ 保存しました！' : '💾 変更を保存'}
           </button>
         </div>
-      </main>
+
+        {/* ログアウト */}
+        <div className="bg-gray-800 rounded-xl p-6">
+          <h2 className="font-bold mb-4 text-red-400">⚠️ アカウント操作</h2>
+          <button onClick={handleLogout}
+            className="w-full bg-red-800 hover:bg-red-700 py-3 rounded-xl font-bold transition-colors">
+            🚪 ログアウト
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
