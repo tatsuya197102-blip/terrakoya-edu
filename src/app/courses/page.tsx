@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
+import { toggleFavorite, getFavorites } from '@/lib/firestore';
 
 const SAMPLE_COURSES = [
   { id: '1', title: '漫画基礎講座', titleEn: 'Manga Basics Course', titleAr: 'دورة أساسيات المانغا', description: 'キャラクターデザインから背景まで、漫画の基礎を学びます', level: '初級', category: 'manga', lessons: 12, duration: '6時間', thumbnail: '🎨', rating: 4.8, students: 1250 },
@@ -32,14 +33,26 @@ export default function CoursesPage() {
   const [selectedLevel, setSelectedLevel] = useState('すべて');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState<'rating' | 'students' | 'lessons'>('rating');
+  const [favorites, setFavorites] = useState<string[]>([]);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    if (user) {
+      getFavorites(user.uid).then(setFavorites);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
   }, [user, loading, router]);
 
-  if (!mounted || loading) return <div className="flex items-center justify-center min-h-screen"><p>読み込み中...</p></div>;
+  if (!mounted || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>読み込み中...</p>
+      </div>
+    );
+  }
 
   const getTitle = (course: typeof SAMPLE_COURSES[0]) => {
     if (i18n.language === 'ar') return course.titleAr;
@@ -85,7 +98,9 @@ export default function CoursesPage() {
             placeholder="🔍 コースを検索..."
             className="w-full border border-gray-300 rounded-xl px-5 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
           />
-          {search && <button onClick={() => setSearch('')} className="absolute right-4 top-3 text-gray-400 hover:text-gray-600">✕</button>}
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-4 top-3 text-gray-400 hover:text-gray-600">✕</button>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-3 mb-6">
@@ -120,7 +135,9 @@ export default function CoursesPage() {
             <p className="text-4xl mb-4">🔍</p>
             <p className="text-gray-500">該当するコースが見つかりません</p>
             <button onClick={() => { setSearch(''); setSelectedLevel('すべて'); setSelectedCategory('all'); }}
-              className="mt-4 text-blue-600 hover:underline text-sm">フィルターをリセット</button>
+              className="mt-4 text-blue-600 hover:underline text-sm">
+              フィルターをリセット
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -132,25 +149,20 @@ export default function CoursesPage() {
                 </div>
                 <div className="p-5">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">{course.level}</span>
-                    <span className="text-xs text-yellow-500">⭐ {course.rating}</span>
-                  </div>
-                  <h3 className="font-bold text-gray-900 mb-1">{getTitle(course)}</h3>
-                  <p className="text-sm text-gray-500 mb-3">{course.description}</p>
-                  <div className="flex justify-between text-xs text-gray-400 mb-4">
-                    <span>📚 {course.lessons}レッスン</span>
-                    <span>⏱ {course.duration}</span>
-                    <span>👥 {course.students.toLocaleString()}</span>
-                  </div>
-                  <button className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition">
-                    {t('courses.enroll')}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      {course.level}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-yellow-500">⭐ {course.rating}</span>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!user) return;
+                          const isFav = await toggleFavorite(user.uid, course.id);
+                          setFavorites(prev =>
+                            isFav ? [...prev, course.id] : prev.filter(id => id !== course.id)
+                          );
+                        }}
+                        className="text-lg hover:scale-110 transition-transform"
+                      >
+{favorites.includes(course.id) ? '❤️' : '🤍'}

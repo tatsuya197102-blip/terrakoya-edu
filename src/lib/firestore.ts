@@ -80,3 +80,28 @@ export const completeLesson = async (
 
   return progress;
 };
+
+// お気に入り追加/削除
+export const toggleFavorite = async (uid: string, courseId: string) => {
+  const favRef = doc(db, 'users', uid, 'favorites', courseId);
+  const favSnap = await getDoc(favRef);
+
+  if (favSnap.exists()) {
+    await favSnap.ref.delete();
+    return false;
+  } else {
+    await setDoc(favRef, {
+      courseId,
+      addedAt: serverTimestamp(),
+    });
+    return true;
+  }
+};
+
+// お気に入り一覧を取得
+export const getFavorites = async (uid: string) => {
+  const { getDocs, collection } = await import('firebase/firestore');
+  const favRef = collection(db, 'users', uid, 'favorites');
+  const snap = await getDocs(favRef);
+  return snap.docs.map(d => d.data().courseId as string);
+};
