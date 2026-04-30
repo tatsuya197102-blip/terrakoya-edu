@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
 import { onAuthChange } from '@/lib/auth';
+import { saveUserProfile } from '@/lib/firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -19,9 +20,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthChange((user) => {
+    const unsubscribe = onAuthChange(async (user) => {
       setUser(user);
       setLoading(false);
+
+      // ログイン時にプロフィールを自動保存
+      if (user) {
+        await saveUserProfile(user);
+      }
     });
     return () => unsubscribe();
   }, []);
