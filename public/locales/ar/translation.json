@@ -1,40 +1,55 @@
 {
   "common": {
-    "appName": "تراكويا التعليمي",
+    "appName": "تيراكويا - منصة التعلم",
     "welcome": "أهلا وسهلا",
     "loading": "جاري التحميل...",
-    "error": "حدث خطأ ما",
+    "error": "حدث خطأ",
     "language": "اللغة"
   },
   "navigation": {
-    "home": "الرئيسية",
+    "home": "الصفحة الرئيسية",
     "courses": "الدورات",
     "dashboard": "لوحة التحكم",
     "profile": "الملف الشخصي",
     "logout": "تسجيل الخروج"
   },
   "courses": {
-    "title": "الدورات المتاحة",
-    "description": "استكشف مجموعة الدورات لدينا لتحسين مهاراتك",
+    "title": "الدورات التعليمية",
+    "description": "اكتشف مجموعة واسعة من دورات الرسم والمانجا والرسوم المتحركة",
     "enroll": "التسجيل الآن",
-    "enrolled": "مسجل"
+    "enrolled": "مسجل",
+    "search": "ابحث عن دورة...",
+    "filter": "تصفية",
+    "allCourses": "جميع الدورات"
   },
   "dashboard": {
     "title": "لوحة التحكم",
     "myProgress": "تقدمي",
     "recentActivity": "النشاط الأخير",
-    "completedCourses": "الدورات المكتملة"
+    "completedCourses": "الدورات المكتملة",
+    "streakDays": "أيام الاستمرار",
+    "enrolledCourses": "الدورات المسجلة"
   },
   "auth": {
     "login": "تسجيل الدخول",
-    "register": "التسجيل",
-    "email": "عنوان البريد الإلكتروني",
+    "register": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
     "forgotPassword": "هل نسيت كلمة المرور؟",
-    "signUp": "إنشاء حساب"
+    "signUp": "إنشاء حساب جديد",
+    "loginWithGoogle": "تسجيل الدخول باستخدام Google"
   },
   "home": {
-    "title": "أهلا وسهلا بك في تراكويا",
-    "subtitle": "منصة تعليمية متعددة اللغات عبر الإنترنت"
+    "title": "منصة تعليمية للفنانين",
+    "subtitle": "تعلم الرسم والمانجا والرسوم المتحركة من الخبراء",
+    "getStarted": "ابدأ الآن",
+    "exploreNow": "استكشف الآن"
+  },
+  "lessons": {
+    "complete": "إكمال الدرس",
+    "completed": "مكتمل",
+    "nextLesson": "الدرس التالي",
+    "previousLesson": "الدرس السابق",
+    "viewCourse": "عرض الدورة"
   }
 }

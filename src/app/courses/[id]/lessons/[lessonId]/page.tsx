@@ -10,12 +10,12 @@ import { useToast } from '@/components/ToastProvider';
 
 const COURSES: Record<string, {
   title: string;
-  lessons: { id: string; title: string; duration: string; free: boolean; description: string }[];
+  lessons: { id: string; title: string; duration: string; free: boolean; description: string; videoUrl?: string }[];
 }> = {
   'manga-basics': {
     title: '漫画基礎講座',
     lessons: [
-      { id: 'l1', title: 'キャラクターの描き方基礎', duration: '30分', free: true, description: 'キャラクターの基本的な描き方を学びます。頭身バランス、体の構造など基礎から丁寧に解説します。' },
+      { id: 'l1', title: 'キャラクターの描き方基礎', duration: '30分', free: true, description: 'キャラクターの基本的な描き方を学びます。', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
       { id: 'l2', title: '顔・表情の描き方', duration: '25分', free: true, description: '喜怒哀楽の表情を自然に描くコツを学びます。' },
       { id: 'l3', title: '体・ポーズの描き方', duration: '35分', free: false, description: '動きのあるポーズの描き方を学びます。' },
       { id: 'l4', title: '背景の描き方入門', duration: '40分', free: false, description: 'キャラクターを引き立てる背景の描き方を学びます。' },
@@ -25,27 +25,27 @@ const COURSES: Record<string, {
   'digital-illust': {
     title: 'デジタルイラスト入門',
     lessons: [
-      { id: 'l1', title: 'CLIPSTUDIOの基本操作', duration: '20分', free: true, description: 'CLIPSTUDIOの画面構成と基本ツールの使い方を学びます。' },
-      { id: 'l2', title: 'レイヤーの使い方', duration: '25分', free: true, description: 'レイヤーの概念と効果的な使い方を学びます。' },
-      { id: 'l3', title: 'ブラシツールの活用', duration: '30分', free: false, description: '様々なブラシの特性と使い分けを学びます。' },
-      { id: 'l4', title: '色塗りの基礎', duration: '35分', free: false, description: 'アニメ塗りの基本テクニックを学びます。' },
+      { id: 'l1', title: 'CLIPSTUDIOの基本操作', duration: '20分', free: true, description: 'CLIPSTUDIOの基本を学びます。' },
+      { id: 'l2', title: 'レイヤーの使い方', duration: '25分', free: true, description: 'レイヤーの概念を学びます。' },
+      { id: 'l3', title: 'ブラシツールの活用', duration: '30分', free: false, description: 'ブラシの使い分けを学びます。' },
+      { id: 'l4', title: '色塗りの基礎', duration: '35分', free: false, description: 'アニメ塗りの基本を学びます。' },
     ],
   },
   'story-making': {
     title: 'ストーリー作り',
     lessons: [
-      { id: 'l1', title: 'ストーリーの基本構造', duration: '30分', free: true, description: '起承転結の基本構造と応用を学びます。' },
-      { id: 'l2', title: 'キャラクター設定の作り方', duration: '35分', free: false, description: '魅力的なキャラクターの設定シートの書き方を学びます。' },
-      { id: 'l3', title: '起承転結の組み立て方', duration: '40分', free: false, description: '読者を飽きさせないストーリー展開の作り方を学びます。' },
+      { id: 'l1', title: 'ストーリーの基本構造', duration: '30分', free: true, description: '起承転結の基本を学びます。' },
+      { id: 'l2', title: 'キャラクター設定の作り方', duration: '35分', free: false, description: 'キャラクター設定を学びます。' },
+      { id: 'l3', title: '起承転結の組み立て方', duration: '40分', free: false, description: 'ストーリー展開を学びます。' },
     ],
   },
   'animation-basics': {
     title: 'アニメーション基礎',
     lessons: [
-      { id: 'l1', title: 'アニメーションの原理', duration: '25分', free: true, description: '12のアニメーション原則を学びます。' },
-      { id: 'l2', title: '動きのタイミングと間', duration: '30分', free: false, description: 'タイミングとスペーシングの概念を学びます。' },
-      { id: 'l3', title: 'ウォークサイクルの作り方', duration: '45分', free: false, description: '歩行アニメーションの基本パターンを学びます。' },
-      { id: 'l4', title: '表情アニメーション', duration: '35分', free: false, description: '表情変化のアニメーション技法を学びます。' },
+      { id: 'l1', title: 'アニメーションの原理', duration: '25分', free: true, description: '12の原則を学びます。' },
+      { id: 'l2', title: '動きのタイミングと間', duration: '30分', free: false, description: 'タイミングを学びます。' },
+      { id: 'l3', title: 'ウォークサイクルの作り方', duration: '45分', free: false, description: 'ウォークサイクルを学びます。' },
+      { id: 'l4', title: '表情アニメーション', duration: '35分', free: false, description: '表情アニメーションを学びます。' },
     ],
   },
 };
@@ -68,6 +68,7 @@ export default function LessonPage() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) { router.push('/auth/login'); return; }
+      
       const ref = doc(db, 'users', user.uid);
       const snap = await getDoc(ref);
       if (snap.exists()) {
@@ -147,14 +148,30 @@ export default function LessonPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="bg-gray-800 rounded-xl aspect-video flex items-center justify-center mb-6 relative overflow-hidden">
-          <div className="text-center">
-            <div className="text-6xl mb-4">▶️</div>
-            <p className="text-gray-400 text-sm">動画プレイヤー</p>
-            <p className="text-gray-500 text-xs mt-1">{lesson.duration}</p>
-          </div>
+        {/* 動画プレイヤー */}
+        <div className="bg-gray-800 rounded-xl mb-6 relative overflow-hidden" style={{ aspectRatio: '16/9' }}>
+          {lesson.videoUrl ? (
+            <iframe
+              width="100%"
+              height="100%"
+              src={lesson.videoUrl}
+              title={lesson.title}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{ display: 'block' }}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="text-6xl mb-4">▶️</div>
+                <p className="text-gray-400">動画プレイヤー</p>
+                <p className="text-gray-500 text-sm mt-2">{lesson.duration}</p>
+              </div>
+            </div>
+          )}
           {completed && (
-            <div className="absolute top-3 right-3 bg-green-600 text-white text-xs px-2 py-1 rounded-full">✅ 完了済み</div>
+            <div className="absolute top-3 right-3 bg-green-600 text-white text-xs px-2 py-1 rounded-full z-10">✅ 完了済み</div>
           )}
         </div>
 
@@ -175,6 +192,7 @@ export default function LessonPage() {
           </div>
         </div>
 
+        {/* レッスン一覧 */}
         <div className="bg-gray-800 rounded-xl p-4 mb-6">
           <h3 className="font-bold mb-3 text-sm text-gray-400">このコースのレッスン</h3>
           <div className="space-y-2">
@@ -186,6 +204,20 @@ export default function LessonPage() {
                 <span className="text-xs text-gray-400">{l.duration}</span>
               </Link>
             ))}
+          </div>
+        </div>
+
+        {/* 課題提出セクション */}
+        <div className="bg-gray-800 rounded-xl p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold mb-1 text-sm text-gray-400">📤 課題を提出してAIフィードバックをもらおう</h3>
+              <p className="text-xs text-gray-500">月1枚まで無料でAI講師のフィードバックが受けられます</p>
+            </div>
+            <Link href={`/courses/${courseId}/assignment`}
+              className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+              📝 課題を提出
+            </Link>
           </div>
         </div>
 

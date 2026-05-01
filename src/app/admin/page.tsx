@@ -25,7 +25,16 @@ type Course = {
   published: boolean;
 };
 
-type User = { uid: string; displayName: string; email: string; };
+type Lesson = {
+  id: string;
+  courseId: string;
+  title: string;
+  videoUrl: string;
+  duration: string;
+  free: boolean;
+};
+
+type User = { uid: string; displayName: string; email: string };
 
 const EMPTY_COURSE: Omit<Course, 'id'> = {
   title: '', description: '', level: '初級', category: 'manga',
@@ -33,17 +42,25 @@ const EMPTY_COURSE: Omit<Course, 'id'> = {
   tags: [], published: true,
 };
 
+const EMPTY_LESSON: Omit<Lesson, 'id'> = {
+  courseId: '', title: '', videoUrl: '', duration: '', free: true,
+};
+
 export default function AdminPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'notify'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'lessons' | 'notify'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [form, setForm] = useState<Omit<Course, 'id'>>(EMPTY_COURSE);
   const [tagInput, setTagInput] = useState('');
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [lessonForm, setLessonForm] = useState<Omit<Lesson, 'id'>>(EMPTY_LESSON);
+  const [showLessonForm, setShowLessonForm] = useState(false);
   const [notifyTitle, setNotifyTitle] = useState('');
   const [notifyBody, setNotifyBody] = useState('');
   const [notifyType, setNotifyType] = useState<'reminder' | 'new_course' | 'progress'>('new_course');
@@ -51,12 +68,14 @@ export default function AdminPage() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user || user.email !== ADMIN_EMAIL) { router.push('/'); return; }
-      const [uSnap, cSnap] = await Promise.all([
+      const [uSnap, cSnap, lSnap] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'courses')),
+        getDocs(collection(db, 'lessons')),
       ]);
       setUsers(uSnap.docs.map(d => ({ uid: d.id, ...d.data() } as User)));
       setCourses(cSnap.docs.map(d => ({ id: d.id, ...d.data() } as Course)));
+      setLessons(lSnap.docs.map(d => ({ id: d.id, ...d.data() } as Lesson)));
       setLoading(false);
     });
     return () => unsubscribe();
@@ -97,6 +116,33 @@ export default function AdminPage() {
     setShowForm(true);
   };
 
+  const handleSaveLesson = async () => {
+    if (!lessonForm.title || !lessonForm.videoUrl || !lessonForm.courseId) {
+      showToast('すべてのフィールドを入力してください', 'error');
+      return;
+    }
+    const id = editingLesson ? editingLesson.id : 'lesson-' + Date.now();
+    await setDoc(doc(db, 'lessons', id), lessonForm);
+    const updated = { id, ...lessonForm };
+    if (editingLesson) {
+      setLessons(prev => prev.map(l => l.id === id ? updated : l));
+      showToast('レッスンを更新しました', 'success');
+    } else {
+      setLessons(prev => [...prev, updated]);
+      showToast('レッスンを追加しました', 'success');
+    }
+    setShowLessonForm(false);
+    setEditingLesson(null);
+    setLessonForm(EMPTY_LESSON);
+  };
+
+  const handleDeleteLesson = async (id: string) => {
+    if (!confirm('このレッスンを削除しますか？')) return;
+    await deleteDoc(doc(db, 'lessons', id));
+    setLessons(prev => prev.filter(l => l.id !== id));
+    showToast('レッスンを削除しました', 'info');
+  };
+
   const handleSendNotify = async () => {
     if (!notifyTitle || !notifyBody) { showToast('タイトルと本文を入力してください', 'error'); return; }
     const snap = await getDocs(collection(db, 'users'));
@@ -125,11 +171,11 @@ export default function AdminPage() {
           <Link href="/dashboard" className="text-blue-400 hover:underline text-sm">← ダッシュボード</Link>
           <h1 className="text-xl font-bold">🛠️ 管理者パネル</h1>
         </div>
-        <div className="text-sm text-gray-400">ユーザー数: {users.length} / コース数: {courses.length}</div>
+        <div className="text-sm text-gray-400">ユーザー: {users.length} / コース: {courses.length} / レッスン: {lessons.length}</div>
       </div>
 
       <div className="flex border-b border-gray-800 px-8">
-        {([['users', '👥 ユーザー'], ['courses', '📚 コース'], ['notify', '🔔 一斉通知']] as const).map(([tab, label]) => (
+        {([['users', '👥 ユーザー'], ['courses', '📚 コース'], ['lessons', '🎥 レッスン'], ['notify', '🔔 通知']] as const).map(([tab, label]) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}>
             {label}
@@ -243,7 +289,7 @@ export default function AdminPage() {
 
             <div className="space-y-3">
               {courses.length === 0 && (
-                <p className="text-center text-gray-500 py-8">コースがありません。追加してください。</p>
+                <p className="text-center text-gray-500 py-8">コースがありません。</p>
               )}
               {courses.map(course => (
                 <div key={course.id} className="bg-gray-800 rounded-xl p-4 flex items-center justify-between">
@@ -252,19 +298,11 @@ export default function AdminPage() {
                     <div>
                       <p className="font-medium">{course.title}</p>
                       <p className="text-gray-400 text-xs">{course.level} · {course.category} · {course.lessons}レッスン</p>
-                      {course.tags?.length > 0 && (
-                        <div className="flex gap-1 mt-1">
-                          {course.tags.map(t => <span key={t} className="text-xs bg-gray-700 px-2 py-0.5 rounded-full text-gray-300">#{t}</span>)}
-                        </div>
-                      )}
                     </div>
                   </div>
-                  <div className="flex gap-2 items-center">
-                    <span className={`text-xs px-2 py-1 rounded-full ${course.published ? 'bg-green-800 text-green-300' : 'bg-gray-700 text-gray-400'}`}>
-                      {course.published ? '公開中' : '非公開'}
-                    </span>
-                    <button onClick={() => handleEditCourse(course)} className="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg text-sm transition-colors">✏️ 編集</button>
-                    <button onClick={() => handleDeleteCourse(course.id)} className="bg-red-800 hover:bg-red-700 px-3 py-1.5 rounded-lg text-sm transition-colors">🗑️ 削除</button>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleEditCourse(course)} className="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg text-sm">✏️ 編集</button>
+                    <button onClick={() => handleDeleteCourse(course.id)} className="bg-red-800 hover:bg-red-700 px-3 py-1.5 rounded-lg text-sm">🗑️ 削除</button>
                   </div>
                 </div>
               ))}
@@ -272,13 +310,89 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 一斉通知 */}
+        {/* レッスン管理 */}
+        {activeTab === 'lessons' && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">レッスン管理</h2>
+              <button onClick={() => { setShowLessonForm(true); setEditingLesson(null); setLessonForm(EMPTY_LESSON); }}
+                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm transition-colors">
+                + レッスン追加
+              </button>
+            </div>
+
+            {showLessonForm && (
+              <div className="bg-gray-800 rounded-xl p-6 mb-6">
+                <h3 className="font-bold mb-4">{editingLesson ? 'レッスン編集' : '新規レッスン追加'}</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">コース ID *</label>
+                    <input value={lessonForm.courseId} onChange={e => setLessonForm(p => ({ ...p, courseId: e.target.value }))}
+                      className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm" placeholder="manga-basics" />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">レッスンタイトル *</label>
+                    <input value={lessonForm.title} onChange={e => setLessonForm(p => ({ ...p, title: e.target.value }))}
+                      className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm" placeholder="レッスンタイトル" />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">動画URL (YouTube/Cloudflare Stream) *</label>
+                    <input value={lessonForm.videoUrl} onChange={e => setLessonForm(p => ({ ...p, videoUrl: e.target.value }))}
+                      className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">時間</label>
+                    <input value={lessonForm.duration} onChange={e => setLessonForm(p => ({ ...p, duration: e.target.value }))}
+                      className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm" placeholder="30分" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="free" checked={lessonForm.free}
+                      onChange={e => setLessonForm(p => ({ ...p, free: e.target.checked }))} />
+                    <label htmlFor="free" className="text-sm text-gray-400">無料</label>
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <button onClick={handleSaveLesson} className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-sm transition-colors">
+                    {editingLesson ? '更新' : '追加'}
+                  </button>
+                  <button onClick={() => { setShowLessonForm(false); setEditingLesson(null); }}
+                    className="bg-gray-600 hover:bg-gray-500 px-6 py-2 rounded-lg text-sm transition-colors">
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {lessons.length === 0 && (
+                <p className="text-center text-gray-500 py-8">レッスンがありません。</p>
+              )}
+              {lessons.map(lesson => (
+                <div key={lesson.id} className="bg-gray-800 rounded-xl p-4 flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium">{lesson.title}</p>
+                    <p className="text-gray-400 text-xs">{lesson.courseId} · {lesson.duration} {lesson.free && '· 無料'}</p>
+                    <p className="text-gray-500 text-xs truncate mt-1">{lesson.videoUrl}</p>
+                  </div>
+                  <div className="flex gap-2 ml-4">
+                    <button onClick={() => { setEditingLesson(lesson); setLessonForm(lesson); setShowLessonForm(true); }}
+                      className="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap">✏️ 編集</button>
+                    <button onClick={() => handleDeleteLesson(lesson.id)}
+                      className="bg-red-800 hover:bg-red-700 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap">🗑️ 削除</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 通知 */}
         {activeTab === 'notify' && (
           <div className="max-w-lg">
-            <h2 className="text-lg font-bold mb-6">全ユーザーへ一斉通知</h2>
+            <h2 className="text-lg font-bold mb-6">全ユーザーへ通知</h2>
             <div className="bg-gray-800 rounded-xl p-6 space-y-4">
               <div>
-                <label className="text-sm text-gray-400 block mb-1">通知タイプ</label>
+                <label className="text-sm text-gray-400 block mb-1">タイプ</label>
                 <select value={notifyType} onChange={e => setNotifyType(e.target.value as typeof notifyType)}
                   className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm">
                   <option value="reminder">⏰ 学習リマインダー</option>
@@ -287,14 +401,14 @@ export default function AdminPage() {
                 </select>
               </div>
               <div>
-                <label className="text-sm text-gray-400 block mb-1">タイトル *</label>
+                <label className="text-sm text-gray-400 block mb-1">タイトル</label>
                 <input value={notifyTitle} onChange={e => setNotifyTitle(e.target.value)}
-                  className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm" placeholder="通知タイトル" />
+                  className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="text-sm text-gray-400 block mb-1">本文 *</label>
+                <label className="text-sm text-gray-400 block mb-1">本文</label>
                 <textarea value={notifyBody} onChange={e => setNotifyBody(e.target.value)}
-                  className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm h-24" placeholder="通知の内容" />
+                  className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm h-24" />
               </div>
               <button onClick={handleSendNotify} disabled={!notifyTitle || !notifyBody}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 px-6 py-2 rounded-lg text-sm transition-colors">
