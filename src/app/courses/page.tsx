@@ -4,16 +4,15 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
 
-const COURSES = [
-  { id: 'manga-basics', title: '漫画基礎講座', description: 'キャラクターデザインから背景まで、漫画の基礎を学びます', level: '初級', category: 'manga', lessons: 12, duration: '6時間', thumbnail: '🎨', rating: 4.8, students: 1250, tags: ['キャラクター', '背景', 'コマ割り'] },
-  { id: 'digital-illust', title: 'デジタルイラスト入門', description: 'CLIPSTUDIOを使ったデジタルイラストの基礎', level: '初級', category: 'illustration', lessons: 8, duration: '4時間', thumbnail: '🖌️', rating: 4.6, students: 890, tags: ['CLIPSTUDIO', 'レイヤー', '色塗り'] },
-  { id: 'story-making', title: 'ストーリー作り', description: '読者を引きつけるストーリーの作り方', level: '中級', category: 'story', lessons: 10, duration: '5時間', thumbnail: '📖', rating: 4.9, students: 650, tags: ['構成', 'キャラクター設定', '起承転結'] },
-  { id: 'animation-basics', title: 'アニメーション基礎', description: 'キャラクターに動きをつける基礎技術', level: '中級', category: 'animation', lessons: 15, duration: '8時間', thumbnail: '🎬', rating: 4.7, students: 430, tags: ['モーション', 'タイミング', 'ウォークサイクル'] },
-  { id: 'bg-art', title: '背景イラスト', description: '風景・室内など様々な背景の描き方', level: '中級', category: 'illustration', lessons: 10, duration: '5時間', thumbnail: '🏞️', rating: 4.5, students: 320, tags: ['パース', '風景', '室内'] },
-  { id: 'character-design', title: 'キャラクターデザイン', description: '魅力的なオリジナルキャラクターの作り方', level: '上級', category: 'manga', lessons: 14, duration: '7時間', thumbnail: '✨', rating: 4.9, students: 280, tags: ['デザイン', 'オリジナル', 'シルエット'] },
+// ハードコードのデフォルトコース
+const DEFAULT_COURSES = [
+  { id: 'manga-basics', title: '漫画基礎講座', description: 'キャラクターデザインから背景まで、漫画の基礎を学びます', level: '初級', category: 'manga', lessons: 12, duration: '6時間', thumbnail: '🎨', rating: 4.8, students: 1250, tags: ['キャラクター', '背景', 'コマ割り'], published: true },
+  { id: 'digital-illust', title: 'デジタルイラスト入門', description: 'CLIPSTUDIOを使ったデジタルイラストの基礎', level: '初級', category: 'illustration', lessons: 8, duration: '4時間', thumbnail: '🖌️', rating: 4.6, students: 890, tags: ['CLIPSTUDIO', 'レイヤー', '色塗り'], published: true },
+  { id: 'story-making', title: 'ストーリー作り', description: '読者を引きつけるストーリーの作り方', level: '中級', category: 'story', lessons: 10, duration: '5時間', thumbnail: '📖', rating: 4.9, students: 650, tags: ['構成', 'キャラクター設定', '起承転結'], published: true },
+  { id: 'animation-basics', title: 'アニメーション基礎', description: 'キャラクターに動きをつける基礎技術', level: '中級', category: 'animation', lessons: 15, duration: '8時間', thumbnail: '🎬', rating: 4.7, students: 430, tags: ['モーション', 'タイミング', 'ウォークサイクル'], published: true },
 ];
 
 const CATEGORIES = [
@@ -31,6 +30,21 @@ const SORTS = [
   { id: 'newest', label: '新着順' },
 ];
 
+type Course = {
+  id: string;
+  title: string;
+  description: string;
+  level: string;
+  category: string;
+  lessons: number;
+  duration: string;
+  thumbnail: string;
+  rating: number;
+  students: number;
+  tags: string[];
+  published?: boolean;
+};
+
 export default function CoursesPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -39,18 +53,41 @@ export default function CoursesPage() {
   const [sort, setSort] = useState('popular');
   const [favorites, setFavorites] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState('');
+  const [courses, setCourses] = useState<Course[]>(DEFAULT_COURSES);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        const ref = doc(db, 'users', user.uid);
-        const snap = await getDoc(ref);
-        if (snap.exists()) setFavorites(snap.data().favorites || []);
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
+    const loadData = async () => {
+      const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          const ref = doc(db, 'users', user.uid);
+          const snap = await getDoc(ref);
+          if (snap.exists()) setFavorites(snap.data().favorites || []);
+        }
+
+        // Firebaseからコース取得
+        try {
+          const cSnap = await getDocs(collection(db, 'courses'));
+          const fbCourses = cSnap.docs.map(d => ({ id: d.id, ...d.data() } as Course));
+          
+          // デフォルトコースとマージ（公開中のみ）
+          const publishedDefault = DEFAULT_COURSES.filter(c => c.published !== false);
+          const publishedFb = fbCourses.filter(c => c.published !== false);
+          const merged = [...publishedDefault, ...publishedFb];
+          
+          // 重複削除
+          const unique = Array.from(new Map(merged.map(c => [c.id, c])).values());
+          setCourses(unique);
+        } catch (e) {
+          console.error('コース読み込みエラー:', e);
+          setCourses(DEFAULT_COURSES);
+        }
+
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    };
+    loadData();
   }, []);
 
   const toggleFavorite = async (courseId: string) => {
@@ -67,14 +104,13 @@ export default function CoursesPage() {
     }
   };
 
-  // 全タグ一覧
-  const allTags = Array.from(new Set(COURSES.flatMap(c => c.tags)));
+  const allTags = Array.from(new Set(courses.flatMap(c => c.tags || [])));
 
-  const filtered = COURSES
+  const filtered = courses
     .filter(c => category === 'all' || c.category === category)
     .filter(c => level === 'all' || c.level === level)
-    .filter(c => selectedTag === '' || c.tags.includes(selectedTag))
-    .filter(c => search === '' || c.title.includes(search) || c.description.includes(search) || c.tags.some(t => t.includes(search)))
+    .filter(c => selectedTag === '' || (c.tags || []).includes(selectedTag))
+    .filter(c => search === '' || c.title.includes(search) || c.description.includes(search) || (c.tags || []).some(t => t.includes(search)))
     .sort((a, b) => {
       if (sort === 'popular') return b.students - a.students;
       if (sort === 'rating') return b.rating - a.rating;
@@ -158,7 +194,7 @@ export default function CoursesPage() {
 
               {/* タグ */}
               <div className="flex flex-wrap gap-1 mb-3">
-                {course.tags.map(tag => (
+                {(course.tags || []).map(tag => (
                   <button key={tag} onClick={() => setSelectedTag(selectedTag === tag ? '' : tag)}
                     className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
                       selectedTag === tag ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
