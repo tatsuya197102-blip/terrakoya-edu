@@ -1,39 +1,56 @@
 'use client';
-
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
-
-type User = { uid: string; displayName: string; email: string; createdAt: Timestamp | null; };
-type Course = { id: string; title: string; description: string; level: string; category: string; thumbnail: string; lessons: number; duration: string; };
+import { useToast } from '@/components/ToastProvider';
 
 const ADMIN_EMAIL = 'tatsuya197102@gmail.com';
 
-const EMPTY_COURSE: Omit<Course, 'id'> = { title: '', description: '', level: '初級', category: 'manga', thumbnail: '🎨', lessons: 0, duration: '' };
+type Course = {
+  id: string;
+  title: string;
+  description: string;
+  level: string;
+  category: string;
+  thumbnail: string;
+  lessons: number;
+  duration: string;
+  rating: number;
+  students: number;
+  tags: string[];
+  published: boolean;
+};
+
+type User = { uid: string; displayName: string; email: string; };
+
+const EMPTY_COURSE: Omit<Course, 'id'> = {
+  title: '', description: '', level: '初級', category: 'manga',
+  thumbnail: '🎨', lessons: 0, duration: '', rating: 0, students: 0,
+  tags: [], published: true,
+};
 
 export default function AdminPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'notify'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [form, setForm] = useState<Omit<Course, 'id'>>(EMPTY_COURSE);
+  const [tagInput, setTagInput] = useState('');
   const [notifyTitle, setNotifyTitle] = useState('');
   const [notifyBody, setNotifyBody] = useState('');
   const [notifyType, setNotifyType] = useState<'reminder' | 'new_course' | 'progress'>('new_course');
-  const [notifySent, setNotifySent] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user || user.email !== ADMIN_EMAIL) { router.push('/'); return; }
-      setIsAdmin(true);
       const [uSnap, cSnap] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'courses')),
@@ -46,48 +63,60 @@ export default function AdminPage() {
   }, []);
 
   const handleSaveCourse = async () => {
-    if (!form.title) return;
+    if (!form.title) { showToast('タイトルを入力してください', 'error'); return; }
     const id = editingCourse ? editingCourse.id : form.title.replace(/\s+/g, '-').toLowerCase() + '-' + Date.now();
     await setDoc(doc(db, 'courses', id), { ...form, updatedAt: serverTimestamp() });
     const updated = { id, ...form };
     if (editingCourse) {
       setCourses(prev => prev.map(c => c.id === id ? updated : c));
+      showToast('コースを更新しました', 'success');
     } else {
       setCourses(prev => [...prev, updated]);
+      showToast('コースを追加しました', 'success');
     }
     setShowForm(false);
     setEditingCourse(null);
     setForm(EMPTY_COURSE);
+    setTagInput('');
   };
 
   const handleDeleteCourse = async (id: string) => {
     if (!confirm('このコースを削除しますか？')) return;
     await deleteDoc(doc(db, 'courses', id));
     setCourses(prev => prev.filter(c => c.id !== id));
+    showToast('コースを削除しました', 'info');
   };
 
   const handleEditCourse = (course: Course) => {
     setEditingCourse(course);
-    setForm({ title: course.title, description: course.description, level: course.level, category: course.category, thumbnail: course.thumbnail, lessons: course.lessons, duration: course.duration });
+    setForm({ title: course.title, description: course.description, level: course.level,
+      category: course.category, thumbnail: course.thumbnail, lessons: course.lessons,
+      duration: course.duration, rating: course.rating, students: course.students,
+      tags: course.tags || [], published: course.published ?? true });
+    setTagInput((course.tags || []).join(', '));
     setShowForm(true);
   };
 
   const handleSendNotify = async () => {
-    if (!notifyTitle || !notifyBody) return;
+    if (!notifyTitle || !notifyBody) { showToast('タイトルと本文を入力してください', 'error'); return; }
     const snap = await getDocs(collection(db, 'users'));
     await Promise.all(snap.docs.map(d =>
       setDoc(doc(collection(db, 'notifications')), {
-        uid: d.id, type: notifyType, title: notifyTitle, body: notifyBody, read: false, createdAt: serverTimestamp(),
+        uid: d.id, type: notifyType, title: notifyTitle, body: notifyBody,
+        read: false, createdAt: serverTimestamp(),
       })
     ));
-    setNotifySent(true);
+    showToast(`${snap.docs.length}人に通知を送信しました`, 'success');
     setNotifyTitle(''); setNotifyBody('');
-    setTimeout(() => setNotifySent(false), 3000);
   };
 
-  if (loading || !isAdmin) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">読み込み中...</div>
-  );
+  const handleTagInput = (value: string) => {
+    setTagInput(value);
+    const tags = value.split(',').map(t => t.trim()).filter(t => t !== '');
+    setForm(p => ({ ...p, tags }));
+  };
+
+  if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">読み込み中...</div>;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -96,10 +125,9 @@ export default function AdminPage() {
           <Link href="/dashboard" className="text-blue-400 hover:underline text-sm">← ダッシュボード</Link>
           <h1 className="text-xl font-bold">🛠️ 管理者パネル</h1>
         </div>
-        <div className="text-sm text-gray-400">ユーザー数: {users.length}</div>
+        <div className="text-sm text-gray-400">ユーザー数: {users.length} / コース数: {courses.length}</div>
       </div>
 
-      {/* タブ */}
       <div className="flex border-b border-gray-800 px-8">
         {([['users', '👥 ユーザー'], ['courses', '📚 コース'], ['notify', '🔔 一斉通知']] as const).map(([tab, label]) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
@@ -121,20 +149,17 @@ export default function AdminPage() {
                   <tr>
                     <th className="px-4 py-3 text-left">名前</th>
                     <th className="px-4 py-3 text-left">メール</th>
-                    <th className="px-4 py-3 text-left">登録日</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
                   {users.map(u => (
-                    <tr key={u.uid} className="hover:bg-gray-800 transition-colors">
+                    <tr key={u.uid} className="hover:bg-gray-800">
                       <td className="px-4 py-3">{u.displayName || '名無し'}</td>
                       <td className="px-4 py-3 text-gray-400">{u.email}</td>
-                      <td className="px-4 py-3 text-gray-400">{u.createdAt?.toDate?.()?.toLocaleDateString('ja-JP') || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {users.length === 0 && <p className="text-center text-gray-500 py-8">ユーザーがいません</p>}
             </div>
           </div>
         )}
@@ -144,13 +169,12 @@ export default function AdminPage() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">コース管理</h2>
-              <button onClick={() => { setShowForm(true); setEditingCourse(null); setForm(EMPTY_COURSE); }}
+              <button onClick={() => { setShowForm(true); setEditingCourse(null); setForm(EMPTY_COURSE); setTagInput(''); }}
                 className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm transition-colors">
                 + コース追加
               </button>
             </div>
 
-            {/* コース追加・編集フォーム */}
             {showForm && (
               <div className="bg-gray-800 rounded-xl p-6 mb-6">
                 <h3 className="font-bold mb-4">{editingCourse ? 'コース編集' : '新規コース追加'}</h3>
@@ -194,20 +218,33 @@ export default function AdminPage() {
                     <input value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))}
                       className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm" placeholder="6時間" />
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="text-sm text-gray-400 block mb-1">タグ（カンマ区切り）</label>
+                    <input value={tagInput} onChange={e => handleTagInput(e.target.value)}
+                      className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm" placeholder="キャラクター, 背景, コマ割り" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="published" checked={form.published}
+                      onChange={e => setForm(p => ({ ...p, published: e.target.checked }))} />
+                    <label htmlFor="published" className="text-sm text-gray-400">公開する</label>
+                  </div>
                 </div>
                 <div className="flex gap-3 mt-4">
                   <button onClick={handleSaveCourse} className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-sm transition-colors">
                     {editingCourse ? '更新' : '追加'}
                   </button>
-                  <button onClick={() => { setShowForm(false); setEditingCourse(null); }} className="bg-gray-600 hover:bg-gray-500 px-6 py-2 rounded-lg text-sm transition-colors">
+                  <button onClick={() => { setShowForm(false); setEditingCourse(null); }}
+                    className="bg-gray-600 hover:bg-gray-500 px-6 py-2 rounded-lg text-sm transition-colors">
                     キャンセル
                   </button>
                 </div>
               </div>
             )}
 
-            {/* コース一覧 */}
             <div className="space-y-3">
+              {courses.length === 0 && (
+                <p className="text-center text-gray-500 py-8">コースがありません。追加してください。</p>
+              )}
               {courses.map(course => (
                 <div key={course.id} className="bg-gray-800 rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -215,19 +252,22 @@ export default function AdminPage() {
                     <div>
                       <p className="font-medium">{course.title}</p>
                       <p className="text-gray-400 text-xs">{course.level} · {course.category} · {course.lessons}レッスン</p>
+                      {course.tags?.length > 0 && (
+                        <div className="flex gap-1 mt-1">
+                          {course.tags.map(t => <span key={t} className="text-xs bg-gray-700 px-2 py-0.5 rounded-full text-gray-300">#{t}</span>)}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleEditCourse(course)} className="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg text-sm transition-colors">
-                      ✏️ 編集
-                    </button>
-                    <button onClick={() => handleDeleteCourse(course.id)} className="bg-red-800 hover:bg-red-700 px-3 py-1.5 rounded-lg text-sm transition-colors">
-                      🗑️ 削除
-                    </button>
+                  <div className="flex gap-2 items-center">
+                    <span className={`text-xs px-2 py-1 rounded-full ${course.published ? 'bg-green-800 text-green-300' : 'bg-gray-700 text-gray-400'}`}>
+                      {course.published ? '公開中' : '非公開'}
+                    </span>
+                    <button onClick={() => handleEditCourse(course)} className="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg text-sm transition-colors">✏️ 編集</button>
+                    <button onClick={() => handleDeleteCourse(course.id)} className="bg-red-800 hover:bg-red-700 px-3 py-1.5 rounded-lg text-sm transition-colors">🗑️ 削除</button>
                   </div>
                 </div>
               ))}
-              {courses.length === 0 && <p className="text-center text-gray-500 py-8">コースがありません。追加してください。</p>}
             </div>
           </div>
         )}
@@ -256,13 +296,10 @@ export default function AdminPage() {
                 <textarea value={notifyBody} onChange={e => setNotifyBody(e.target.value)}
                   className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm h-24" placeholder="通知の内容" />
               </div>
-              <div className="flex items-center gap-3">
-                <button onClick={handleSendNotify} disabled={!notifyTitle || !notifyBody}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 px-6 py-2 rounded-lg text-sm transition-colors">
-                  {users.length}人に送信
-                </button>
-                {notifySent && <span className="text-green-400 text-sm">✅ 送信完了！</span>}
-              </div>
+              <button onClick={handleSendNotify} disabled={!notifyTitle || !notifyBody}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 px-6 py-2 rounded-lg text-sm transition-colors">
+                {users.length}人に送信
+              </button>
             </div>
           </div>
         )}
