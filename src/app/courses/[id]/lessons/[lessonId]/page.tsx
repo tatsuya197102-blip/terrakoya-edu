@@ -4,8 +4,9 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
+import { useToast } from '@/components/ToastProvider';
 
 const COURSES: Record<string, {
   title: string;
@@ -15,10 +16,10 @@ const COURSES: Record<string, {
     title: '漫画基礎講座',
     lessons: [
       { id: 'l1', title: 'キャラクターの描き方基礎', duration: '30分', free: true, description: 'キャラクターの基本的な描き方を学びます。頭身バランス、体の構造など基礎から丁寧に解説します。' },
-      { id: 'l2', title: '顔・表情の描き方', duration: '25分', free: true, description: '喜怒哀楽の表情を自然に描くコツを学びます。目・鼻・口のバランスが重要です。' },
-      { id: 'l3', title: '体・ポーズの描き方', duration: '35分', free: false, description: '動きのあるポーズの描き方を学びます。重心とバランスを意識することが大切です。' },
-      { id: 'l4', title: '背景の描き方入門', duration: '40分', free: false, description: 'キャラクターを引き立てる背景の描き方を学びます。パース（遠近法）の基礎も解説します。' },
-      { id: 'l5', title: 'コマ割りの基礎', duration: '30分', free: false, description: '読者を引き込むコマ割りのテクニックを学びます。テンポとリズムが重要です。' },
+      { id: 'l2', title: '顔・表情の描き方', duration: '25分', free: true, description: '喜怒哀楽の表情を自然に描くコツを学びます。' },
+      { id: 'l3', title: '体・ポーズの描き方', duration: '35分', free: false, description: '動きのあるポーズの描き方を学びます。' },
+      { id: 'l4', title: '背景の描き方入門', duration: '40分', free: false, description: 'キャラクターを引き立てる背景の描き方を学びます。' },
+      { id: 'l5', title: 'コマ割りの基礎', duration: '30分', free: false, description: '読者を引き込むコマ割りのテクニックを学びます。' },
     ],
   },
   'digital-illust': {
@@ -34,7 +35,7 @@ const COURSES: Record<string, {
     title: 'ストーリー作り',
     lessons: [
       { id: 'l1', title: 'ストーリーの基本構造', duration: '30分', free: true, description: '起承転結の基本構造と応用を学びます。' },
-      { id: 'l2', title: 'キャラクター設定の作り方', duration: '35分', free: false, description: '魅力的なキャラクターを作るための設定シートの書き方を学びます。' },
+      { id: 'l2', title: 'キャラクター設定の作り方', duration: '35分', free: false, description: '魅力的なキャラクターの設定シートの書き方を学びます。' },
       { id: 'l3', title: '起承転結の組み立て方', duration: '40分', free: false, description: '読者を飽きさせないストーリー展開の作り方を学びます。' },
     ],
   },
@@ -52,6 +53,7 @@ const COURSES: Record<string, {
 export default function LessonPage() {
   const params = useParams();
   const router = useRouter();
+  const { showToast } = useToast();
   const courseId = params.id as string;
   const lessonId = params.lessonId as string;
   const course = COURSES[courseId];
@@ -61,6 +63,7 @@ export default function LessonPage() {
   const [enrolled, setEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -69,12 +72,12 @@ export default function LessonPage() {
       const snap = await getDoc(ref);
       if (snap.exists()) {
         const data = snap.data();
-        const enrolledCourses = data.enrolledCourses || [];
-        setEnrolled(enrolledCourses.includes(courseId));
-        const completedLessons = data.completedLessons?.[courseId] || [];
-        setCompleted(completedLessons.includes(lessonId));
+        setEnrolled((data.enrolledCourses || []).includes(courseId));
+        const cl = data.completedLessons?.[courseId] || [];
+        setCompletedLessons(cl);
+        setCompleted(cl.includes(lessonId));
         const total = course?.lessons.length || 1;
-        setProgress(Math.round((completedLessons.length / total) * 100));
+        setProgress(Math.round((cl.length / total) * 100));
       }
       setLoading(false);
     });
@@ -85,12 +88,30 @@ export default function LessonPage() {
     const user = auth.currentUser;
     if (!user) return;
     const ref = doc(db, 'users', user.uid);
+    const today = new Date().toISOString().split('T')[0];
+    const snap = await getDoc(ref);
+    const data = snap.data() || {};
+    const currentCompleted = [...(data.completedLessons?.[courseId] || [])];
+    const activityDates = [...(data.activityDates || [])];
+    if (!currentCompleted.includes(lessonId)) currentCompleted.push(lessonId);
+    if (!activityDates.includes(today)) activityDates.push(today);
+    const total = course?.lessons.length || 1;
+    const newProgress = Math.round((currentCompleted.length / total) * 100);
     await updateDoc(ref, {
-      [`completedLessons.${courseId}`]: arrayUnion(lessonId),
+      [`completedLessons.${courseId}`]: currentCompleted,
+      activityDates,
+      lastAccessedAt: serverTimestamp(),
     });
     setCompleted(true);
-    const total = course?.lessons.length || 1;
-    setProgress(prev => Math.min(100, prev + Math.round(100 / total)));
+    setCompletedLessons(currentCompleted);
+    setProgress(newProgress);
+    showToast(`レッスン完了！進捗: ${newProgress}%`, 'success');
+    if (newProgress === 100) {
+      setTimeout(() => {
+        showToast('🎉 コース修了おめでとうございます！', 'success');
+        setTimeout(() => router.push(`/certificate?course=${courseId}`), 2000);
+      }, 500);
+    }
   };
 
   const prevLesson = lessonIndex > 0 ? course?.lessons[lessonIndex - 1] : null;
@@ -109,29 +130,23 @@ export default function LessonPage() {
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center text-white gap-4">
       <p className="text-2xl">🔒</p>
       <p>このレッスンは受講登録が必要です</p>
-      <Link href={`/courses/${courseId}`} className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors">
-        コースページへ
-      </Link>
+      <Link href={`/courses/${courseId}`} className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors">コースページへ</Link>
     </div>
   );
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* ヘッダー */}
       <div className="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
-        <Link href={`/courses/${courseId}`} className="text-blue-400 hover:underline text-sm">
-          ← {course.title}
-        </Link>
+        <Link href={`/courses/${courseId}`} className="text-blue-400 hover:underline text-sm">← {course.title}</Link>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-400">進捗: {progress}%</span>
-          <div className="w-24 h-1.5 bg-gray-700 rounded-full">
-            <div className="h-1.5 bg-blue-500 rounded-full transition-all" style={{ width: `${progress}%` }}></div>
+          <span className="text-sm text-gray-400">{progress}%</span>
+          <div className="w-32 h-2 bg-gray-700 rounded-full">
+            <div className="h-2 bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* 動画プレイヤー（モック） */}
         <div className="bg-gray-800 rounded-xl aspect-video flex items-center justify-center mb-6 relative overflow-hidden">
           <div className="text-center">
             <div className="text-6xl mb-4">▶️</div>
@@ -139,47 +154,55 @@ export default function LessonPage() {
             <p className="text-gray-500 text-xs mt-1">{lesson.duration}</p>
           </div>
           {completed && (
-            <div className="absolute top-3 right-3 bg-green-600 text-white text-xs px-2 py-1 rounded-full">
-              ✅ 完了済み
-            </div>
+            <div className="absolute top-3 right-3 bg-green-600 text-white text-xs px-2 py-1 rounded-full">✅ 完了済み</div>
           )}
         </div>
 
-        {/* レッスン情報 */}
         <div className="flex items-start justify-between mb-6">
-          <div>
+          <div className="flex-1">
             <p className="text-gray-400 text-sm mb-1">レッスン {lessonIndex + 1} / {course.lessons.length}</p>
-            <h1 className="text-2xl font-bold">{lesson.title}</h1>
-            <p className="text-gray-400 mt-2">{lesson.description}</p>
+            <h1 className="text-2xl font-bold mb-2">{lesson.title}</h1>
+            <p className="text-gray-400">{lesson.description}</p>
           </div>
-          {!completed ? (
-            <button onClick={handleComplete}
-              className="ml-4 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
-              ✅ 完了にする
-            </button>
-          ) : (
-            <span className="ml-4 text-green-400 text-sm font-medium whitespace-nowrap">✅ 完了済み</span>
-          )}
+          <div className="ml-4">
+            {!completed ? (
+              <button onClick={handleComplete} className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+                ✅ 完了にする
+              </button>
+            ) : (
+              <span className="text-green-400 text-sm font-medium">✅ 完了済み</span>
+            )}
+          </div>
         </div>
 
-        {/* 前後ナビ */}
-        <div className="flex justify-between gap-4 mt-8">
+        <div className="bg-gray-800 rounded-xl p-4 mb-6">
+          <h3 className="font-bold mb-3 text-sm text-gray-400">このコースのレッスン</h3>
+          <div className="space-y-2">
+            {course.lessons.map((l, i) => (
+              <Link key={l.id} href={`/courses/${courseId}/lessons/${l.id}`}
+                className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${l.id === lessonId ? 'bg-blue-700' : 'hover:bg-gray-700'}`}>
+                <span className="text-sm w-5 text-center">{completedLessons.includes(l.id) ? '✅' : i + 1}</span>
+                <span className="text-sm flex-1">{l.title}</span>
+                <span className="text-xs text-gray-400">{l.duration}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-between gap-4">
           {prevLesson ? (
-            <Link href={`/courses/${courseId}/lessons/${prevLesson.id}`}
-              className="flex-1 bg-gray-800 hover:bg-gray-700 rounded-xl p-4 transition-colors">
+            <Link href={`/courses/${courseId}/lessons/${prevLesson.id}`} className="flex-1 bg-gray-800 hover:bg-gray-700 rounded-xl p-4 transition-colors">
               <p className="text-gray-400 text-xs mb-1">← 前のレッスン</p>
               <p className="font-medium text-sm">{prevLesson.title}</p>
             </Link>
           ) : <div className="flex-1" />}
           {nextLesson ? (
-            <Link href={`/courses/${courseId}/lessons/${nextLesson.id}`}
-              className="flex-1 bg-blue-700 hover:bg-blue-600 rounded-xl p-4 transition-colors text-right">
+            <Link href={`/courses/${courseId}/lessons/${nextLesson.id}`} className="flex-1 bg-blue-700 hover:bg-blue-600 rounded-xl p-4 transition-colors text-right">
               <p className="text-gray-300 text-xs mb-1">次のレッスン →</p>
               <p className="font-medium text-sm">{nextLesson.title}</p>
             </Link>
           ) : (
-            <Link href={`/courses/${courseId}`}
-              className="flex-1 bg-green-700 hover:bg-green-600 rounded-xl p-4 transition-colors text-right">
+            <Link href={`/courses/${courseId}`} className="flex-1 bg-green-700 hover:bg-green-600 rounded-xl p-4 transition-colors text-right">
               <p className="text-gray-300 text-xs mb-1">🏆 コース完了！</p>
               <p className="font-medium text-sm">コースページへ戻る</p>
             </Link>
