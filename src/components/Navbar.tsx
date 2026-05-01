@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const ADMIN_EMAIL = 'tatsuya197102@gmail.com';
 
@@ -55,10 +56,14 @@ export default function Navbar() {
 
         {/* 中央ナビ */}
         <div className="hidden md:flex items-center gap-1">
-          {[
-            { href: '/dashboard', label: 'ダッシュボード', icon: '🏠' },
+
+{[
             { href: '/courses', label: 'コース', icon: '📚' },
+            { href: '/showcase', label: 'ショーケース', icon: '🎨' },
+            { href: '/teacher/dashboard', label: '教師', icon: '👨‍🏫' },
+            { href: '/dashboard', label: 'ダッシュボード', icon: '📊' },
           ].map(({ href, label, icon }) => (
+
             <Link key={href} href={href}
               className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm transition-colors ${
                 isActive(href) ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -70,6 +75,8 @@ export default function Navbar() {
 
         {/* 右側 */}
         <div className="flex items-center gap-2">
+          {/* 言語切替 */}
+          <LanguageSwitcher />
           {/* 通知ベル */}
           <Link href="/notifications" className="relative p-2 text-gray-400 hover:text-white transition-colors">
             🔔
@@ -133,12 +140,14 @@ export default function Navbar() {
 
       {/* モバイルナビ */}
       <div className="md:hidden flex border-t border-gray-800">
-        {[
-          { href: '/dashboard', label: 'ホーム', icon: '🏠' },
+
+{[
           { href: '/courses', label: 'コース', icon: '📚' },
-          { href: '/notifications', label: '通知', icon: '🔔' },
-          { href: '/profile', label: 'プロフィール', icon: '👤' },
+          { href: '/showcase', label: 'ショーケース', icon: '🎨' },
+          { href: '/teacher/dashboard', label: '教師', icon: '👨‍🏫' },
+          { href: '/dashboard', label: 'ダッシュボード', icon: '📊' },
         ].map(({ href, label, icon }) => (
+
           <Link key={href} href={href}
             className={`flex-1 flex flex-col items-center py-2 text-xs transition-colors ${
               isActive(href) ? 'text-blue-400' : 'text-gray-500'

@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "firebase:setup": "node firebase-console-setup.js",
+    "firebase:setup:dry": "node firebase-console-setup.js --dry-run",
+    "firebase:local": "node firebase-setup.js",
+    "firebase:emulator": "firebase emulators:start --only firestore"
   },
   "dependencies": {
     "firebase": "^12.12.1",
