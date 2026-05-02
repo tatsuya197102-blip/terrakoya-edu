@@ -1,1 +1,1 @@
-﻿{"functions":{"src/app/**/*.tsx":{"maxDuration":60}},"buildCommand":"next build","outputDirectory":".next"}
+{"buildCommand":"next build","outputDirectory":".next"}
