@@ -60,8 +60,9 @@ export default function Navbar() {
 {[
             { href: '/courses', label: 'コース', icon: '📚' },
             { href: '/showcase', label: 'ショーケース', icon: '🎨' },
+            { href: '/submissions', label: '課題', icon: '📝' },
+            { href: '/ai-consult', label: 'AI相談', icon: '🤖' },
             { href: '/teacher/dashboard', label: '教師', icon: '👨‍🏫' },
-            { href: '/dashboard', label: 'ダッシュボード', icon: '📊' },
           ].map(({ href, label, icon }) => (
 
             <Link key={href} href={href}

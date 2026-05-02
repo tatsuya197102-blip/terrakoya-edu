@@ -26,13 +26,15 @@ export default function CertificatePage() {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (!user) { router.push('/auth/login'); return; }
+      if (!user) { router.push('/login'); return; }
       const ref = doc(db, 'users', user.uid);
       const snap = await getDoc(ref);
       if (snap.exists()) {
         setUserName(snap.data().displayName || user.displayName || 'Learner');
+      } else {
+        setUserName(user.displayName || 'Learner');
       }
-      setCompletedDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+      setCompletedDate(new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }));
       setLoading(false);
     });
     return () => unsubscribe();
@@ -52,67 +54,70 @@ export default function CertificatePage() {
       pdf.setLineWidth(0.5);
       pdf.rect(12, 12, 273, 186);
 
+      pdf.setTextColor(59, 130, 246);
+      pdf.setFontSize(12);
+      pdf.text('CERTIFICATE OF COMPLETION', 148.5, 35, { align: 'center' });
+
       pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(22);
-      pdf.text('CERTIFICATE OF COMPLETION', 148.5, 43, { align: 'center' });
-      pdf.setFontSize(11);
-      pdf.setTextColor(156, 163, 175);
-      pdf.text('Completion Certificate', 148.5, 53, { align: 'center' });
+      pdf.setFontSize(28);
+      pdf.text('Certificate of Achievement', 148.5, 50, { align: 'center' });
 
       pdf.setDrawColor(59, 130, 246);
       pdf.setLineWidth(0.5);
-      pdf.line(60, 60, 237, 60);
+      pdf.line(80, 58, 217, 58);
 
       pdf.setTextColor(156, 163, 175);
       pdf.setFontSize(11);
-      pdf.text('This is to certify that', 148.5, 75, { align: 'center' });
+      pdf.text('This is to certify that', 148.5, 72, { align: 'center' });
 
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(26);
-      pdf.text(userName, 148.5, 95, { align: 'center' });
+      const displayName = userName || 'Learner';
+      pdf.text(displayName, 148.5, 90, { align: 'center' });
 
       pdf.setDrawColor(255, 255, 255);
       pdf.setLineWidth(0.3);
-      const nameWidth = pdf.getTextWidth(userName);
-      pdf.line(148.5 - nameWidth/2 - 10, 99, 148.5 + nameWidth/2 + 10, 99);
+      const nameWidth = pdf.getTextWidth(displayName);
+      pdf.line(148.5 - nameWidth / 2 - 10, 94, 148.5 + nameWidth / 2 + 10, 94);
 
       pdf.setTextColor(156, 163, 175);
       pdf.setFontSize(11);
-      pdf.text('has successfully completed', 148.5, 113, { align: 'center' });
+      pdf.text('has successfully completed the course', 148.5, 108, { align: 'center' });
 
       pdf.setTextColor(96, 165, 250);
-      pdf.setFontSize(18);
-      pdf.text(course?.titleEn || courseId, 148.5, 128, { align: 'center' });
+      pdf.setFontSize(20);
+      pdf.text(course?.titleEn || courseId, 148.5, 123, { align: 'center' });
 
       pdf.setTextColor(156, 163, 175);
       pdf.setFontSize(10);
-      pdf.text('Completed on: ' + completedDate, 148.5, 145, { align: 'center' });
+      pdf.text('Date: ' + completedDate, 148.5, 140, { align: 'center' });
 
       pdf.setDrawColor(59, 130, 246);
-      pdf.line(60, 155, 237, 155);
+      pdf.line(80, 150, 217, 150);
 
       pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(14);
-      pdf.text('TERRAKOYA', 148.5, 168, { align: 'center' });
+      pdf.setFontSize(16);
+      pdf.text('TERRAKOYA', 148.5, 165, { align: 'center' });
+
       pdf.setFontSize(8);
       pdf.setTextColor(75, 85, 99);
-      pdf.text('Online Learning Platform for Manga & Anime Creators', 148.5, 176, { align: 'center' });
-      pdf.text('terrakoya-edu.vercel.app', 148.5, 183, { align: 'center' });
+      pdf.text('Online Learning Platform for Manga & Anime Creators', 148.5, 175, { align: 'center' });
+      pdf.text('terrakoya-edu.vercel.app', 148.5, 182, { align: 'center' });
 
       pdf.save('TERRAKOYA_certificate_' + courseId + '.pdf');
     } catch (e) {
       console.error('PDF error:', e);
-      alert('PDF生成エラー: ' + e);
+      alert('PDF generation error: ' + e);
     }
     setDownloading(false);
   };
 
-  if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">読み込み中...</div>;
+  if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">Loading...</div>;
 
   if (!course) return (
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center text-white gap-4">
-      <p>コースが見つかりません</p>
-      <Link href="/courses" className="text-blue-400 hover:underline">コース一覧へ</Link>
+      <p>Course not found</p>
+      <Link href="/courses" className="text-blue-400 hover:underline">Back to courses</Link>
     </div>
   );
 
@@ -131,7 +136,8 @@ export default function CertificatePage() {
             <p className="text-3xl font-bold mb-1">{userName}</p>
             <div className="w-48 h-0.5 bg-white mx-auto mb-4"></div>
             <p className="text-gray-400 text-sm mb-3">修了コース</p>
-            <p className="text-xl font-bold text-blue-400 mb-4">{course.title}</p>
+            <p className="text-xl font-bold text-blue-400 mb-1">{course.title}</p>
+            <p className="text-sm text-gray-500 mb-4">{course.titleEn}</p>
             <p className="text-gray-500 text-sm mb-8">{completedDate}</p>
             <div className="flex items-center justify-center gap-2">
               <span className="text-2xl">⛩️</span>
@@ -142,9 +148,9 @@ export default function CertificatePage() {
         <div className="text-center">
           <button onClick={handleDownload} disabled={downloading}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-8 py-3 rounded-xl font-bold text-lg transition-colors">
-            {downloading ? '生成中...' : '📄 PDFをダウンロード'}
+            {downloading ? 'Generating...' : '📄 PDFをダウンロード'}
           </button>
-          <p className="text-gray-500 text-sm mt-3">※ PDFは英語表記で出力されます</p>
+          <p className="text-gray-500 text-sm mt-3">※ PDFは英語ベースで出力されます（文字化け防止）</p>
         </div>
       </div>
     </div>

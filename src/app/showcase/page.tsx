@@ -14,6 +14,12 @@ interface ShowcaseItem {
   rating: number;
 }
 
+const JMC_WORKS = [
+  { title: 'Production I.G 共同制作', desc: '資本業務提携によるアニメ制作', icon: '🎬', color: 'from-red-600 to-red-800' },
+  { title: 'ベトナム・エジプトスタジオ', desc: '海外3拠点での制作体制', icon: '🌍', color: 'from-green-600 to-green-800' },
+  { title: 'アラビア語ローカライズ', desc: 'エジプト市場向け漫画翻訳', icon: '📖', color: 'from-blue-600 to-blue-800' },
+];
+
 export default function ShowcasePage() {
   const { i18n } = useTranslation();
   const [items, setItems] = useState<ShowcaseItem[]>([]);
@@ -57,6 +63,9 @@ export default function ShowcasePage() {
     noResults: lang === 'ar' ? 'لا توجد أعمال' : lang === 'en' ? 'No works found' : '該当する作品がありません',
     partner: lang === 'ar' ? 'هل تريد الشراكة معنا؟' : lang === 'en' ? 'Interested in a partnership?' : 'パートナーシップについてご関心がありますか？',
     contact: lang === 'ar' ? 'تواصل معنا' : lang === 'en' ? 'Contact Us' : 'お問い合わせ',
+    jmcTitle: lang === 'ar' ? 'خدمات J-MANGA CREATE' : lang === 'en' ? 'J-MANGA CREATE Services' : 'J-MANGA CREATE の制作実績',
+    jmcSub: lang === 'ar' ? 'شريكك في إنتاج الأنيمي والمانجا' : lang === 'en' ? 'Your anime & manga production partner' : 'アニメ・漫画制作のパートナー',
+    featured: lang === 'ar' ? 'أعمال مميزة' : lang === 'en' ? 'Featured Works' : 'おすすめ作品',
   };
 
   if (loading) {
@@ -81,6 +90,22 @@ export default function ShowcasePage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-8 py-12">
+        <div className="mb-16">
+          <h2 className="text-2xl font-bold mb-2 text-center">{t.jmcTitle}</h2>
+          <p className="text-gray-400 text-center mb-8">{t.jmcSub}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {JMC_WORKS.map((work, i) => (
+              <div key={i} className={`bg-gradient-to-br ${work.color} p-6 rounded-2xl text-center hover:scale-105 transition-transform`}>
+                <span className="text-4xl block mb-3">{work.icon}</span>
+                <h3 className="text-lg font-bold mb-2">{work.title}</h3>
+                <p className="text-sm opacity-80">{work.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <h2 className="text-2xl font-bold mb-6 text-center">{t.featured}</h2>
+
         <div className="flex gap-3 mb-10 justify-center">
           {[
             { value: 'all', label: t.all, emoji: '🌟' },
@@ -115,7 +140,7 @@ export default function ShowcasePage() {
                       ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30'
                       : 'bg-purple-600/20 text-purple-400 border border-purple-600/30'
                   }`}>
-                    {item.category === 'manga' ? `📖 ${t.manga}` : `🎬 ${t.anime}`}
+                    {item.category === 'manga' ? '📖 ' + t.manga : '🎬 ' + t.anime}
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-yellow-400 text-lg">{'★'.repeat(Math.floor(item.rating))}</span>
