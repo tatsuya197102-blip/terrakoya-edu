@@ -57,8 +57,8 @@ export default function Navbar() {
         {/* 中央ナビ */}
         <div className="hidden md:flex items-center gap-1">
 
-{[
-            { href: '/courses', label: 'コース', icon: '📚' },
+          {[
+            { href: '/lessons', label: 'レッスン', icon: '🎓' },
             { href: '/showcase', label: 'ショーケース', icon: '🎨' },
             { href: '/submissions', label: '課題', icon: '📝' },
             { href: '/ai-consult', label: 'AI相談', icon: '🤖' },

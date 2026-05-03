@@ -1,0 +1,209 @@
+Step 1: GitHub アカウント（5分）
+
+github.com に登録
+username + password 設定
+あなたのGitHub username を教えてください
+↓↓
+　tatsuya197102-blip
+　tatsuya197102-blip
+　tatsuya197102-blip
+
+
+Step 2: API キー取得（10分）
+Gemini API:
+https://aistudio.google.com/app/apikey にアクセス
+「Create API Key」→「Create new API key in new project」キーをコピー
+↓↓
+　AIzaSyDatIPw3tD_xipT-x636-FQtQrosRh0pLw
+　AIzaSyDatIPw3tD_xipT-x636-FQtQrosRh0pLw
+　AIzaSyDatIPw3tD_xipT-x636-FQtQrosRh0pLw
+
+Claude API（将来用）：
+https://console.anthropic.com/account/keys にアクセス
+「Create Key」キーをコピー
+↓↓
+　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
+　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
+　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
+
+
+Google Translate API：
+Google Cloud Console にログイン
+プロジェクト作成 → Translation API 有効化
+↓↓
+　済　(https://console.cloud.google.com/apis/library/translate.googleapis.com?project=project-dbcaf361-edb1-4210-aec )
+
+Step 3: DB選択（5分）
+以下から選んでください：
+
+A) PostgreSQL（本格的、セットアップが必要）
+B) Firebase Realtime（クラウドネイティブ、簡単）
+C) Supabase（Firebase の代替、PostgreSQL ベース）
+
+Step 4: Vimeo Pro 確認（2分）
+Vimeo アカウント、持ってますか？
+
+↓↓
+実装方針：Vimeo なしで進める
+今は Vimeo なしで開発を進めて、5月中旬に課金します。
+【MVP】
+- 4月: Next.js + Firebase + 多言語化 ✓
+- 5月: 動画プレイヤー UI（Vimeo API なし） ✓
+- 6月: Vimeo 動画埋め込み + 本番テスト ✓
+代わりに、今やること：
+
+ダミー動画プレイヤー を実装（HTML5 video or YouTube 埋め込み）
+Vimeo の仕様書 を読んで、API 連携の準備
+5月中旬に Vimeo Pro 契約 → 実装完成
+
+
+TERRAKOYA 教育版 — AI API 選定分析
+
+【2026年4月時点】
+
+=== 完全無料オプション ===
+
+1. Gemini 2.5 Flash-Lite (FREE TIER)
+   - 無料枠: 1日1,000リクエスト
+   - 入出力: 無料（割り当て内）
+   - 応答速度: 2-3秒
+   - 品質: 軽量タスク向け、教科書Q&Aには充分
+   - 制限: コンテキスト10万トークン（100K）
+   - 判定: ✓ MVP段階で採用可能
+
+2. DeepSeek API (OpenRouter経由)
+   - 無料枠: あり（月額上限あり）
+   - 入出力: $0.55/$1.65 (100万トークンあたり)
+   - 応答速度: 3-4秒
+   - 品質: GPT-4o並みながら低コスト
+   - コンテキスト: 64K標準
+   - 判定: ✓ コスト最適化段階で推奨
+
+=== 低コスト有料オプション ===
+
+1. Claude Haiku 4.5（推奨）
+   - 入出力: $0.80/$4.00 (100万トークンあたり)
+   - 応答速度: 0.5-1秒（最速）
+   - 品質: 高い（教科書コンテキスト埋め込みに最適）
+   - コンテキスト: 200K標準
+   - 月額想定: 1日5問 × 100ユーザーで約 $2-5/月
+   - 判定: ◎ ベストバランス
+
+2. GPT-4o Mini
+   - 入出力: $0.15/$0.60 (100万トークンあたり)
+   - 応答速度: 1-2秒
+   - 品質: 中程度
+   - 月額想定: 約 $1-2/月（超安価）
+   - 判定: ◎ 超予算重視なら選択肢
+
+3. Gemini 2.5 Flash (有料)
+   - 入出力: $0.075/$0.30 (100万トークンあたり)
+   - 応答速度: 2-3秒
+   - 品質: Flash系は軽め
+   - 月額想定: 約 $0.5-1/月（最安）
+   - コンテキスト: 100万トークン（強み）
+   - 判定: ○ 超安価だが品質トレードオフ
+
+=== 推定コスト（月額）===
+
+想定: 100ユーザー × 1日5問 = 月5,000問
+
+Claude Haiku 4.5:
+  - 平均トークン数: 質問400 + 回答300 = 700トークン/問
+  - 5,000問 × 700 = 3.5M トークン
+  - 入力: 2M × $0.80 = $1.60
+  - 出力: 1.5M × $4.00 = $6.00
+  - 合計: 約 $7.60/月 ✓ 実用的
+
+Gemini 2.5 Flash-Lite (無料):
+  - 1,000リクエスト/日枠で月3万リクエスト対応
+  - 5,000問/月は対応可（1日5問×20ユーザーまで無料）
+  - 21ユーザー以上は有料に移行
+  - 移行コスト: 上記 Gemini Flash の $0.5-1/月
+
+GPT-4o Mini:
+  - 3.5M × ($0.15 + $0.60) = 約 $2.62/月 ✓ 最安
+
+=== 開発段階別の推奨 ===
+
+【MVP（3ヶ月）】
+  - Gemini 2.5 Flash-Lite （完全無料）
+  - 最大 1,000リクエスト/日で20ユーザー前後までサポート
+  - 追加ユーザーは有料に
+  - コスト: $0/月
+
+【Phase 1 スケール（ユーザー増加時）】
+  - Claude Haiku 4.5 に移行
+  - 教科書コンテキスト埋め込みで精度向上
+  - コスト: $10-50/月（100-500ユーザー想定）
+
+【Phase 2 本番（1000+ ユーザー）】
+  - マルチモデル戦略
+  - 簡単な質問 → Gemini Flash (安価)
+  - 複雑な質問 → Claude Haiku (品質)
+  - キャッシング活用で入力コスト 90% 削減可
+  - コスト: $100-500/月
+
+=== 各モデルの教科書Q&A適性 ===
+
+Claude Haiku 4.5: ★★★★★
+  - 教科書内容を正確に引用できる
+  - コンテキスト埋め込みに最適
+  - 回答品質が安定している
+
+GPT-4o Mini: ★★★★☆
+  - 低コストでも応答品質は悪くない
+  - ただし細部で不正確になることがある
+
+Gemini Flash: ★★★☆☆
+  - 軽量タスク向け
+  - 長めの説明は不得意
+
+=== 決定フロー ===
+
+Q: 無料で運用したい？
+└─ YES → Gemini 2.5 Flash-Lite で MVP 開始
+         （月3-5万リクエスト / 20ユーザー目安）
+└─ NO  → Claude Haiku 4.5 で品質重視
+         （月 $10-50 / 100-500ユーザー）
+
+=== 自動翻訳の連携 ===
+
+日本語 AI回答 → Google Translate API で自動翻訳
+  - 英語 / アラビア語に翻訳
+  - コスト: 月 500 万文字で約 $5-10
+  - 或いは DeepL API ($5.00/月スターター)
+
+=== 推奨決定案 ===
+
+【最小予算での実装】
+- MVP: Gemini 2.5 Flash-Lite (完全無料)
+- 翻訳: Google Translate API ($5-10/月)
+- 合計: 月 $5-10（20ユーザーまで）
+
+【品質重視での実装】
+- AI: Claude Haiku 4.5 ($10-50/月)
+- 翻訳: DeepL API ($5/月)
+- 合計: 月 $15-55（100-500ユーザー）
+
+【ハイブリッド戦略（推奨）】
+- MVP段階: Gemini Flash-Lite 無料枠で開始
+- ユーザー20名以降: Claude Haiku に段階移行
+- スケール後: マルチモデル + キャッシング活用
+- コスト: $0 → $10-20/月 へ段階的成長
+
+=== アクション ===
+
+1. Gemini 2.5 Flash-Lite で教科書をテスト
+   - サンプル質問10問で精度確認
+   - 日本語版・英語版・アラビア語版で試行
+
+2. Claude Haiku 4.5 で同じテスト実施
+   - スピード・品質・コストの比較
+
+3. 翻訳API の品質確認
+   - Google Translate vs DeepL の翻訳精度比較
+   - 教育コンテンツ向けの最適化
+
+4. 無料枠での月額利用数を計測
+   - ユーザー行動データ基に有料移行タイミングを決定
