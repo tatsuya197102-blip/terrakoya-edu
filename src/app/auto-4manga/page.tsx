@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import MangaTemplate from '@/components/MangaTemplate';
-import { Spinner } from '@/components/Spinner';
+import Spinner from '@/components/Spinner';
 import Toast from '@/components/Toast';
 
 interface Story {

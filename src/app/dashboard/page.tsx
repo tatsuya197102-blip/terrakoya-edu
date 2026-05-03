@@ -199,9 +199,11 @@ export default function DashboardPage() {
         </div>
 
         {/* クイックアクション */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           {[
             { href: '/courses', label: 'コース一覧', icon: '📚' },
+            { href: '/auto-4manga', label: '4コマ漫画', icon: '📖' },
+            { href: '/auto-animate', label: 'アニメーション', icon: '🎬' },
             { href: '/notifications', label: '通知', icon: '🔔' },
             { href: '/profile', label: 'プロフィール', icon: '👤' },
             { href: '/certificate?course=manga-basics', label: '修了証', icon: '🏆' },

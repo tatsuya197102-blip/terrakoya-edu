@@ -67,39 +67,28 @@ export default function AutoAnimatePage() {
     }, animationSpeed);
   };
 
-  // GIF/動画ダウンロード（jpeg フレームをZIPで）
+  // フレームをダウンロード（個別PNG）
   const downloadFrames = async () => {
-    if (!frames.some((f) => f.imageUrl)) {
+    const uploadedFrames = frames.filter((f) => f.imageUrl);
+    if (uploadedFrames.length === 0) {
       setToast({ message: '少なくとも1つのフレームが必要です', type: 'error' });
       return;
     }
 
     try {
-      // フレームをダウンロード（シンプル版：ブラウザでzipを作成）
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-
-      frames.forEach((frame, idx) => {
+      uploadedFrames.forEach((frame, idx) => {
         if (frame.imageUrl) {
-          const base64Data = frame.imageUrl.split(',')[1];
-          zip.file(`frame_${String(idx + 1).padStart(2, '0')}.png`, base64Data, {
-            base64: true,
-          });
+          const a = document.createElement('a');
+          a.href = frame.imageUrl;
+          a.download = `frame_${String(idx + 1).padStart(2, '0')}.png`;
+          a.click();
         }
       });
 
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'animation-frames.zip';
-      a.click();
-      URL.revokeObjectURL(url);
-
-      setToast({ message: 'フレームをZIPでダウンロードしました！', type: 'success' });
+      setToast({ message: `${uploadedFrames.length}枚のフレームをダウンロードしました！`, type: 'success' });
     } catch (error) {
       console.error('Download error:', error);
-      setToast({ message: 'ダウンロード機能は別途設定が必要です', type: 'error' });
+      setToast({ message: 'ダウンロードに失敗しました', type: 'error' });
     }
   };
 
