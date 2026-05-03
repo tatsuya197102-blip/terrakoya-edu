@@ -61,6 +61,8 @@ export default function Navbar() {
             { href: '/lessons', label: 'レッスン', icon: '🎓' },
             { href: '/showcase', label: 'ショーケース', icon: '🎨' },
             { href: '/submissions', label: '課題', icon: '📝' },
+            { href: '/auto-4manga', label: '4コマ漫画', icon: '📖' },
+            { href: '/auto-animate', label: 'アニメーション', icon: '🎬' },
             { href: '/ai-consult', label: 'AI相談', icon: '🤖' },
             { href: '/teacher/dashboard', label: '教師', icon: '👨‍🏫' },
           ].map(({ href, label, icon }) => (
