@@ -1,1 +1,8 @@
-{"buildCommand":"next build","outputDirectory":".next"}
+{
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "functions": {
+    "src/app/api/analyze-artwork/route.ts": { "maxDuration": 60 },
+    "src/app/api/grade-artwork/route.ts": { "maxDuration": 60 }
+  }
+}

@@ -155,24 +155,15 @@ export default function AssignmentPage() {
     userComment: string, imageBase64: string, userId: string,
   ) => {
     setStreamingId(subId);
-    streamRef.current = '';
-    setStreamText('');
     try {
       const res = await fetch('/api/analyze-artwork', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId: cId, fileName, fileType, comment: userComment, imageBase64, stream: true }),
+        body: JSON.stringify({ courseId: cId, fileName, fileType, comment: userComment, imageBase64 }),
       });
-      if (!res.ok || !res.body) throw new Error('stream failed');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        streamRef.current += decoder.decode(value, { stream: true });
-        setStreamText(streamRef.current);
-      }
-      const finalText = streamRef.current;
+      const data = await res.json();
+      const finalText = data.feedback || 'フィードバックを生成できませんでした';
+
       await updateDoc(doc(db, 'users', userId, 'submissions', subId), {
         aiFeedback: finalText, feedbackStatus: 'done',
       });
@@ -186,7 +177,9 @@ export default function AssignmentPage() {
         s.id === subId ? { ...s, feedbackStatus: 'error' } : s
       ));
     } finally {
-      setStreamingId(null); setStreamText(''); streamRef.current = '';
+      setStreamingId(null);
+      setStreamText('');
+      streamRef.current = '';
     }
   };
 
