@@ -144,23 +144,27 @@ export default function Navbar() {
       </div>
 
       {/* モバイルナビ */}
-      <div className="md:hidden flex border-t border-gray-800">
-
-{[
-          { href: '/lessons',  label: t('nav.lessons'), icon: '🎓' },
-          { href: '/courses',  label: t('nav.courses'), icon: '📚' },
-          { href: '/live',     label: t('nav.live'),    icon: '📡' },
-          { href: '/dashboard',label: t('nav.home'),    icon: '🏠' },
-        ].map(({ href, label, icon }) => (
-
-          <Link key={href} href={href}
-            className={`flex-1 flex flex-col items-center py-2 text-xs transition-colors ${
-              isActive(href) ? 'text-blue-400' : 'text-gray-500'
-            }`}>
-            <span className="text-lg">{icon}</span>
-            {label}
-          </Link>
-        ))}
+      <div className="md:hidden border-t border-gray-800 overflow-x-auto" style={{scrollbarWidth:'none'}}>
+        <div className="flex min-w-max">
+          {[
+            { href: '/dashboard',   label: t('nav.home'),      icon: '🏠' },
+            { href: '/lessons',     label: t('nav.lessons'),   icon: '🎓' },
+            { href: '/courses',     label: t('nav.courses'),   icon: '📚' },
+            { href: '/live',        label: t('nav.live'),      icon: '📡' },
+            { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
+            { href: '/auto-animate',label: t('nav.anime'),     icon: '🎬' },
+            { href: '/contest',     label: t('nav.contest'),   icon: '🏆' },
+            { href: '/ai-consult',  label: t('nav.aiConsult'), icon: '🤖' },
+          ].map(({ href, label, icon }) => (
+            <Link key={href} href={href}
+              className={`flex flex-col items-center px-4 py-2 text-xs transition-colors whitespace-nowrap ${
+                isActive(href) ? 'text-blue-400' : 'text-gray-500'
+              }`}>
+              <span className="text-xl mb-0.5">{icon}</span>
+              {label}
+            </Link>
+          ))}
+        </div>
       </div>
     </nav>
   );
