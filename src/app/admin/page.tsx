@@ -68,15 +68,21 @@ export default function AdminPage() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user: import("firebase/auth").User | null) => {
       if (!user || user.email !== ADMIN_EMAIL) { router.push('/'); return; }
-      const [uSnap, cSnap, lSnap] = await Promise.all([
-        getDocs(collection(db, 'users')),
-        getDocs(collection(db, 'courses')),
-        getDocs(collection(db, 'lessons')),
-      ]);
-      setUsers(uSnap.docs.map(d => ({ uid: d.id, ...d.data() } as User)));
-      setCourses(cSnap.docs.map(d => ({ id: d.id, ...d.data() } as Course)));
-      setLessons(lSnap.docs.map(d => ({ id: d.id, ...d.data() } as Lesson)));
-      setLoading(false);
+      try {
+        const [uSnap, cSnap, lSnap] = await Promise.all([
+          getDocs(collection(db, 'users')),
+          getDocs(collection(db, 'courses')),
+          getDocs(collection(db, 'lessons')),
+        ]);
+        setUsers(uSnap.docs.map(d => ({ uid: d.id, ...d.data() } as User)));
+        setCourses(cSnap.docs.map(d => ({ id: d.id, ...d.data() } as Course)));
+        setLessons(lSnap.docs.map(d => ({ id: d.id, ...d.data() } as Lesson)));
+      } catch (e) {
+        console.error('Admin load error:', e);
+        showToast('データの読み込みに失敗しました', 'error');
+      } finally {
+        setLoading(false);
+      }
     });
     return () => unsubscribe();
   }, []);
