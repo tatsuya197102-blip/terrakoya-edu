@@ -201,7 +201,7 @@ export default function AssignmentPage() {
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error);
+      if (!data.success) throw new Error(data.error || '不明なエラー');
 
       const gradeResult: GradeResult = {
         totalScore: data.totalScore,
@@ -217,12 +217,12 @@ export default function AssignmentPage() {
         s.id === sub.id ? { ...s, gradeResult, gradingStatus: 'done' } : s
       ));
       showToast('📊 AI採点が完了しました！', 'success');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       setSubmissions(prev => prev.map(s =>
         s.id === sub.id ? { ...s, gradingStatus: 'error' } : s
       ));
-      showToast('採点に失敗しました', 'error');
+      showToast(`採点エラー: ${e.message}`, 'error');
     }
   };
 

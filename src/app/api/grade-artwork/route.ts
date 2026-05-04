@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const maxDuration = 60;
+
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY || process.env.NEXT_PUBLIC_CLAUDE_API_KEY;
 
 const RUBRICS: Record<string, { criteria: { name: string; description: string }[] }> = {
@@ -56,8 +58,10 @@ export async function POST(req: NextRequest) {
     const { courseId, fileName, fileType, comment, imageBase64 } = await req.json();
 
     if (!CLAUDE_API_KEY) {
-      return NextResponse.json({ error: 'APIキーが設定されていません' }, { status: 500 });
+      return NextResponse.json({ error: 'APIキーが設定されていません', success: false }, { status: 200 });
     }
+
+    console.log('Grade API Key exists:', !!CLAUDE_API_KEY, CLAUDE_API_KEY?.substring(0, 10));
 
     const rubric = RUBRICS[courseId] || DEFAULT_RUBRIC;
 
@@ -118,7 +122,11 @@ ${rubricText}
       }),
     });
 
-    if (!response.ok) throw new Error(`Claude API error: ${response.statusText}`);
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Claude API error:', response.status, errText);
+      return NextResponse.json({ error: `APIエラー(${response.status}): ${errText.substring(0, 200)}`, success: false }, { status: 200 });
+    }
 
     const data = await response.json();
     const rawText = data.content?.[0]?.text || '';
@@ -135,6 +143,6 @@ ${rubricText}
 
   } catch (error) {
     console.error('Grade error:', error);
-    return NextResponse.json({ error: '採点に失敗しました' }, { status: 500 });
+    return NextResponse.json({ error: `採点エラー: ${String(error)}`, success: false }, { status: 200 });
   }
 }
