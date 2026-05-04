@@ -25,6 +25,8 @@ export default function Auto4MangaPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  const [submitMsg, setSubmitMsg] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const t = {
     title: lang === 'ar' ? 'صانع المانجا ذات 4 لوحات' : '自動4コマ漫画メーカー',
@@ -178,6 +180,54 @@ export default function Auto4MangaPage() {
     return themeStories[themeId] || themeStories.free;
   };
 
+  const handleMangaSubmit = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const { auth, db } = await import('@/lib/firebase');
+    const user = auth.currentUser;
+    if (!user) { setSubmitMsg('ログインが必要です'); return; }
+    setSubmitting(true);
+    setSubmitMsg('');
+    try {
+      // 画像を圧縮
+      const base64: string = await new Promise((res) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          const MAX = 800;
+          let { width, height } = img;
+          if (width > MAX || height > MAX) {
+            if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+            else { width = Math.round(width * MAX / height); height = MAX; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+          URL.revokeObjectURL(url);
+          res(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
+        };
+        img.src = url;
+      });
+
+      const { addDoc, collection } = await import('firebase/firestore');
+      await addDoc(collection(db, 'users', user.uid, 'submissions'), {
+        courseId: 'auto-4manga',
+        fileName: file.name,
+        fileType: 'image/jpeg',
+        comment: `4コマ漫画「${selectedStory?.title || ''}」`,
+        imageBase64: base64,
+        submittedAt: new Date().toISOString(),
+        aiFeedback: null, feedbackStatus: 'pending',
+        gradeResult: null, gradingStatus: 'idle',
+      });
+      setSubmitMsg('✅ 提出しました！コースページからAIフィードバックを確認できます');
+    } catch (err) {
+      console.error(err);
+      setSubmitMsg('❌ 提出に失敗しました。もう一度お試しください');
+    }
+    setSubmitting(false);
+  };
+
   const downloadTemplate = () => {
     const canvas = document.createElement('canvas');
     canvas.width = 800;
@@ -257,10 +307,16 @@ export default function Auto4MangaPage() {
             <button onClick={downloadTemplate} className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-xl font-bold transition flex-1">
               {t.download}
             </button>
-            <a href="/submissions" className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition flex-1 text-center">
+            <label className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition flex-1 text-center cursor-pointer">
               📤 {lang === 'ar' ? 'تقديم العمل' : '完成したら提出する'}
-            </a>
+              <input type="file" accept="image/*" className="hidden" onChange={handleMangaSubmit} />
+            </label>
           </div>
+          {submitMsg && (
+            <div className={`mt-4 p-3 rounded-lg text-sm text-center ${submitMsg.includes('✅') ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
+              {submitMsg}
+            </div>
+          )}
         </div>
       </div>
     );
