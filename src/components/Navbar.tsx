@@ -50,30 +50,28 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* ロゴ */}
         <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg">
-          <span className="text-2xl">⛩️</span>
-          <span className="text-white">TERRAKOYA</span>
+          <span className="text-white tracking-wide">TERRAKOYA</span>
         </Link>
 
         {/* 中央ナビ */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-0.5 overflow-hidden">
 
 {[
           { href: '/dashboard', label: 'ホーム', icon: '🏠' },
-            { href: '/lessons', label: 'レッスン', icon: '🎓' },
-            { href: '/courses', label: 'コース', icon: '📚' },
-            { href: '/live', label: 'ライブ', icon: '📡' },
-            { href: '/auto-4manga', label: '4コマ', icon: '📖' },
-            { href: '/auto-animate', label: 'アニメ', icon: '🎬' },
-            { href: '/contest', label: 'コンテスト', icon: '🏆' },
-            { href: '/portfolio', label: '作品集', icon: '💎' },
-            { href: '/ai-consult', label: 'AI相談', icon: '🤖' },
+          { href: '/lessons', label: 'レッスン', icon: '🎓' },
+          { href: '/courses', label: 'コース', icon: '📚' },
+          { href: '/live', label: 'ライブ', icon: '📡' },
+          { href: '/auto-4manga', label: '4コマ', icon: '📖' },
+          { href: '/auto-animate', label: 'アニメ', icon: '🎬' },
+          { href: '/contest', label: 'コンテスト', icon: '🏆' },
+          { href: '/ai-consult', label: 'AI相談', icon: '🤖' },
           ].map(({ href, label, icon }) => (
 
             <Link key={href} href={href}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm transition-colors ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                 isActive(href) ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
               }`}>
-              <span>{icon}</span>{label}
+              <span>{icon}</span><span>{label}</span>
             </Link>
           ))}
         </div>

@@ -35,8 +35,17 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
       router.push('/dashboard');
-    } catch (err) {
-      setError('Google ログインに失敗しました');
+    } catch (err: any) {
+      console.error('Google login error:', err);
+      if (err.code === 'auth/popup-blocked') {
+        setError('ポップアップがブロックされました。ブラウザの設定でポップアップを許可してください。');
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setError('このドメインはFirebaseで承認されていません。管理者にご連絡ください。');
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        setError('ログインがキャンセルされました。');
+      } else {
+        setError(`Google ログインに失敗しました（${err.code || 'unknown'}）`);
+      }
     } finally {
       setLoading(false);
     }
