@@ -6,96 +6,45 @@ import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
-// ハードコードのデフォルトコース
 const DEFAULT_COURSES = [
-  { id: 'manga-basics', title: '漫画基礎講座', description: 'キャラクターデザインから背景まで、漫画の基礎を学びます', level: '初級', category: 'manga', lessons: 12, duration: '6時間', thumbnail: '🎨', rating: 4.8, students: 1250, tags: ['キャラクター', '背景', 'コマ割り'], published: true },
-  { id: 'digital-illust', title: 'デジタルイラスト入門', description: 'CLIPSTUDIOを使ったデジタルイラストの基礎', level: '初級', category: 'illustration', lessons: 8, duration: '4時間', thumbnail: '🖌️', rating: 4.6, students: 890, tags: ['CLIPSTUDIO', 'レイヤー', '色塗り'], published: true },
-  { id: 'story-making', title: 'ストーリー作り', description: '読者を引きつけるストーリーの作り方', level: '中級', category: 'story', lessons: 10, duration: '5時間', thumbnail: '📖', rating: 4.9, students: 650, tags: ['構成', 'キャラクター設定', '起承転結'], published: true },
-  { id: 'animation-basics', title: 'アニメーション基礎', description: 'キャラクターに動きをつける基礎技術', level: '中級', category: 'animation', lessons: 15, duration: '8時間', thumbnail: '🎬', rating: 4.7, students: 430, tags: ['モーション', 'タイミング', 'ウォークサイクル'], published: true },
+  { id: 'manga-basics',    title: { ja: '漫画基礎講座',         en: 'Manga Basics',           ar: 'أساسيات المانغا'        }, description: { ja: 'キャラクターデザインから背景まで', en: 'From character design to backgrounds', ar: 'من تصميم الشخصيات إلى الخلفيات' }, level: 'beginner',     category: 'manga',         lessons: 12, duration: '6h', thumbnail: '🎨', rating: 4.8, students: 1250, tags: ['キャラクター','背景','コマ割り'] },
+  { id: 'digital-illust',  title: { ja: 'デジタルイラスト入門', en: 'Digital Illustration',    ar: 'الرسم الرقمي'           }, description: { ja: 'CLIPSTUDIOの基礎',               en: 'CLIPSTUDIO basics',                ar: 'أساسيات CLIPSTUDIO'              }, level: 'beginner',     category: 'illustration',  lessons: 8,  duration: '4h', thumbnail: '🖌️', rating: 4.6, students: 890,  tags: ['CLIPSTUDIO','レイヤー','色塗り'] },
+  { id: 'story-making',    title: { ja: 'ストーリー作り',        en: 'Story Creation',         ar: 'كتابة القصص'            }, description: { ja: '読者を引きつけるストーリーの作り方', en: 'How to create compelling stories', ar: 'كيفية إنشاء قصص جذابة'           }, level: 'intermediate', category: 'story',         lessons: 10, duration: '5h', thumbnail: '📖', rating: 4.9, students: 650,  tags: ['構成','キャラクター設定','起承転結'] },
+  { id: 'animation-basics',title: { ja: 'アニメーション基礎',   en: 'Animation Basics',       ar: 'أساسيات الرسوم المتحركة' }, description: { ja: 'キャラクターに動きをつける',       en: 'Adding movement to characters',    ar: 'إضافة حركة للشخصيات'             }, level: 'intermediate', category: 'animation',     lessons: 15, duration: '8h', thumbnail: '🎬', rating: 4.7, students: 430,  tags: ['モーション','タイミング','ウォークサイクル'] },
 ];
-
-const CATEGORIES = [
-  { id: 'all', label: 'すべて', icon: '📚' },
-  { id: 'manga', label: '漫画', icon: '🎨' },
-  { id: 'illustration', label: 'イラスト', icon: '🖌️' },
-  { id: 'story', label: 'ストーリー', icon: '📖' },
-  { id: 'animation', label: 'アニメ', icon: '🎬' },
-];
-
-const LEVELS = ['all', '初級', '中級', '上級'];
-const SORTS = [
-  { id: 'popular', label: '人気順' },
-  { id: 'rating', label: '評価順' },
-  { id: 'newest', label: '新着順' },
-];
-
-type Course = {
-  id: string;
-  title: string;
-  description: string;
-  level: string;
-  category: string;
-  lessons: number;
-  duration: string;
-  thumbnail: string;
-  rating: number;
-  students: number;
-  tags: string[];
-  published?: boolean;
-};
 
 export default function CoursesPage() {
   const router = useRouter();
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('all');
-  const [level, setLevel] = useState('all');
-  const [sort, setSort] = useState('popular');
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language as 'ja' | 'en' | 'ar';
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [selectedTag, setSelectedTag] = useState('');
-  const [courses, setCourses] = useState<Course[]>(DEFAULT_COURSES);
-  const [loading, setLoading] = useState(true);
+  const [enrolled, setEnrolled] = useState<string[]>([]);
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('popular');
+  const [uid, setUid] = useState('');
 
   useEffect(() => {
-    const loadData = async () => {
-      const unsubscribe = auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          const ref = doc(db, 'users', user.uid);
-          const snap = await getDoc(ref);
-          if (snap.exists()) setFavorites(snap.data().favorites || []);
+    const unsub = auth.onAuthStateChanged(async (user) => {
+      if (!user) { router.push('/login'); return; }
+      setUid(user.uid);
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+          setFavorites(snap.data().favorites || []);
+          setEnrolled(snap.data().enrolledCourses || []);
         }
-
-        // Firebaseからコース取得
-        try {
-          const cSnap = await getDocs(collection(db, 'courses'));
-          const fbCourses = cSnap.docs.map(d => ({ id: d.id, ...d.data() } as Course));
-          
-          // デフォルトコースとマージ（公開中のみ）
-          const publishedDefault = DEFAULT_COURSES.filter(c => c.published !== false);
-          const publishedFb = fbCourses.filter(c => c.published !== false);
-          const merged = [...publishedDefault, ...publishedFb];
-          
-          // 重複削除
-          const unique = Array.from(new Map(merged.map(c => [c.id, c])).values());
-          setCourses(unique);
-        } catch (e) {
-          console.error('コース読み込みエラー:', e);
-          setCourses(DEFAULT_COURSES);
-        }
-
-        setLoading(false);
-      });
-      return () => unsubscribe();
-    };
-    loadData();
+      } catch (e) { console.error(e); }
+    });
+    return () => unsub();
   }, []);
 
   const toggleFavorite = async (courseId: string) => {
-    const user = auth.currentUser;
-    if (!user) { router.push('/login'); return; }
-    const ref = doc(db, 'users', user.uid);
-    const isFav = favorites.includes(courseId);
-    if (isFav) {
+    if (!uid) return;
+    const ref = doc(db, 'users', uid);
+    if (favorites.includes(courseId)) {
       await updateDoc(ref, { favorites: arrayRemove(courseId) });
       setFavorites(prev => prev.filter(id => id !== courseId));
     } else {
@@ -104,133 +53,84 @@ export default function CoursesPage() {
     }
   };
 
-  const allTags = Array.from(new Set(courses.flatMap(c => c.tags || [])));
+  const cats = [
+    { id: 'all',         label: t('common.all'),   icon: '📚' },
+    { id: 'manga',       label: 'Manga',            icon: '🎨' },
+    { id: 'illustration',label: 'Illust',           icon: '🖌️' },
+    { id: 'story',       label: 'Story',            icon: '📖' },
+    { id: 'animation',   label: 'Anime',            icon: '🎬' },
+  ];
 
-  const filtered = courses
-    .filter(c => category === 'all' || c.category === category)
-    .filter(c => level === 'all' || c.level === level)
-    .filter(c => selectedTag === '' || (c.tags || []).includes(selectedTag))
-    .filter(c => search === '' || c.title.includes(search) || c.description.includes(search) || (c.tags || []).some(t => t.includes(search)))
-    .sort((a, b) => {
-      if (sort === 'popular') return b.students - a.students;
-      if (sort === 'rating') return b.rating - a.rating;
-      return 0;
-    });
-
-  if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">読み込み中...</div>;
+  const filtered = DEFAULT_COURSES.filter(c => {
+    const title = c.title[lang] || c.title.ja;
+    const matchCat = filter === 'all' || c.category === filter;
+    const matchSearch = !search || title.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">コース一覧</h1>
-
-        {/* カテゴリタブ */}
-        <div className="flex gap-2 mb-5 overflow-x-auto pb-2">
-          {CATEGORIES.map(cat => (
-            <button key={cat.id} onClick={() => setCategory(cat.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
-                category === cat.id ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+    <div className="min-h-screen bg-gray-950 text-white" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="bg-gray-900 border-b border-gray-800 px-8 py-6">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold">{t('courses.title')}</h1>
+          <p className="text-gray-400 mt-1">{t('courses.subtitle')}</p>
+        </div>
+      </div>
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* フィルター */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {cats.map(c => (
+            <button key={c.id} onClick={() => setFilter(c.id)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                filter === c.id ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
               }`}>
-              <span>{cat.icon}</span>{cat.label}
+              {c.icon} {c.label}
             </button>
           ))}
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder={t('common.search') + '...'}
+            className="ml-auto bg-gray-800 border border-gray-700 rounded-full px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
         </div>
 
-        {/* 検索・フィルター */}
-        <div className="bg-gray-800 rounded-xl p-4 mb-5">
-          <div className="flex flex-wrap gap-3 mb-3">
-            <input
-              type="text"
-              placeholder="コース・タグを検索..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="bg-gray-700 rounded-lg px-4 py-2 flex-1 min-w-48 text-sm"
-            />
-            <select value={level} onChange={e => setLevel(e.target.value)}
-              className="bg-gray-700 rounded-lg px-4 py-2 text-sm">
-              {LEVELS.map(l => <option key={l} value={l}>{l === 'all' ? 'すべてのレベル' : l}</option>)}
-            </select>
-            <select value={sort} onChange={e => setSort(e.target.value)}
-              className="bg-gray-700 rounded-lg px-4 py-2 text-sm">
-              {SORTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-            </select>
-          </div>
+        <p className="text-gray-400 text-sm mb-6">{filtered.length} {lang === 'ar' ? 'دورة' : lang === 'en' ? 'courses' : 'コース'}</p>
 
-          {/* タグフィルター */}
-          <div className="flex flex-wrap gap-2">
-            <button onClick={() => setSelectedTag('')}
-              className={`px-3 py-1 rounded-full text-xs transition-colors ${selectedTag === '' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
-              すべてのタグ
-            </button>
-            {allTags.map(tag => (
-              <button key={tag} onClick={() => setSelectedTag(selectedTag === tag ? '' : tag)}
-                className={`px-3 py-1 rounded-full text-xs transition-colors ${selectedTag === tag ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
-                #{tag}
-              </button>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map(course => {
+            const title = course.title[lang] || course.title.ja;
+            const desc = course.description[lang] || course.description.ja;
+            const isEnrolled = enrolled.includes(course.id);
+            const isFav = favorites.includes(course.id);
+            const levelLabel = course.level === 'beginner' ? t('courses.beginner')
+              : course.level === 'intermediate' ? t('courses.intermediate') : t('courses.advanced');
+            return (
+              <div key={course.id} className="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 hover:border-gray-500 transition-colors">
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <span className="text-4xl">{course.thumbnail}</span>
+                    <button onClick={() => toggleFavorite(course.id)} className="text-xl hover:scale-110 transition-transform">
+                      {isFav ? '❤️' : '🤍'}
+                    </button>
+                  </div>
+                  <div className="flex gap-2 mb-3 flex-wrap">
+                    <span className="bg-blue-900 text-blue-300 text-xs px-2 py-0.5 rounded">{levelLabel}</span>
+                    {isEnrolled && <span className="bg-green-900 text-green-300 text-xs px-2 py-0.5 rounded">{t('courses.enrolled')}</span>}
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">{title}</h3>
+                  <p className="text-gray-400 text-sm mb-4 line-clamp-2">{desc}</p>
+                  <div className="flex items-center gap-3 text-xs text-gray-500 mb-4">
+                    <span>📚 {course.lessons} {t('courses.lessonCount')}</span>
+                    <span>⏱️ {course.duration}</span>
+                    <span>⭐ {course.rating}</span>
+                  </div>
+                  <Link href={`/courses/${course.id}`}
+                    className="block w-full text-center bg-blue-600 hover:bg-blue-700 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                    {t('courses.viewCourse')}
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
         </div>
-
-        {/* 検索結果数 */}
-        <p className="text-gray-400 text-sm mb-4">
-          {filtered.length}件のコース
-          {search && <span> 「{search}」の検索結果</span>}
-          {selectedTag && <span> #{selectedTag}</span>}
-        </p>
-
-        {/* コース一覧 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map(course => (
-            <div key={course.id} className="bg-gray-800 rounded-xl p-5 hover:bg-gray-750 transition-colors border border-gray-700 hover:border-blue-600">
-              <div className="flex justify-between items-start mb-3">
-                <span className="text-4xl">{course.thumbnail}</span>
-                <button onClick={() => toggleFavorite(course.id)}
-                  className="text-xl hover:scale-110 transition-transform">
-                  {favorites.includes(course.id) ? '❤️' : '🤍'}
-                </button>
-              </div>
-              <h2 className="text-lg font-bold mb-1">{course.title}</h2>
-              <p className="text-gray-400 text-sm mb-3 line-clamp-2">{course.description}</p>
-
-              {/* タグ */}
-              <div className="flex flex-wrap gap-1 mb-3">
-                {(course.tags || []).map(tag => (
-                  <button key={tag} onClick={() => setSelectedTag(selectedTag === tag ? '' : tag)}
-                    className={`text-xs px-2 py-0.5 rounded-full transition-colors ${
-                      selectedTag === tag ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-                    }`}>
-                    #{tag}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex gap-2 mb-3">
-                <span className="bg-blue-600 text-xs px-2 py-1 rounded">{course.level}</span>
-                <span className="bg-gray-600 text-xs px-2 py-1 rounded">{course.category}</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-400 mb-4">
-                <span>📚 {course.lessons}レッスン</span>
-                <span>⏱️ {course.duration}</span>
-                <span>⭐ {course.rating}</span>
-              </div>
-              <Link href={`/courses/${course.id}`}
-                className="block w-full text-center bg-blue-600 hover:bg-blue-700 rounded-lg py-2 transition-colors text-sm font-medium">
-                コースを見る
-              </Link>
-            </div>
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center text-gray-400 py-16">
-            <p className="text-4xl mb-3">🔍</p>
-            <p className="text-lg mb-2">コースが見つかりませんでした</p>
-            <button onClick={() => { setSearch(''); setCategory('all'); setLevel('all'); setSelectedTag(''); }}
-              className="text-blue-400 hover:underline text-sm">
-              フィルターをリセット
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
