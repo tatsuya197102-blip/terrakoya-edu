@@ -58,27 +58,25 @@ export default function Home() {
       </nav>
 
       {/* ヒーロー */}
-      <section className="flex flex-col items-center justify-center text-center px-6 py-16 md:py-24">
+      <section style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:'4rem 1.5rem'}}>
         <div className="inline-block bg-blue-500/20 text-blue-300 text-xs px-4 py-1.5 rounded-full mb-6 border border-blue-400/30">
           🎌 JP · EN · AR
         </div>
-        <h2 className={`text-4xl md:text-6xl font-bold text-white mb-4 leading-tight max-w-lg ${isAr ? 'font-arabic' : ''}`}
-          dir={isAr ? 'rtl' : 'ltr'}>
+        <h2 style={{fontSize:'clamp(2rem,6vw,3.5rem)', fontWeight:'bold', color:'white', marginBottom:'1rem', lineHeight:1.2, maxWidth:'32rem', direction: isAr ? 'rtl' : 'ltr'}}>
           {headline.main}
         </h2>
-        <p className="text-base md:text-xl text-blue-200 mb-10 max-w-md leading-relaxed"
-          dir={isAr ? 'rtl' : 'ltr'}>
+        <p style={{fontSize:'clamp(1rem,2.5vw,1.25rem)', color:'#bfdbfe', marginBottom:'2.5rem', maxWidth:'28rem', lineHeight:1.7, direction: isAr ? 'rtl' : 'ltr'}}>
           {headline.sub}
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs sm:max-w-none sm:justify-center">
+        <div style={{display:'flex', flexDirection:'column', gap:'0.75rem', width:'100%', maxWidth:'20rem'}}>
           <button onClick={() => router.push(user ? '/dashboard' : '/register')}
-            className="bg-blue-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-blue-400 transition text-base w-full sm:w-auto">
+            style={{background:'#3b82f6', color:'white', padding:'0.75rem 2rem', borderRadius:'0.75rem', fontWeight:'500', fontSize:'1rem', width:'100%', cursor:'pointer', border:'none'}}>
             {user
               ? (isAr ? 'واصل التعلم' : lang === 'en' ? 'Continue Learning' : '学習を続ける')
               : (isAr ? 'ابدأ مجاناً' : lang === 'en' ? 'Start for Free' : '無料で始める')}
           </button>
           <button onClick={() => router.push('/lessons')}
-            className="border border-white/30 text-white px-8 py-3 rounded-xl font-medium hover:bg-white/10 transition text-base w-full sm:w-auto">
+            style={{background:'transparent', color:'white', padding:'0.75rem 2rem', borderRadius:'0.75rem', fontWeight:'500', fontSize:'1rem', width:'100%', cursor:'pointer', border:'1px solid rgba(255,255,255,0.3)'}}>
             {isAr ? 'استعرض الدروس' : lang === 'en' ? 'Browse Lessons' : 'レッスンを見る'}
           </button>
         </div>
