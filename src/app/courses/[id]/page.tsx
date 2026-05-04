@@ -158,7 +158,7 @@ export default function CourseDetailPage() {
       <div className="max-w-4xl mx-auto px-8 py-8">
         <div className="flex flex-col md:flex-row gap-8">
           <div className="flex-1">
-            <h2 className="text-xl font-bold mb-4">{lang === 'ar' ? 'الدروس' : lang === 'en' ? 'Lessons' : 'レッスン一覧'}（{course.lessons.length}）</h2>
+            <h2 className="text-xl font-bold mb-4">{({'ar':'الدروس','en':'Lessons','ja':'レッスン一覧','zh':'课程列表','hi':'पाठ सूची','vi':'Danh sách bài','es':'Lecciones'}[lang as string]||'Lessons')} ({course.lessons.length})</h2>
             <div className="space-y-3">
               {course.lessons.map((lesson, index) => {
                 const lessonTitle = lesson.title[lang] || lesson.title.ja;
@@ -212,8 +212,8 @@ export default function CourseDetailPage() {
               )}
               <div className="mt-6 space-y-2 text-sm text-gray-400">
                 <p>📚 {course.lessons.length} {t('courses.lessonCount')}</p>
-                <p>🏆 {lang === 'ar' ? 'شهادة إتمام' : lang === 'en' ? 'Certificate' : '修了証あり'}</p>
-                <p>♾️ {lang === 'ar' ? 'وصول غير محدود' : lang === 'en' ? 'Unlimited access' : '無期限アクセス'}</p>
+                <p>🏆 {({'ar':'شهادة إتمام','en':'Certificate','ja':'修了証あり','zh':'结业证书','hi':'प्रमाण पत्र','vi':'Chứng chỉ','es':'Certificado'}[lang as string]||'Certificate')}</p>
+                <p>♾️ {({'ar':'وصول غير محدود','en':'Unlimited access','ja':'無期限アクセス','zh':'无限访问','hi':'असीमित पहुंच','vi':'Truy cập không giới hạn','es':'Acceso ilimitado'}[lang as string]||'Unlimited access')}</p>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-700">
                 <Link href={`/courses/${courseId}/assignment`}

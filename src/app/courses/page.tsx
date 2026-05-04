@@ -92,7 +92,7 @@ export default function CoursesPage() {
             className="ml-auto bg-gray-800 border border-gray-700 rounded-full px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
         </div>
 
-        <p className="text-gray-400 text-sm mb-6">{filtered.length} {lang === 'ar' ? 'دورة' : lang === 'en' ? 'courses' : 'コース'}</p>
+        <p className="text-gray-400 text-sm mb-6">{filtered.length} {{'ar':'دورة','en':'courses','ja':'コース','zh':'门课程','hi':'कोर्स','vi':'khóa học','es':'cursos'}[lang as string] || 'courses'}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map(course => {

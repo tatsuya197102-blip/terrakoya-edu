@@ -43,7 +43,11 @@ export default function PortfolioPage() {
       } catch (err) { console.error(err); }
       setLoading(false);
     });
-    return () => unsubscribe();
+  
+  const L = (ar: string, en: string, ja: string, zh: string, hi: string, vi: string, es: string) =>
+    ({ar, en, ja, zh, hi, vi, es} as Record<string,string>)[lang] || en;
+
+  return () => unsubscribe();
   }, [router]);
 
   const BADGES = [
@@ -63,7 +67,7 @@ export default function PortfolioPage() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">{userName[0] || '?'}</div>
           <h1 className="text-3xl font-bold mb-2">{userName}</h1>
-          <p className="text-gray-300">{lang === 'ar' ? 'سجل نموك كفنان' : 'クリエイターとしての成長記録'}</p>
+          <p className="text-gray-300">{L('سجل نموك كفنان','Your creative growth record','クリエイターとしての成長記録','创作者成长记录','क्रिएटर की विकास यात्रा','Hành trình sáng tạo của bạn','Tu registro de crecimiento creativo')}</p>
         </div>
       </div>
 
@@ -71,31 +75,31 @@ export default function PortfolioPage() {
         <div className="grid grid-cols-3 gap-4 mb-12">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
             <p className="text-3xl font-bold text-blue-400">{totalWorks}</p>
-            <p className="text-gray-400 text-sm mt-1">{lang === 'ar' ? 'الأعمال' : '作品数'}</p>
+            <p className="text-gray-400 text-sm mt-1">{L('الأعمال','Works','作品数','作品数','कार्य','Tác phẩm','Obras')}</p>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
             <p className="text-3xl font-bold text-green-400">{avgGrade || '-'}</p>
-            <p className="text-gray-400 text-sm mt-1">{lang === 'ar' ? 'التقييم' : '平均評価'}</p>
+            <p className="text-gray-400 text-sm mt-1">{L('التقييم','Avg. Grade','平均評価','平均评分','औसत ग्रेड','Điểm TB','Nota media')}</p>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
             <p className="text-3xl font-bold text-orange-400">{streak}</p>
-            <p className="text-gray-400 text-sm mt-1">{lang === 'ar' ? 'متتالية' : '連続日数'}</p>
+            <p className="text-gray-400 text-sm mt-1">{L('متتالية','Streak','連続日数','连续天数','स्ट्रीक','Chuỗi ngày','Racha')}</p>
           </div>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-12">
-          <h2 className="text-xl font-bold mb-4">{lang === 'ar' ? 'الشارات' : 'バッジ'}</h2>
+          <h2 className="text-xl font-bold mb-4">{L('الشارات','Badges','バッジ','徽章','बैज','Huy hiệu','Insignias')}</h2>
           <div className="flex gap-4 flex-wrap">
             {BADGES.map((b, i) => (
               <div key={i} className={`flex flex-col items-center p-4 rounded-xl ${b.ok ? 'bg-slate-800' : 'bg-slate-800/30 opacity-40'}`}>
                 <span className="text-3xl mb-1">{b.icon}</span>
-                <span className="text-xs text-gray-300">{lang === 'ar' ? b.labelAr : b.labelJa}</span>
+                <span className="text-xs text-gray-300">{({'ar':b.labelAr,'ja':b.labelJa,'en':b.labelEn||b.labelJa} as Record<string,string>)[lang] || b.labelJa}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold mb-6">{lang === 'ar' ? 'أعمالي' : '作品一覧'}</h2>
+        <h2 className="text-2xl font-bold mb-6">{L('أعمالي','My Artworks','作品一覧','我的作品','मेरी कलाकृतियां','Tác phẩm của tôi','Mis obras')}</h2>
         {works.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {works.map(work => (

@@ -329,7 +329,7 @@ export default function AutoAnimatePage() {
                   playing ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
                 }`}>
                 {playing
-                  ? (lang === 'ar' ? '⏹ إيقاف' : '⏹ 停止')
+                  ? t('animate.stop')
                   : t('animate.play')}
               </button>
               <button onClick={handleDownload}

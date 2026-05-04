@@ -30,6 +30,7 @@ export default function Home() {
     ar: { main: 'ارسم مستقبلك', sub: 'تعلم المانغا والأنيمي من المحترفين — من مصر إلى العالم' },
     zh: { main: '用漫画描绘你的未来', sub: '向专业人士学习漫画和动漫——从埃及走向世界' },
     vi: { main: 'Vẽ Tương Lai Của Bạn', sub: 'Học manga và anime từ các chuyên gia — từ Ai Cập ra thế giới' },
+    es: { main: 'Dibuja tu Futuro', sub: 'Aprende manga y anime de profesionales — desde Egipto al mundo' },
   };
 
   const headline = headlines[lang] || headlines.ja;
@@ -42,19 +43,19 @@ export default function Home() {
         <h1 className="text-white text-xl font-bold tracking-wide">TERRAKOYA</h1>
         <div className="flex items-center gap-3">
           <div className="flex gap-1 flex-wrap">
-            {['ja', 'en', 'ar', 'zh', 'hi', 'vi'].map(lng => (
+            {['ja', 'en', 'ar', 'zh', 'hi', 'vi', 'es'].map(lng => (
               <button key={lng} onClick={() => i18n.changeLanguage(lng)}
                 className={`px-2.5 py-1 rounded text-xs font-medium transition ${
                   i18n.language === lng ? 'bg-white text-blue-900' : 'text-white border border-white/30 hover:bg-white/10'
                 }`}>
-                {lng === 'ja' ? 'JP' : lng === 'en' ? 'EN' : lng === 'ar' ? 'AR' : lng === 'zh' ? 'ZH' : lng === 'hi' ? 'HI' : 'VI'}
+                {({ ja:'JP', en:'EN', ar:'AR', zh:'ZH', hi:'HI', vi:'VI', es:'ES' } as Record<string,string>)[lng]}
               </button>
             ))}
           </div>
           <button onClick={() => router.push(user ? '/dashboard' : '/login')}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-400 transition whitespace-nowrap">
-            {user ? (isAr ? 'لوحة التحكم' : lang === 'en' ? 'Dashboard' : 'ダッシュボード')
-                   : (isAr ? 'تسجيل الدخول' : lang === 'en' ? 'Login' : 'ログイン')}
+            {user ? ({'ar':'لوحة التحكم','en':'Dashboard','ja':'ダッシュボード','zh':'学习面板','hi':'डैशबोर्ड','vi':'Bảng điều khiển','es':'Panel'}[lang as string] || 'Dashboard')
+                   : ({'ar':'تسجيل الدخول','en':'Login','ja':'ログイン','zh':'登录','hi':'लॉग इन','vi':'Đăng nhập','es':'Iniciar sesión'}[lang as string] || 'Login')}
           </button>
         </div>
       </nav>
@@ -74,12 +75,12 @@ export default function Home() {
           <button onClick={() => router.push(user ? '/dashboard' : '/register')}
             style={{background:'#3b82f6', color:'white', padding:'0.75rem 2rem', borderRadius:'0.75rem', fontWeight:'500', fontSize:'1rem', width:'100%', cursor:'pointer', border:'none'}}>
             {user
-              ? (isAr ? 'واصل التعلم' : lang === 'en' ? 'Continue Learning' : '学習を続ける')
-              : (isAr ? 'ابدأ مجاناً' : lang === 'en' ? 'Start for Free' : '無料で始める')}
+              ? ({'ar':'واصل التعلم','en':'Continue Learning','ja':'学習を続ける','zh':'继续学习','hi':'सीखना जारी रखें','vi':'Tiếp tục học','es':'Continuar aprendiendo'}[lang as string] || 'Continue Learning')
+              : ({'ar':'ابدأ مجاناً','en':'Start for Free','ja':'無料で始める','zh':'免费开始','hi':'मुफ्त शुरू करें','vi':'Bắt đầu miễn phí','es':'Comenzar gratis'}[lang as string] || 'Start for Free')}
           </button>
           <button onClick={() => router.push('/lessons')}
             style={{background:'transparent', color:'white', padding:'0.75rem 2rem', borderRadius:'0.75rem', fontWeight:'500', fontSize:'1rem', width:'100%', cursor:'pointer', border:'1px solid rgba(255,255,255,0.3)'}}>
-            {isAr ? 'استعرض الدروس' : lang === 'en' ? 'Browse Lessons' : 'レッスンを見る'}
+            {{'ar':'استعرض الدروس','en':'Browse Lessons','ja':'レッスンを見る','zh':'浏览课程','hi':'पाठ देखें','vi':'Xem bài học','es':'Ver lecciones'}[lang as string] || 'Browse Lessons'}
           </button>
         </div>
       </section>

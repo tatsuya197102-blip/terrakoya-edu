@@ -19,14 +19,14 @@ interface Contest {
 const SAMPLE_CONTESTS: Contest[] = [
   {
     id: 'contest-001',
-    theme: { ja: '🌟 テーマ：友情', en: '🌟 Theme: Friendship', ar: '🌟 الموضوع: الصداقة', zh: '🌟 主题：友情', hi: '🌟 विषय: मित्रता', vi: '🌟 Chủ đề: Tình bạn' },
-    description: { ja: '「友情」をテーマにした4コマ漫画またはイラストを描こう！', en: 'Draw a 4-koma manga or illustration about "Friendship"!', ar: 'ارسم مانجا من 4 لوحات أو رسم توضيحي حول موضوع "الصداقة"!', zh: '画一幅以"友情"为主题的四格漫画或插画！', hi: '"मित्रता" विषय पर 4-कोमा मंगा या चित्र बनाएं!', vi: 'Vẽ manga 4-koma hoặc minh họa về chủ đề "Tình bạn"!' },
+    theme: { ja: '🌟 テーマ：友情', en: '🌟 Theme: Friendship', ar: '🌟 الموضوع: الصداقة', zh: '🌟 主题：友情', hi: '🌟 विषय: मित्रता', vi: '🌟 Chủ đề: Tình bạn', es: '🌟 Tema: Amistad' },
+    description: { ja: '「友情」をテーマにした4コマ漫画またはイラストを描こう！', en: 'Draw a 4-koma manga or illustration about "Friendship"!', ar: 'ارسم مانجا من 4 لوحات أو رسم توضيحي حول موضوع "الصداقة"!', zh: '画一幅以"友情"为主题的四格漫画或插画！', hi: '"मित्रता" विषय पर 4-कोमा मंगा या चित्र बनाएं!', vi: 'Vẽ manga 4-koma hoặc minh họa về chủ đề "Tình bạn"!', es: '¡Dibuja un manga 4-koma o ilustración sobre "Amistad"!' },
     deadline: '2026-06-30', status: 'active', entries: [],
   },
   {
     id: 'contest-002',
-    theme: { ja: '🌍 テーマ：エジプトと日本', en: '🌍 Theme: Egypt & Japan', ar: '🌍 الموضوع: مصر واليابان', zh: '🌍 主题：埃及与日本', hi: '🌍 विषय: मिस्र और जापान', vi: '🌍 Chủ đề: Ai Cập & Nhật Bản' },
-    description: { ja: 'エジプトと日本の文化をミックスしたキャラクターやストーリーを描こう！', en: 'Draw characters or stories mixing Egyptian and Japanese cultures!', ar: 'ارسم شخصيات أو قصص تمزج بين الثقافة المصرية واليابانية!', zh: '画融合埃及和日本文化的角色或故事！', hi: 'मिस्र और जापान की संस्कृति मिलाकर किरदार या कहानी बनाएं!', vi: 'Vẽ nhân vật hoặc câu chuyện kết hợp văn hóa Ai Cập và Nhật Bản!' },
+    theme: { ja: '🌍 テーマ：エジプトと日本', en: '🌍 Theme: Egypt & Japan', ar: '🌍 الموضوع: مصر واليابان', zh: '🌍 主题：埃及与日本', hi: '🌍 विषय: मिस्र और जापान', vi: '🌍 Chủ đề: Ai Cập & Nhật Bản', es: '🌍 Tema: Egipto y Japón' },
+    description: { ja: 'エジプトと日本の文化をミックスしたキャラクターやストーリーを描こう！', en: 'Draw characters or stories mixing Egyptian and Japanese cultures!', ar: 'ارسم شخصيات أو قصص تمزج بين الثقافة المصرية واليابانية!', zh: '画融合埃及和日本文化的角色或故事！', hi: 'मिस्र और जापान की संस्कृति मिलाकर किरदार या कहानी बनाएं!', vi: 'Vẽ nhân vật hoặc câu chuyện kết hợp văn hóa Ai Cập và Nhật Bản!', es: '¡Dibuja personajes o historias mezclando las culturas egipcia y japonesa!' },
     deadline: '2026-07-31', status: 'upcoming', entries: [],
   },
 ];
@@ -99,7 +99,7 @@ export default function ContestPage() {
               <div className="space-y-4">
                 <input type="text" value={title} onChange={e => setTitle(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white"
-                  placeholder={lang === 'ar' ? 'عنوان العمل' : lang === 'en' ? 'Artwork title' : '作品タイトル'} />
+                  placeholder={{'ar':'عنوان العمل','en':'Artwork title','ja':'作品タイトル','zh':'作品标题','hi':'कला शीर्षक','vi':'Tiêu đề tác phẩm','es':'Título de la obra'}[lang as string] || 'Artwork title'} />
                 <input type="file" accept="image/*" onChange={handleFileChange} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white" />
                 {preview && <img src={preview} alt="Preview" className="max-h-48 rounded-lg" />}
                 <button onClick={handleSubmitEntry} disabled={submitting || !title || !preview}
@@ -144,8 +144,8 @@ export default function ContestPage() {
   }
 
   const statusLabel = (status: string) => {
-    if (status === 'active') return lang === 'ar' ? 'جاري' : lang === 'en' ? 'Active' : '開催中';
-    return lang === 'ar' ? 'قريباً' : lang === 'en' ? 'Coming Soon' : '近日開催';
+    if (status === 'active') return {'ar':'جاري','en':'Active','ja':'開催中','zh':'进行中','hi':'सक्रिय','vi':'Đang diễn ra','es':'Activo'}[lang as string] || 'Active';
+    return {'ar':'قريباً','en':'Coming Soon','ja':'近日開催','zh':'即将开始','hi':'जल्द आ रहा है','vi':'Sắp diễn ra','es':'Próximamente'}[lang as string] || 'Coming Soon';
   };
 
   return (

@@ -5,11 +5,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const THEMES = [
-  { id: 'school',     labelJa: '🏫 学校の日常', labelEn: '🏫 School Life',    labelAr: '🏫 الحياة المدرسية' },
-  { id: 'adventure',  labelJa: '⚔️ 冒険',       labelEn: '⚔️ Adventure',      labelAr: '⚔️ مغامرة' },
-  { id: 'funny',      labelJa: '😂 おもしろ',   labelEn: '😂 Comedy',         labelAr: '😂 مضحك' },
-  { id: 'friendship', labelJa: '🤝 友情',        labelEn: '🤝 Friendship',     labelAr: '🤝 صداقة' },
-  { id: 'free',       labelJa: '✨ 自由テーマ',  labelEn: '✨ Free Theme',     labelAr: '✨ موضوع حر' },
+  { id: 'school',     labelJa: '🏫 学校の日常', labelEn: '🏫 School Life', labelAr: '🏫 الحياة المدرسية', labelZh: '🏫 校园日常', labelHi: '🏫 स्कूल जीवन', labelVi: '🏫 Đời học đường', labelEs: '🏫 Vida escolar' },
+  { id: 'adventure',  labelJa: '⚔️ 冒険', labelEn: '⚔️ Adventure', labelAr: '⚔️ مغامرة', labelZh: '⚔️ 冒险', labelHi: '⚔️ साहसिक', labelVi: '⚔️ Phiêu lưu', labelEs: '⚔️ Aventura' },
+  { id: 'funny',      labelJa: '😂 おもしろ', labelEn: '😂 Comedy', labelAr: '😂 مضحك', labelZh: '😂 搞笑', labelHi: '😂 कॉमेडी', labelVi: '😂 Hài hước', labelEs: '😂 Comedia' },
+  { id: 'friendship', labelJa: '🤝 友情', labelEn: '🤝 Friendship', labelAr: '🤝 صداقة', labelZh: '🤝 友情', labelHi: '🤝 मित्रता', labelVi: '🤝 Tình bạn', labelEs: '🤝 Amistad' },
+  { id: 'free',       labelJa: '✨ 自由テーマ', labelEn: '✨ Free Theme', labelAr: '✨ موضوع حر', labelZh: '✨ 自由主题', labelHi: '✨ मुक्त विषय', labelVi: '✨ Chủ đề tự do', labelEs: '✨ Tema libre' },
 ];
 
 interface Story {
@@ -33,20 +33,20 @@ export default function Auto4MangaPage() {
     title: tr('manga4.title'),
     sub: tr('manga4.subtitle'),
     charName: tr('manga4.characterName'),
-    charPlaceholder: lang === 'ar' ? 'مثال: سارة، يوسف' : lang === 'en' ? 'e.g. Sakura, Taro' : '例: タロウ、サクラ',
+    charPlaceholder: ({'ar':'مثال: سارة، يوسف','en':'e.g. Sakura, Taro','ja':'例: タロウ、サクラ','zh':'例：小明、小花','hi':'जैसे: सकुरा, तारो','vi':'Vd: Sakura, Taro','es':'Ej: Sakura, Taro'} as Record<string,string>)[lang] || 'e.g. Sakura, Taro',
     selectTheme: tr('manga4.theme'),
     generate: tr('manga4.generate'),
     generating: tr('manga4.generating'),
-    panel: lang === 'ar' ? 'اللوحة' : lang === 'en' ? 'Panel' : 'コマ',
-    scene: lang === 'ar' ? 'المشهد' : lang === 'en' ? 'Scene' : '場面',
-    dialogue: lang === 'ar' ? 'الحوار' : lang === 'en' ? 'Dialogue' : 'セリフ',
+    panel: ({'ar':'اللوحة','en':'Panel','ja':'コマ','zh':'格','hi':'पैनल','vi':'Panel','es':'Panel'} as Record<string,string>)[lang] || 'Panel',
+    scene: ({'ar':'المشهد','en':'Scene','ja':'場面','zh':'场景','hi':'दृश्य','vi':'Cảnh','es':'Escena'} as Record<string,string>)[lang] || 'Scene',
+    dialogue: ({'ar':'الحوار','en':'Dialogue','ja':'セリフ','zh':'对话','hi':'संवाद','vi':'Đối thoại','es':'Diálogo'} as Record<string,string>)[lang] || 'Dialogue',
     useThis: tr('manga4.useThis'),
     draw: tr('manga4.draw'),
     back: tr('manga4.back'),
-    ki:    lang === 'ar' ? 'البداية' : lang === 'en' ? 'Setup'   : '起',
-    sho:   lang === 'ar' ? 'التطور'  : lang === 'en' ? 'Build'   : '承',
-    ten:   lang === 'ar' ? 'التحول'  : lang === 'en' ? 'Turn'    : '転',
-    ketsu: lang === 'ar' ? 'النهاية' : lang === 'en' ? 'Payoff'  : '結',
+    ki: ({'ar':'البداية','en':'Setup','ja':'起','zh':'起','hi':'शुरुआत','vi':'Mở đầu','es':'Inicio'} as Record<string,string>)[lang] || 'Setup',
+    sho: ({'ar':'التطور','en':'Build','ja':'承','zh':'承','hi':'विकास','vi':'Phát triển','es':'Desarrollo'} as Record<string,string>)[lang] || 'Build',
+    ten: ({'ar':'التحول','en':'Turn','ja':'転','zh':'转','hi':'मोड़','vi':'Chuyển biến','es':'Giro'} as Record<string,string>)[lang] || 'Turn',
+    ketsu: ({'ar':'النهاية','en':'Payoff','ja':'結','zh':'结','hi':'समाप्ति','vi':'Kết thúc','es':'Desenlace'} as Record<string,string>)[lang] || 'Payoff',
     download: tr('manga4.download'),
     tips: tr('manga4.tips'),
   };
@@ -187,7 +187,7 @@ export default function Auto4MangaPage() {
     if (!file) return;
     const { auth, db } = await import('@/lib/firebase');
     const user = auth.currentUser;
-    if (!user) { setSubmitMsg('ログインが必要です'); return; }
+    if (!user) { setSubmitMsg({'ar':'يجب تسجيل الدخول','en':'Login required','ja':'ログインが必要です','zh':'请先登录','hi':'लॉगिन आवश्यक है','vi':'Cần đăng nhập','es':'Inicio de sesión requerido'}[lang as string] || 'Login required'); return; }
     setSubmitting(true);
     setSubmitMsg(tr('manga4.submitting'));
     try {
@@ -236,7 +236,7 @@ export default function Auto4MangaPage() {
         }),
       });
       const data = await res.json();
-      const feedback = data.feedback || 'フィードバックを生成できませんでした';
+      const feedback = data.feedback || ({'ar':'تعذر إنشاء التغذية الراجعة','en':'Could not generate feedback','ja':'フィードバックを生成できませんでした','zh':'无法生成反馈','hi':'फीडबैक नहीं बन सका','vi':'Không thể tạo phản hồi','es':'No se pudo generar retroalimentación'}[lang as string] || 'Could not generate feedback');
 
       await updateDoc(doc(db, 'users', user.uid, 'submissions', docRef.id), {
         aiFeedback: feedback, feedbackStatus: 'done',
@@ -245,7 +245,7 @@ export default function Auto4MangaPage() {
       setSubmitMsg(`✅__${feedback}`);
     } catch (err) {
       console.error(err);
-      setSubmitMsg('❌ 提出に失敗しました。もう一度お試しください');
+      setSubmitMsg('❌ ' + ({'ar':'فشل الإرسال. حاول مجدداً','en':'Submission failed. Please try again','ja':'提出に失敗しました。もう一度お試しください','zh':'提交失败，请重试','hi':'सबमिट विफल हुआ। कृपया पुनः प्रयास करें','vi':'Gửi thất bại. Vui lòng thử lại','es':'Error al enviar. Inténtalo de nuevo'}[lang as string] || 'Submission failed. Please try again'));
     }
     setSubmitting(false);
   };
@@ -268,7 +268,7 @@ export default function Auto4MangaPage() {
 
     const panelHeight = 260;
     const startY = 60;
-    const labels = ['起', '承', '転', '結'];
+    const labels = [tl.ki, tl.sho, tl.ten, tl.ketsu];
 
     for (let i = 0; i < 4; i++) {
       const y = startY + i * (panelHeight + 10);
@@ -309,7 +309,7 @@ export default function Auto4MangaPage() {
                 <p className="text-gray-300 mb-2">🎬 {t.scene}: {panel.scene}</p>
                 <p className="text-white font-medium">💬 {t.dialogue}: 「{panel.dialogue}」</p>
                 <div className="mt-4 border-2 border-dashed border-slate-700 rounded-xl h-32 flex items-center justify-center text-gray-500">
-                  {lang === 'ar' ? 'ارسم هنا!' : 'ここに描こう！'}
+                  {({'ar':'ارسم هنا!','en':'Draw here!','ja':'ここに描こう！','zh':'在这里画！','hi':'यहाँ बनाएं!','vi':'Vẽ ở đây!','es':'¡Dibuja aquí!'}[lang as string] || 'Draw here!')}
                 </div>
               </div>
             ))}
@@ -318,9 +318,9 @@ export default function Auto4MangaPage() {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
             <h3 className="text-lg font-bold mb-3">💡 {t.tips}</h3>
             <ul className="text-gray-300 text-sm space-y-2">
-              <li>・{lang==='ar'?'ارسم تعبيرات واضحة':lang==='en'?'Draw clear expressions':'キャラクターの表情をしっかり描こう'}</li>
+              <li>・{({'ar':'ارسم تعبيرات واضحة','en':'Draw clear expressions','ja':'キャラクターの表情をしっかり描こう','zh':'画出清晰的表情','hi':'स्पष्ट भाव-भंगिमा बनाएं','vi':'Vẽ biểu cảm rõ ràng','es':'Dibuja expresiones claras'}[lang as string] || 'Draw clear expressions')}</li>
               <li>・{lang==='ar'?'اكتب الحوار في بالونات الكلام':lang==='en'?'Write dialogue in speech bubbles':'セリフは吹き出しの中に書こう'}</li>
-              <li>・{lang==='ar'?'ارسم خلفية بسيطة':lang==='en'?'Add a simple background':'背景も簡単でいいから描いてみよう'}</li>
+              <li>・{({'ar':'ارسم خلفية بسيطة','en':'Add a simple background','ja':'背景も簡単でいいから描いてみよう','zh':'画个简单的背景','hi':'सरल पृष्ठभूमि जोड़ें','vi':'Thêm nền đơn giản','es':'Añade un fondo simple'}[lang as string] || 'Add a simple background')}</li>
               <li>・{lang==='ar'?'النهاية المضحكة مهمة!':lang==='en'?'The punchline in panel 4 matters!':'4コマ目のオチが大事！'}</li>
             </ul>
           </div>
@@ -383,7 +383,7 @@ export default function Auto4MangaPage() {
             <div className="grid grid-cols-2 gap-3">
               {THEMES.map(th => (
                 <button key={th.id} onClick={() => setTheme(th.id)} className={`p-4 rounded-xl text-left transition ${theme === th.id ? 'bg-blue-600 text-white border-2 border-blue-400' : 'bg-slate-800 text-gray-300 hover:bg-slate-700 border-2 border-transparent'}`}>
-                  {lang === 'ar' ? (th as any).labelAr : lang === 'en' ? (th as any).labelEn : (th as any).labelJa}
+                  {({'ar':(th as any).labelAr,'en':(th as any).labelEn,'zh':(th as any).labelZh,'hi':(th as any).labelHi,'vi':(th as any).labelVi,'es':(th as any).labelEs} as Record<string,string>)[lang] || (th as any).labelJa}
                 </button>
               ))}
             </div>
@@ -397,7 +397,7 @@ export default function Auto4MangaPage() {
         {stories.length > 0 && (
           <div className="mt-10 space-y-6">
             <h2 className="text-2xl font-bold text-center mb-6">
-              {lang === 'ar' ? '٣ قصص مقترحة' : '🎲 3つのストーリー案'}
+              {({'ar':'٣ قصص مقترحة','en':'🎲 3 Story Ideas','ja':'🎲 3つのストーリー案','zh':'🎲 3个故事方案','hi':'🎲 3 कहानी विचार','vi':'🎲 3 ý tưởng câu chuyện','es':'🎲 3 ideas de historia'}[lang as string] || '🎲 3 Story Ideas')}
             </h2>
             {stories.map((story, i) => (
               <div key={i} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-blue-500 transition">

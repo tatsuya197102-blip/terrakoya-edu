@@ -65,7 +65,7 @@ export default function LessonsPage() {
       <div className="min-h-screen bg-slate-950 text-white" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <div className="max-w-4xl mx-auto px-8 py-8">
           <button onClick={() => setSelected(null)} className="text-blue-400 hover:underline mb-6 block">
-            ← {lang === 'ar' ? 'العودة للقائمة' : lang === 'en' ? 'Back to List' : 'レッスン一覧に戻る'}
+            ← {{'ar':'العودة للقائمة','en':'Back to List','ja':'レッスン一覧に戻る','zh':'返回列表','hi':'सूची पर वापस','vi':'Quay lại danh sách','es':'Volver a la lista'}[lang as string] || 'Back to List'}
           </button>
           <div className="mb-6">
             <span className="text-4xl mr-3">{selected.icon}</span>
@@ -87,7 +87,7 @@ export default function LessonsPage() {
                 <div className="text-center">
                   <p className="text-6xl mb-4">🎬</p>
                   <p className="text-gray-400 text-lg">
-                    {lang === 'ar' ? 'الفيديو قيد الإعداد' : lang === 'en' ? 'Video coming soon' : '動画準備中'}
+                    {{'ar':'الفيديو قيد الإعداد','en':'Video coming soon','ja':'動画準備中','zh':'视频即将上线','hi':'वीडियो जल्द आएगा','vi':'Video sắp ra mắt','es':'Video próximamente'}[lang as string] || 'Video coming soon'}
                   </p>
                 </div>
               </div>
@@ -95,7 +95,7 @@ export default function LessonsPage() {
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <h2 className="text-xl font-bold mb-3">
-              {lang === 'ar' ? 'وصف الدرس' : lang === 'en' ? 'Lesson Description' : 'レッスン内容'}
+              {{'ar':'وصف الدرس','en':'Lesson Description','ja':'レッスン内容','zh':'课程描述','hi':'पाठ विवरण','vi':'Mô tả bài học','es':'Descripción de la lección'}[lang as string] || 'Lesson Description'}
             </h2>
             <p className="text-gray-300 leading-relaxed">{selected.desc[lang] || selected.desc.ja}</p>
           </div>
@@ -110,13 +110,13 @@ export default function LessonsPage() {
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-purple-300 text-sm tracking-widest mb-4">TERRAKOYA LESSONS</p>
           <h1 className="text-4xl font-bold mb-4">
-            {lang === 'ar' ? 'كتاب المانغا - دروس الفيديو' : lang === 'en' ? 'Manga Textbook - Video Lessons' : 'マンガの教科書 - レッスン動画'}
+            {{'ar':'كتاب المانغا - دروس الفيديو','en':'Manga Textbook - Video Lessons','ja':'マンガの教科書 - レッスン動画','zh':'漫画教科书 - 视频课程','hi':'मंगा पाठ्यपुस्तक - वीडियो पाठ','vi':'Sách giáo khoa Manga - Bài học video','es':'Manual de Manga - Lecciones en video'}[lang as string] || 'Manga Textbook - Video Lessons'}
           </h1>
           <p className="text-gray-300">
-            {lang === 'ar' ? 'تعلم خطوة بخطوة مع فيديوهات يوتيوب' : lang === 'en' ? 'Learn step by step with YouTube videos' : 'YouTube動画でステップバイステップで学ぼう'}
+            {{'ar':'تعلم خطوة بخطوة مع فيديوهات يوتيوب','en':'Learn step by step with YouTube videos','ja':'YouTube動画でステップバイステップで学ぼう','zh':'通过YouTube视频一步步学习','hi':'YouTube वीडियो के साथ चरण दर चरण सीखें','vi':'Học từng bước với video YouTube','es':'Aprende paso a paso con videos de YouTube'}[lang as string] || 'Learn step by step with YouTube videos'}
           </p>
           <p className="text-purple-300 text-sm mt-2">
-            {lang === 'ar' ? `${LESSONS.length} درساً` : lang === 'en' ? `${LESSONS.length} lessons` : `全${LESSONS.length}レッスン`}
+            {`${LESSONS.length} ${{ar:'درس',en:'lessons',ja:'レッスン',zh:'课',hi:'पाठ',vi:'bài học',es:'lecciones'}[lang as string] || 'lessons'}`}
           </p>
         </div>
       </div>
