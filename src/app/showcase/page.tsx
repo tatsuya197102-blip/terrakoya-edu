@@ -15,7 +15,7 @@ interface ShowcaseItem {
 }
 
 const JMC_WORKS = [
-  { title: 'Production I.G 共同制作', desc: '資本業務提携によるアニメ制作', icon: '🎬', color: 'from-red-600 to-red-800' },
+  { title: 'アニメ制作事業', desc: '日本・海外スタジオでのアニメ制作', icon: '🎬', color: 'from-red-600 to-red-800' },
   { title: 'ベトナム・エジプトスタジオ', desc: '海外3拠点での制作体制', icon: '🌍', color: 'from-green-600 to-green-800' },
   { title: 'アラビア語ローカライズ', desc: 'エジプト市場向け漫画翻訳', icon: '📖', color: 'from-blue-600 to-blue-800' },
 ];
