@@ -187,9 +187,8 @@ export default function Auto4MangaPage() {
     const user = auth.currentUser;
     if (!user) { setSubmitMsg('ログインが必要です'); return; }
     setSubmitting(true);
-    setSubmitMsg('');
+    setSubmitMsg('⏳ 提出中...');
     try {
-      // 画像を圧縮
       const base64: string = await new Promise((res) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
@@ -209,8 +208,8 @@ export default function Auto4MangaPage() {
         img.src = url;
       });
 
-      const { addDoc, collection } = await import('firebase/firestore');
-      await addDoc(collection(db, 'users', user.uid, 'submissions'), {
+      const { addDoc, updateDoc, doc, collection } = await import('firebase/firestore');
+      const docRef = await addDoc(collection(db, 'users', user.uid, 'submissions'), {
         courseId: 'auto-4manga',
         fileName: file.name,
         fileType: 'image/jpeg',
@@ -220,7 +219,28 @@ export default function Auto4MangaPage() {
         aiFeedback: null, feedbackStatus: 'pending',
         gradeResult: null, gradingStatus: 'idle',
       });
-      setSubmitMsg('✅ 提出しました！コースページからAIフィードバックを確認できます');
+
+      setSubmitMsg('🤖 AIがフィードバックを生成中...');
+
+      const res = await fetch('/api/analyze-artwork', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId: 'auto-4manga',
+          fileName: file.name,
+          fileType: 'image/jpeg',
+          comment: `4コマ漫画「${selectedStory?.title || ''}」`,
+          imageBase64: base64,
+        }),
+      });
+      const data = await res.json();
+      const feedback = data.feedback || 'フィードバックを生成できませんでした';
+
+      await updateDoc(doc(db, 'users', user.uid, 'submissions', docRef.id), {
+        aiFeedback: feedback, feedbackStatus: 'done',
+      });
+
+      setSubmitMsg(`✅__${feedback}`);
     } catch (err) {
       console.error(err);
       setSubmitMsg('❌ 提出に失敗しました。もう一度お試しください');
@@ -313,8 +333,25 @@ export default function Auto4MangaPage() {
             </label>
           </div>
           {submitMsg && (
-            <div className={`mt-4 p-3 rounded-lg text-sm text-center ${submitMsg.includes('✅') ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
-              {submitMsg}
+            <div className={`mt-4 p-4 rounded-xl text-sm ${
+              submitMsg.startsWith('✅__')
+                ? 'bg-purple-900/50 border border-purple-700'
+                : submitMsg.startsWith('❌')
+                ? 'bg-red-900/50 border border-red-700 text-red-300'
+                : 'bg-gray-800 border border-gray-700 text-gray-300'
+            }`}>
+              {submitMsg.startsWith('✅__') ? (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-7 h-7 rounded-full bg-purple-700 flex items-center justify-center text-xs font-bold flex-shrink-0">AI</div>
+                    <p className="text-purple-300 font-medium text-xs">AI講師のフィードバック</p>
+                  </div>
+                  <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">{submitMsg.replace('✅__', '')}</p>
+                  <p className="text-gray-500 text-xs mt-3">✅ 提出完了 · 採点はコースの課題ページから</p>
+                </div>
+              ) : (
+                <p>{submitMsg}</p>
+              )}
             </div>
           )}
         </div>
