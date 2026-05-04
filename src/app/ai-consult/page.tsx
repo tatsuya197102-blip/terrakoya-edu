@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
   role: 'user' | 'ai';
@@ -17,6 +18,7 @@ const SUGGESTIONS = [
 ];
 
 export default function AIConsultPage() {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'ai',
@@ -68,7 +70,7 @@ export default function AIConsultPage() {
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-purple-700 flex items-center justify-center text-sm font-bold flex-shrink-0">AI</div>
           <div>
-            <h1 className="text-base font-bold">テラ先生</h1>
+            <h1 className="text-base font-bold">{t('aiConsult.teacher')}</h1>
             <p className="text-gray-400 text-xs">漫画・アニメ制作の専門AIアドバイザー</p>
           </div>
         </div>
@@ -87,7 +89,7 @@ export default function AIConsultPage() {
                   ? 'bg-blue-600 text-white rounded-br-sm'
                   : 'bg-slate-800 border border-slate-700 text-gray-200 rounded-bl-sm'
               }`}>
-                {msg.role === 'ai' && <p className="text-xs text-purple-400 font-medium mb-1.5">テラ先生</p>}
+                {msg.role === 'ai' && <p className="text-xs text-purple-400 font-medium mb-1.5">{t('aiConsult.teacher')}</p>}
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
               </div>
             </div>
@@ -97,7 +99,7 @@ export default function AIConsultPage() {
             <div className="flex justify-start gap-2">
               <div className="w-7 h-7 rounded-full bg-purple-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">AI</div>
               <div className="bg-slate-800 border border-slate-700 rounded-2xl rounded-bl-sm px-4 py-3">
-                <p className="text-xs text-purple-400 font-medium mb-2">テラ先生</p>
+                <p className="text-xs text-purple-400 font-medium mb-2">{t('aiConsult.teacher')}</p>
                 <div className="flex gap-1 items-center">
                   <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
                   <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}}/>

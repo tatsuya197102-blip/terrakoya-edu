@@ -7,6 +7,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, getDocs, orderBy, query, updateDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
+import { useTranslation } from 'react-i18next';
 
 const COURSES: Record<string, { title: string }> = {
   'manga-basics':      { title: '漫画基礎講座' },
@@ -41,6 +42,8 @@ export default function AssignmentPage() {
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
   const courseId = params.id as string;
   const course = COURSES[courseId];
 
@@ -84,7 +87,7 @@ export default function AssignmentPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (f.size > 5 * 1024 * 1024) { showToast('5MB以下の画像を選んでください', 'error'); return; }
+    if (f.size > 5 * 1024 * 1024) { showToast(t('common.error'), 'error'); return; }
     const reader = new FileReader();
     reader.onload = (ev) => setPreview(ev.target?.result as string);
     reader.readAsDataURL(f);
@@ -118,7 +121,7 @@ export default function AssignmentPage() {
 
   const handleSubmit = async () => {
     const user = auth.currentUser;
-    if (!user || !file) { showToast('ファイルを選択してください', 'error'); return; }
+    if (!user || !file) { showToast(t('assignment.selectFile'), 'error'); return; }
     setSubmitting(true);
     try {
       // 画像を圧縮（最大800px、JPEG70%品質）
@@ -140,11 +143,11 @@ export default function AssignmentPage() {
 
       setSubmissions(prev => [newSub, ...prev]);
       setFile(null); setPreview(''); setComment('');
-      showToast('✅ 提出しました！AIがフィードバックを生成中…', 'success');
+      showToast(t('assignment.submitSuccess'), 'success');
       await streamFeedback(docRef.id, courseId, file.name, fileType, comment, base64, user.uid);
     } catch (e) {
       console.error('Submit error:', e);
-      showToast('提出に失敗しました', 'error');
+      showToast(t('assignment.submitFail'), 'error');
     }
     setSubmitting(false);
   };
@@ -169,7 +172,7 @@ export default function AssignmentPage() {
       setSubmissions(prev => prev.map(s =>
         s.id === subId ? { ...s, aiFeedback: finalText, feedbackStatus: 'done' } : s
       ));
-      showToast('🤖 AIフィードバックが完成しました！', 'success');
+      showToast(t('assignment.gradeDone'), 'success');
     } catch (e) {
       console.error(e);
       setSubmissions(prev => prev.map(s =>
@@ -216,7 +219,7 @@ export default function AssignmentPage() {
       setSubmissions(prev => prev.map(s =>
         s.id === sub.id ? { ...s, gradeResult, gradingStatus: 'done' } : s
       ));
-      showToast('📊 AI採点が完了しました！', 'success');
+      showToast(t('assignment.gradeDone'), 'success');
     } catch (e: any) {
       console.error(e);
       setSubmissions(prev => prev.map(s =>
@@ -264,34 +267,34 @@ export default function AssignmentPage() {
       <div className="bg-gray-900 border-b border-gray-800 px-8 py-4">
         <Link href={`/courses/${courseId}`} className="text-blue-400 hover:underline text-sm">← {course.title}</Link>
         <h1 className="text-2xl font-bold mt-2">課題提出</h1>
-        <p className="text-gray-400 text-sm mt-1">作品をアップロードすると、AI講師がフィードバック＆採点します</p>
+        <p className="text-gray-400 text-sm mt-1">{t('assignment.subtitle')}</p>
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
         {/* 提出フォーム */}
         <div className="bg-gray-800 rounded-xl p-6">
-          <h2 className="text-lg font-bold mb-5">📤 新しい課題を提出</h2>
+          <h2 className="text-lg font-bold mb-5">📤 {t('assignment.title')}</h2>
           <div className="mb-5">
-            <label className="text-sm text-gray-400 block mb-2">画像ファイル（5MB以下）</label>
+            <label className="text-sm text-gray-400 block mb-2">{t('assignment.uploadLabel')}</label>
             <label htmlFor="file-input" className="flex flex-col items-center justify-center border-2 border-dashed border-gray-600 rounded-xl p-8 cursor-pointer hover:border-blue-500 transition-colors">
               <input id="file-input" type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
               {preview ? (
                 <div className="text-center space-y-2">
                   <img src={preview} alt="preview" className="w-36 h-36 mx-auto object-cover rounded-lg" />
                   <p className="text-blue-400 text-sm">{file?.name}</p>
-                  <p className="text-gray-500 text-xs">クリックで変更</p>
+                  <p className="text-gray-500 text-xs">{t('assignment.clickToChange')}</p>
                 </div>
               ) : (
                 <div className="text-center">
                   <p className="text-5xl mb-3">🖼️</p>
-                  <p className="text-gray-400">クリックして画像を選択</p>
+                  <p className="text-gray-400">{t('assignment.clickToSelect')}</p>
                   <p className="text-gray-600 text-xs mt-1">PNG / JPG / GIF / WEBP</p>
                 </div>
               )}
             </label>
           </div>
           <div className="mb-5">
-            <label className="text-sm text-gray-400 block mb-2">コメント（任意）</label>
+            <label className="text-sm text-gray-400 block mb-2">{t('assignment.commentLabel')}</label>
             <textarea
               value={comment} onChange={e => setComment(e.target.value)}
               placeholder="工夫した点、難しかったこと、先生に見てほしいところ..."
@@ -303,7 +306,7 @@ export default function AssignmentPage() {
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
           >
             {submitting ? (
-              <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />提出＆AI分析中...</>
+              <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{t('assignment.submitting')}</>
             ) : '✅ 課題を提出してAIフィードバックを受け取る'}
           </button>
         </div>
@@ -311,7 +314,7 @@ export default function AssignmentPage() {
         {/* 提出履歴 */}
         {submissions.length > 0 && (
           <div>
-            <h2 className="text-lg font-bold mb-4">📋 提出履歴</h2>
+            <h2 className="text-lg font-bold mb-4">{t('assignment.history')}</h2>
             <div className="space-y-5">
               {submissions.map(sub => (
                 <SubmissionCard
@@ -329,8 +332,8 @@ export default function AssignmentPage() {
         {submissions.length === 0 && (
           <div className="text-center text-gray-500 py-16">
             <p className="text-5xl mb-4">📝</p>
-            <p>まだ課題が提出されていません</p>
-            <p className="text-sm mt-1">上のフォームから作品をアップロードしてください</p>
+            <p>{t('assignment.noHistory')}</p>
+            <p className="text-sm mt-1">{t('assignment.noHistoryNote')}</p>
           </div>
         )}
       </div>
@@ -400,11 +403,11 @@ function GradePanel({ result }: { result: GradeResult }) {
       {/* 総評 */}
       <div className="border-t border-gray-700 pt-3 space-y-2">
         <div>
-          <p className="text-xs text-green-400 font-medium mb-1">📝 総評</p>
+          <p className="text-xs text-green-400 font-medium mb-1">{t('assignment.overall')}</p>
           <p className="text-sm text-gray-200 leading-relaxed">{result.overallComment}</p>
         </div>
         <div className="bg-blue-950 rounded-lg px-3 py-2">
-          <p className="text-xs text-blue-300 font-medium mb-0.5">🎯 次のチャレンジ</p>
+          <p className="text-xs text-blue-300 font-medium mb-0.5">{t('assignment.nextChallenge')}</p>
           <p className="text-sm text-blue-100">{result.nextStep}</p>
         </div>
       </div>
@@ -464,7 +467,7 @@ function SubmissionCard({
           <div className="flex items-start gap-3">
             <div className="w-7 h-7 rounded-full bg-purple-700 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">AI</div>
             <div className="flex-1">
-              <p className="text-xs text-purple-300 font-medium mb-1.5">AI講師のフィードバック</p>
+              <p className="text-xs text-purple-300 font-medium mb-1.5">{t('assignment.aiFeedback')}</p>
               {isStreaming && feedbackText ? (
                 <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
                   {feedbackText}
@@ -473,7 +476,7 @@ function SubmissionCard({
               ) : (
                 <div className="flex items-center gap-2 text-gray-400 text-sm">
                   <span className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                  <span>作品を分析しています...</span>
+                  <span>{t('assignment.analyzing')}</span>
                 </div>
               )}
             </div>
@@ -484,7 +487,7 @@ function SubmissionCard({
           <div className="flex items-start gap-3">
             <div className="w-7 h-7 rounded-full bg-purple-700 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">AI</div>
             <div className="flex-1">
-              <p className="text-xs text-purple-300 font-medium mb-1.5">AI講師のフィードバック</p>
+              <p className="text-xs text-purple-300 font-medium mb-1.5">{t('assignment.aiFeedback')}</p>
               <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">{feedbackText}</p>
             </div>
           </div>
@@ -512,7 +515,7 @@ function SubmissionCard({
         {isGrading && (
           <div className="flex items-center gap-2 text-amber-400 text-sm justify-end pt-1">
             <span className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-            <span>採点中...</span>
+            <span>{t('assignment.grading')}</span>
           </div>
         )}
 

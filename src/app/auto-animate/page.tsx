@@ -142,7 +142,7 @@ function drawSkeleton(ctx: CanvasRenderingContext2D, sk: Skeleton, color: string
 }
 
 export default function AutoAnimatePage() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const lang = i18n.language;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [animType, setAnimType] = useState('walk');
@@ -253,10 +253,10 @@ export default function AutoAnimatePage() {
         <div className="max-w-4xl mx-auto">
           <p className="text-green-400 text-xs tracking-widest mb-1">TERRAKOYA ANIMATOR</p>
           <h1 className="text-3xl font-bold">
-            {lang === 'ar' ? 'محرك الشخصيات' : 'スティックフィギュア アニメーター'}
+            {t('animate.title')}
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            {lang === 'ar' ? 'شخصية متحركة بهيكل عظمي حقيقي' : '骨格リグで本格的なアニメーション'}
+            {t('animate.subtitle')}
           </p>
         </div>
       </div>
@@ -270,7 +270,7 @@ export default function AutoAnimatePage() {
             {/* アニメーション選択 */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
               <h2 className="text-sm font-medium text-gray-400 mb-3">
-                {lang === 'ar' ? 'نوع الحركة' : 'アニメーション'}
+                {t('animate.selectAnim')}
               </h2>
               <div className="space-y-2">
                 {Object.entries(ANIM_PRESETS).map(([id, anim]) => (
@@ -287,21 +287,21 @@ export default function AutoAnimatePage() {
             {/* スピード */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
               <h2 className="text-sm font-medium text-gray-400 mb-3">
-                {lang === 'ar' ? 'السرعة' : 'スピード'}
+                {t('animate.speed')}
               </h2>
               <input type="range" min="40" max="300" value={300 - speed + 40}
                 onChange={e => setSpeed(300 - Number(e.target.value) + 40)}
                 className="w-full accent-blue-500" />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>{lang === 'ar' ? 'بطيء' : 'ゆっくり'}</span>
-                <span>{lang === 'ar' ? 'سريع' : 'はやい'}</span>
+                <span>{t('animate.slow')}</span>
+                <span>{t('animate.fast')}</span>
               </div>
             </div>
 
             {/* 色 */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
               <h2 className="text-sm font-medium text-gray-400 mb-3">
-                {lang === 'ar' ? 'لون الشخصية' : 'キャラクターの色'}
+                {t('animate.color')}
               </h2>
               <div className="flex gap-2 flex-wrap">
                 {COLORS.map(c => (
@@ -311,7 +311,7 @@ export default function AutoAnimatePage() {
                 ))}
               </div>
               <h2 className="text-sm font-medium text-gray-400 mb-3 mt-4">
-                {lang === 'ar' ? 'لون الخلفية' : '背景色'}
+                {t('animate.bgColor')}
               </h2>
               <div className="flex gap-2 flex-wrap">
                 {BG_COLORS.map(c => (
@@ -349,7 +349,7 @@ export default function AutoAnimatePage() {
 
             {/* 説明 */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 mt-4">
-              <p className="text-xs text-gray-400 font-medium mb-2">💡 {lang === 'ar' ? 'كيف يعمل' : 'アニメーションの仕組み'}</p>
+              <p className="text-xs text-gray-400 font-medium mb-2">💡 {t('animate.howItWorks')}</p>
               <p className="text-xs text-gray-500 leading-relaxed">
                 {lang === 'ar'
                   ? 'يستخدم هيكل عظمي حقيقي مع 13 مفصلاً. كل حركة محسوبة رياضياً مع تنعيم بين الإطارات.'

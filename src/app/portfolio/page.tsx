@@ -17,7 +17,7 @@ interface Work {
 }
 
 export default function PortfolioPage() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const lang = i18n.language;
   const router = useRouter();
   const [works, setWorks] = useState<Work[]>([]);
@@ -104,7 +104,7 @@ export default function PortfolioPage() {
                 <div className="p-4">
                   <h3 className="font-bold mb-1">{work.title}</h3>
                   <div className="flex items-center justify-between">
-                    <span className="text-blue-400 text-xs">{work.status === 'graded' ? '採点済み' : '提出済み'}</span>
+                    <span className="text-blue-400 text-xs">{work.status === 'graded' ? t('portfolio.graded') : t('portfolio.submitted')}</span>
                     {work.grade && <span className="text-yellow-400 font-bold">{work.grade}/100</span>}
                   </div>
                 </div>
@@ -114,9 +114,9 @@ export default function PortfolioPage() {
         ) : (
           <div className="text-center py-16">
             <p className="text-6xl mb-4">🎨</p>
-            <p className="text-gray-400">{lang === 'ar' ? 'لا توجد أعمال بعد' : 'まだ作品がありません'}</p>
-            <p className="text-gray-500 text-sm mt-2">{lang === 'ar' ? 'قدم واجباتك من صفحة الدورات' : 'コースページから課題を提出すると作品集に追加されます'}</p>
-            <a href="/courses" className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">{lang === 'ar' ? 'اذهب إلى الدورات' : 'コース一覧へ →'}</a>
+            <p className="text-gray-400">{t('portfolio.noWorks')}</p>
+            <p className="text-gray-500 text-sm mt-2">{t('portfolio.noWorksNote')}</p>
+            <a href="/courses" className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">{t('portfolio.goToCourses')}</a>
           </div>
         )}
       </div>
