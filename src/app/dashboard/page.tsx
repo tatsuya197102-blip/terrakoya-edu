@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (!user) { router.push('/auth/login'); return; }
+      if (!user) { router.push('/login'); return; }
       const ref = doc(db, 'users', user.uid);
       const snap = await getDoc(ref);
       if (snap.exists()) {
@@ -163,11 +163,14 @@ export default function DashboardPage() {
             <Link href="/courses" className="text-blue-400 hover:underline text-sm">すべて見る →</Link>
           </div>
           {enrolledCourses.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-400 mb-4">まだコースに登録していません</p>
-              <Link href="/courses" className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors text-sm">
-                コースを探す
-              </Link>
+            <div className="text-center py-8 space-y-4">
+              <p className="text-5xl">🎌</p>
+              <p className="text-gray-300 font-medium">ようこそTERRAKOYAへ！</p>
+              <p className="text-gray-400 text-sm">まずはレッスンを見るか、コースに登録してみましょう</p>
+              <div className="flex gap-3 justify-center flex-wrap">
+                <a href="/lessons" className="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg text-sm transition-colors">🎓 レッスンを見る</a>
+                <a href="/courses" className="bg-gray-700 hover:bg-gray-600 px-5 py-2 rounded-lg text-sm transition-colors">📚 コース一覧</a>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -202,11 +205,11 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           {[
             { href: '/courses', label: 'コース一覧', icon: '📚' },
+            { href: '/lessons', label: 'レッスン', icon: '🎓' },
             { href: '/auto-4manga', label: '4コマ漫画', icon: '📖' },
             { href: '/auto-animate', label: 'アニメーション', icon: '🎬' },
-            { href: '/notifications', label: '通知', icon: '🔔' },
-            { href: '/profile', label: 'プロフィール', icon: '👤' },
-            { href: '/certificate?course=manga-basics', label: '修了証', icon: '🏆' },
+            { href: '/live', label: 'ライブ授業', icon: '📡' },
+            { href: '/portfolio', label: '作品集', icon: '💎' },
           ].map((action, i) => (
             <Link key={i} href={action.href}
               className="bg-gray-800 hover:bg-gray-700 rounded-xl p-4 text-center transition-colors">

@@ -83,7 +83,7 @@ export default function CourseDetailPage() {
 
   const toggleFavorite = async () => {
     const user = auth.currentUser;
-    if (!user) { router.push('/auth/login'); return; }
+    if (!user) { router.push('/login'); return; }
     const ref = doc(db, 'users', user.uid);
     const isFav = favorites.includes(courseId);
     if (isFav) {
@@ -97,7 +97,7 @@ export default function CourseDetailPage() {
 
   const handleEnroll = async () => {
     const user = auth.currentUser;
-    if (!user) { router.push('/auth/login'); return; }
+    if (!user) { router.push('/login'); return; }
     const ref = doc(db, 'users', user.uid);
     await updateDoc(ref, { enrolledCourses: arrayUnion(courseId) });
     setEnrolled(true);

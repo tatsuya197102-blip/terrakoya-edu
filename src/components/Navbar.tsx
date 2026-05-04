@@ -58,11 +58,12 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-1">
 
 {[
+          { href: '/dashboard', label: 'ホーム', icon: '🏠' },
             { href: '/lessons', label: 'レッスン', icon: '🎓' },
+            { href: '/courses', label: 'コース', icon: '📚' },
             { href: '/live', label: 'ライブ', icon: '📡' },
             { href: '/auto-4manga', label: '4コマ', icon: '📖' },
             { href: '/auto-animate', label: 'アニメ', icon: '🎬' },
-            { href: '/submissions', label: '課題', icon: '📝' },
             { href: '/contest', label: 'コンテスト', icon: '🏆' },
             { href: '/portfolio', label: '作品集', icon: '💎' },
             { href: '/ai-consult', label: 'AI相談', icon: '🤖' },
@@ -146,10 +147,10 @@ export default function Navbar() {
       <div className="md:hidden flex border-t border-gray-800">
 
 {[
+          { href: '/lessons', label: 'レッスン', icon: '🎓' },
           { href: '/courses', label: 'コース', icon: '📚' },
-          { href: '/showcase', label: 'ショーケース', icon: '🎨' },
-          { href: '/teacher/dashboard', label: '教師', icon: '👨‍🏫' },
-          { href: '/dashboard', label: 'ダッシュボード', icon: '📊' },
+          { href: '/live', label: 'ライブ', icon: '📡' },
+          { href: '/dashboard', label: 'ホーム', icon: '🏠' },
         ].map(({ href, label, icon }) => (
 
           <Link key={href} href={href}

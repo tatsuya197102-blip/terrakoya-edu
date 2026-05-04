@@ -115,7 +115,8 @@ export default function PortfolioPage() {
           <div className="text-center py-16">
             <p className="text-6xl mb-4">🎨</p>
             <p className="text-gray-400">{lang === 'ar' ? 'لا توجد أعمال بعد' : 'まだ作品がありません'}</p>
-            <a href="/submissions" className="mt-4 inline-block text-blue-400 hover:underline">{lang === 'ar' ? 'قدم عملك الأول' : '最初の作品を提出する →'}</a>
+            <p className="text-gray-500 text-sm mt-2">{lang === 'ar' ? 'قدم واجباتك من صفحة الدورات' : 'コースページから課題を提出すると作品集に追加されます'}</p>
+            <a href="/courses" className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">{lang === 'ar' ? 'اذهب إلى الدورات' : 'コース一覧へ →'}</a>
           </div>
         )}
       </div>

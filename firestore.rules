@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ユーザー自身のデータ
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // 提出物サブコレクション
+      match /submissions/{submissionId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // コース（全ログインユーザーが読める、書き込みは管理者のみ）
+    match /courses/{courseId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'tatsuya197102@gmail.com';
+    }
+
+    // レッスン（全ログインユーザーが読める）
+    match /lessons/{lessonId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'tatsuya197102@gmail.com';
+    }
+
+    // 通知（自分の通知のみ読める）
+    match /notifications/{notifId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow create: if request.auth != null && request.auth.token.email == 'tatsuya197102@gmail.com';
+    }
+
+    // ライブ授業（全ログインユーザーが読める）
+    match /liveLessons/{lessonId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'tatsuya197102@gmail.com';
+    }
+
+    // コンテスト（全ログインユーザーが読める、自分のエントリーは書ける）
+    match /contestEntries/{entryId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.uid;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.uid;
+    }
+
+    // 学校情報（全ログインユーザーが読める）
+    match /schools/{schoolId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'tatsuya197102@gmail.com';
+    }
+
+    // ショーケース（全ログインユーザーが読める）
+    match /showcase/{itemId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == resource.data.uid;
+    }
+  }
+}

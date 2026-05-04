@@ -25,7 +25,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (!user) { router.push('/auth/login'); return; }
+      if (!user) { router.push('/login'); return; }
       await fetchNotifications(user.uid);
       setLoading(false);
     });

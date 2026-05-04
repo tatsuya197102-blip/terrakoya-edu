@@ -67,8 +67,8 @@ export default function LessonPage() {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (!user) { router.push('/auth/login'); return; }
-      
+      if (!user) { router.push('/login'); return; }
+
       const ref = doc(db, 'users', user.uid);
       const snap = await getDoc(ref);
       if (snap.exists()) {

@@ -24,7 +24,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (!user) { router.push('/auth/login'); return; }
+      if (!user) { router.push('/login'); return; }
       setEmail(user.email || '');
       setAvatarUrl(user.photoURL || '');
       setAvatarPreview(user.photoURL || '');
