@@ -54,11 +54,11 @@ export default function CoursesPage() {
   };
 
   const cats = [
-    { id: 'all',         label: { ja: 'すべて', en: 'All',   ar: 'الكل'    }, icon: '📚' },
-    { id: 'manga',       label: { ja: '漫画',   en: 'Manga', ar: 'مانغا'   }, icon: '🎨' },
-    { id: 'illustration',label: { ja: 'イラスト',en: 'Illust',ar: 'رسم'    }, icon: '🖌️' },
-    { id: 'story',       label: { ja: 'ストーリー',en: 'Story',ar: 'قصص'   }, icon: '📖' },
-    { id: 'animation',   label: { ja: 'アニメ', en: 'Anime', ar: 'أنيمي'   }, icon: '🎬' },
+    { id: 'all',         label: { ja: 'すべて', en: 'All',   ar: 'الكل',   zh: '全部', vi: 'Tất cả' }, icon: '📚' },
+    { id: 'manga',       label: { ja: '漫画',   en: 'Manga', ar: 'مانغا',  zh: '漫画', vi: 'Manga' }, icon: '🎨' },
+    { id: 'illustration',label: { ja: 'イラスト',en: 'Illust',ar: 'رسم',   zh: '插画', vi: 'Minh họa' }, icon: '🖌️' },
+    { id: 'story',       label: { ja: 'ストーリー',en: 'Story',ar: 'قصص',  zh: '故事', vi: 'Câu chuyện' }, icon: '📖' },
+    { id: 'animation',   label: { ja: 'アニメ', en: 'Anime', ar: 'أنيمي',  zh: '动漫', vi: 'Anime' }, icon: '🎬' },
   ];
 
   const filtered = DEFAULT_COURSES.filter(c => {
