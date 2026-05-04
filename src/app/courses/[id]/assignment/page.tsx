@@ -30,8 +30,7 @@ type Submission = {
   fileType: string;
   comment: string;
   submittedAt: string;
-  imageUrl?: string;       // Firebase Storage URL
-  imageBase64?: string;    // 後方互換（古いデータ用）
+  imageBase64?: string;
   aiFeedback?: string;
   feedbackStatus?: 'pending' | 'done' | 'error';
   gradeResult?: GradeResult;
@@ -431,9 +430,9 @@ function SubmissionCard({
     <div className="bg-gray-800 rounded-xl overflow-hidden">
       {/* 提出情報 */}
       <div className="p-4 flex gap-4">
-        {(sub.imageUrl || sub.imageBase64) && (
+        {sub.imageBase64 && (
           <img
-            src={sub.imageUrl || `data:${sub.fileType};base64,${sub.imageBase64}`}
+            src={`data:${sub.fileType};base64,${sub.imageBase64}`}
             alt={sub.fileName}
             className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
           />
