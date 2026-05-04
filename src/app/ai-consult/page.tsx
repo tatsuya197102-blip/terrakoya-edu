@@ -14,7 +14,7 @@ const SUGGESTIONS: Record<string, string[]> = {
   en: ['How to draw character eyes', 'Tips for panel layouts', 'How to structure a story', 'How to improve line stability', 'How to use CLIPSTUDIO'],
   ar: ['كيف أرسم عيون الشخصيات', 'نصائح لتقسيم اللوحات', 'كيف أبني قصة متماسكة', 'كيف أثبّت الخطوط', 'كيف أستخدم CLIPSTUDIO'],
   zh: ['如何画角色的眼睛', '分格的技巧是什么？', '如何构建起承转合的故事', '如何练习稳定的线条', '如何使用CLIPSTUDIO'],
-  hi: ['किरदार की आंखें कैसे बनाएं', 'पैनल लेआउट के टिप्स', 'कहानी की संरचना कैसे बनाएं', 'रेखाएं स्थिर कैसे करें', 'CLIPSTUDIO का उपयोग कैसे करें'],
+  vi: ['Cách vẽ mắt nhân vật', 'Mẹo bố cục panel', 'Cách xây dựng cốt truyện', 'Cách ổn định nét vẽ', 'Cách sử dụng CLIPSTUDIO'],
 };
 
 const GREETINGS: Record<string, string> = {
@@ -23,6 +23,7 @@ const GREETINGS: Record<string, string> = {
   ar: 'مرحباً! أنا المعلم تيرا ✏️\n\nاسألني أي شيء عن إنشاء المانغا والأنيمي! رسم الشخصيات، بنية القصة، الأدوات الرقمية — سأعطيك نصائح احترافية!',
   zh: '你好！我是Tera老师 ✏️\n\n关于漫画和动漫创作，什么都可以问我！角色画法、故事构成、数字工具的使用方法，我会从专业角度给你建议！',
   hi: 'नमस्ते! मैं Tera-sensei हूं ✏️\n\nमंगा और एनीमे बनाने के बारे में कुछ भी पूछें! किरदार बनाना, कहानी की संरचना, डिजिटल टूल्स — मैं पेशेवर सलाह दूंगा!',
+  vi: 'Xin chào! Tôi là Tera-sensei ✏️\n\nHãy hỏi tôi bất cứ điều gì về tạo manga và anime! Vẽ nhân vật, cấu trúc câu chuyện, công cụ kỹ thuật số — tôi sẽ cho bạn lời khuyên chuyên nghiệp!',
 };
 
 export default function AIConsultPage() {

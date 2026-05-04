@@ -19,14 +19,14 @@ interface Contest {
 const SAMPLE_CONTESTS: Contest[] = [
   {
     id: 'contest-001',
-    theme: { ja: '🌟 テーマ：友情', en: '🌟 Theme: Friendship', ar: '🌟 الموضوع: الصداقة', zh: '🌟 主题：友情', hi: '🌟 विषय: मित्रता' },
-    description: { ja: '「友情」をテーマにした4コマ漫画またはイラストを描こう！', en: 'Draw a 4-koma manga or illustration about "Friendship"!', ar: 'ارسم مانجا من 4 لوحات أو رسم توضيحي حول موضوع "الصداقة"!', zh: '画一幅以"友情"为主题的四格漫画或插画！', hi: '"मित्रता" विषय पर 4-कोमा मंगा या चित्र बनाएं!' },
+    theme: { ja: '🌟 テーマ：友情', en: '🌟 Theme: Friendship', ar: '🌟 الموضوع: الصداقة', zh: '🌟 主题：友情', hi: '🌟 विषय: मित्रता', vi: '🌟 Chủ đề: Tình bạn' },
+    description: { ja: '「友情」をテーマにした4コマ漫画またはイラストを描こう！', en: 'Draw a 4-koma manga or illustration about "Friendship"!', ar: 'ارسم مانجا من 4 لوحات أو رسم توضيحي حول موضوع "الصداقة"!', zh: '画一幅以"友情"为主题的四格漫画或插画！', hi: '"मित्रता" विषय पर 4-कोमा मंगा या चित्र बनाएं!', vi: 'Vẽ manga 4-koma hoặc minh họa về chủ đề "Tình bạn"!' },
     deadline: '2026-06-30', status: 'active', entries: [],
   },
   {
     id: 'contest-002',
-    theme: { ja: '🌍 テーマ：エジプトと日本', en: '🌍 Theme: Egypt & Japan', ar: '🌍 الموضوع: مصر واليابان', zh: '🌍 主题：埃及与日本', hi: '🌍 विषय: मिस्र और जापान' },
-    description: { ja: 'エジプトと日本の文化をミックスしたキャラクターやストーリーを描こう！', en: 'Draw characters or stories mixing Egyptian and Japanese cultures!', ar: 'ارسم شخصيات أو قصص تمزج بين الثقافة المصرية واليابانية!', zh: '画融合埃及和日本文化的角色或故事！', hi: 'मिस्र और जापान की संस्कृति मिलाकर किरदार या कहानी बनाएं!' },
+    theme: { ja: '🌍 テーマ：エジプトと日本', en: '🌍 Theme: Egypt & Japan', ar: '🌍 الموضوع: مصر واليابان', zh: '🌍 主题：埃及与日本', hi: '🌍 विषय: मिस्र और जापान', vi: '🌍 Chủ đề: Ai Cập & Nhật Bản' },
+    description: { ja: 'エジプトと日本の文化をミックスしたキャラクターやストーリーを描こう！', en: 'Draw characters or stories mixing Egyptian and Japanese cultures!', ar: 'ارسم شخصيات أو قصص تمزج بين الثقافة المصرية واليابانية!', zh: '画融合埃及和日本文化的角色或故事！', hi: 'मिस्र और जापान की संस्कृति मिलाकर किरदार या कहानी बनाएं!', vi: 'Vẽ nhân vật hoặc câu chuyện kết hợp văn hóa Ai Cập và Nhật Bản!' },
     deadline: '2026-07-31', status: 'upcoming', entries: [],
   },
 ];

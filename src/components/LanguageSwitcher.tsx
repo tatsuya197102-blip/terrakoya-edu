@@ -9,6 +9,7 @@ const langLabels: Record<string, string> = {
   ar: 'AR',
   zh: 'ZH',
   hi: 'HI',
+  vi: 'VI',
 };
 
 export default function LanguageSwitcher() {

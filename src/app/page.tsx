@@ -29,7 +29,7 @@ export default function Home() {
     en: { main: 'Draw Your Future', sub: 'Learn manga & anime from professionals — from Egypt to the world' },
     ar: { main: 'ارسم مستقبلك', sub: 'تعلم المانغا والأنيمي من المحترفين — من مصر إلى العالم' },
     zh: { main: '用漫画描绘你的未来', sub: '向专业人士学习漫画和动漫——从埃及走向世界' },
-    hi: { main: 'अपना भविष्य बनाएं', sub: 'पेशेवरों से मंगा और एनीमे सीखें — मिस्र से दुनिया तक' },
+    vi: { main: 'Vẽ Tương Lai Của Bạn', sub: 'Học manga và anime từ các chuyên gia — từ Ai Cập ra thế giới' },
   };
 
   const headline = headlines[lang] || headlines.ja;
@@ -42,12 +42,12 @@ export default function Home() {
         <h1 className="text-white text-xl font-bold tracking-wide">TERRAKOYA</h1>
         <div className="flex items-center gap-3">
           <div className="flex gap-1 flex-wrap">
-            {['ja', 'en', 'ar', 'zh', 'hi'].map(lng => (
+            {['ja', 'en', 'ar', 'zh', 'hi', 'vi'].map(lng => (
               <button key={lng} onClick={() => i18n.changeLanguage(lng)}
                 className={`px-2.5 py-1 rounded text-xs font-medium transition ${
                   i18n.language === lng ? 'bg-white text-blue-900' : 'text-white border border-white/30 hover:bg-white/10'
                 }`}>
-                {lng === 'ja' ? 'JP' : lng === 'en' ? 'EN' : lng === 'ar' ? 'AR' : lng === 'zh' ? 'ZH' : 'HI'}
+                {lng === 'ja' ? 'JP' : lng === 'en' ? 'EN' : lng === 'ar' ? 'AR' : lng === 'zh' ? 'ZH' : lng === 'hi' ? 'HI' : 'VI'}
               </button>
             ))}
           </div>
