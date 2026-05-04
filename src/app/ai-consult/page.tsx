@@ -1,98 +1,144 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface Message {
   role: 'user' | 'ai';
   content: string;
 }
 
+const SUGGESTIONS = [
+  'キャラクターの目の描き方を教えて',
+  'コマ割りのコツは？',
+  '起承転結のストーリーの作り方',
+  '線を安定させる練習方法',
+  'CLIPSTUDIOの使い方',
+];
+
 export default function AIConsultPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'ai',
-      content: 'こんにちは！TERRAKOYAのAIアシスタントです。漫画やアニメの制作についてお悩みがあれば、何でもご相談ください。\n\n例えば:\n・キャラクターデザインのコツ\n・ストーリー構成の相談\n・デジタルツールの使い方\n・課題のフィードバック',
+      content: 'こんにちは！テラ先生です ✏️\n\n漫画・アニメ制作について何でも聞いてください。キャラクターの描き方、ストーリー構成、デジタルツールの使い方など、プロの視点でアドバイスします！',
     }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const getAIResponse = (userMessage: string): string => {
-    const msg = userMessage.toLowerCase();
-    if (msg.includes('キャラクター') || msg.includes('character')) {
-      return 'キャラクターデザインのポイント！\n\n1. シルエット: 遠くからでも識別できる特徴的な形\n2. カラーパレット: 3色以内で統一感\n3. 表情: 目の大きさや形で性格を表現\n4. アクセサリー: 小物で個性を出す\n\n具体的に悩んでいることはありますか？';
-    }
-    if (msg.includes('ストーリー') || msg.includes('story') || msg.includes('物語')) {
-      return 'ストーリー作りの基本！\n\n三幕構成がおすすめ：\n1. 第一幕（導入）: 主人公と世界観を紹介\n2. 第二幕（展開）: 問題や葛藤が生まれる\n3. 第三幕（結末）: クライマックスと解決\n\nポイント: 主人公に「目標」と「障害」を与えると読者が引き込まれます。\n\nどんなジャンルの作品を作りたいですか？';
-    }
-    if (msg.includes('デジタル') || msg.includes('ツール') || msg.includes('ソフト')) {
-      return 'デジタル制作ツールのおすすめ！\n\n初心者向け:\n・CLIP STUDIO PAINT - 漫画制作の定番\n・ibisPaint - スマホで手軽に\n・MediBang Paint - 無料で高機能\n\n中級者以上:\n・Photoshop - プロの定番\n・Procreate - iPad用の人気アプリ\n\nどのツールについて詳しく知りたいですか？';
-    }
-    if (msg.includes('課題') || msg.includes('提出')) {
-      return '課題のアドバイス！\n\n提出前チェックリスト:\n✅ 線画は丁寧か\n✅ バランスは取れているか\n✅ テーマに沿っているか\n\n改善のコツ:\n・他の人の作品を参考にする\n・一度時間を置いてから見直す\n・先生のフィードバックを次に活かす\n\n課題の提出は「課題提出」ページからできます！';
-    }
-    if (msg.includes('評価') || msg.includes('採点')) {
-      return '作品の評価基準（100点満点）:\n\n1. 創造性 (25点): オリジナリティ\n2. 技術力 (25点): 線の質、色使い、バランス\n3. 構図 (25点): レイアウトと見やすさ\n4. テーマ適合 (25点): 課題テーマとの一致\n\n自分の作品を見直して、どの部分が弱いか考えてみましょう！';
-    }
-    return 'ご質問ありがとうございます！\n\n以下のトピックでお手伝いできます：\n\n🎨 キャラクターデザイン\n📖 ストーリー作り\n🖥️ デジタルツール\n📝 課題のアドバイス\n⭐ 評価・採点\n\nどれについて聞きたいですか？';
-  };
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    setMessages(prev => [...prev, { role: 'user', content: input }]);
+  const handleSend = async (text?: string) => {
+    const userMsg = (text || input).trim();
+    if (!userMsg || loading) return;
+    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setInput('');
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    const aiResponse = getAIResponse(input);
-    setMessages(prev => [...prev, { role: 'ai', content: aiResponse }]);
+
+    try {
+      // 会話履歴（最初の挨拶を除く）
+      const history = messages
+        .slice(1)
+        .map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...history, { role: 'user', content: userMsg }],
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'エラー');
+      setMessages(prev => [...prev, { role: 'ai', content: data.text }]);
+    } catch (err: any) {
+      setMessages(prev => [...prev, { role: 'ai', content: `申し訳ありません、エラーが発生しました。\n${err.message}` }]);
+    }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-      <div className="bg-gradient-to-r from-blue-900 to-purple-900 py-6 px-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold">🤖 AI相談室</h1>
-          <p className="text-gray-300 text-sm">漫画・アニメ制作のお悩みを相談しましょう</p>
+    <div className="h-screen bg-slate-950 text-white flex flex-col">
+      {/* ヘッダー */}
+      <div className="bg-gradient-to-r from-blue-900 to-purple-900 py-4 px-6 border-b border-slate-800 flex-shrink-0">
+        <div className="max-w-3xl mx-auto flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-purple-700 flex items-center justify-center text-sm font-bold flex-shrink-0">AI</div>
+          <div>
+            <h1 className="text-base font-bold">テラ先生</h1>
+            <p className="text-gray-400 text-xs">漫画・アニメ制作の専門AIアドバイザー</p>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 max-w-4xl mx-auto w-full px-8 py-6 overflow-y-auto">
-        <div className="space-y-4">
+      {/* メッセージエリア */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-4 py-5 space-y-4">
           {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-lg rounded-2xl p-4 ${
+            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-2`}>
+              {msg.role === 'ai' && (
+                <div className="w-7 h-7 rounded-full bg-purple-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">AI</div>
+              )}
+              <div className={`max-w-xl rounded-2xl px-4 py-3 ${
                 msg.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 border border-slate-700 text-gray-200'
+                  ? 'bg-blue-600 text-white rounded-br-sm'
+                  : 'bg-slate-800 border border-slate-700 text-gray-200 rounded-bl-sm'
               }`}>
-                {msg.role === 'ai' && <p className="text-xs text-blue-400 mb-1">🤖 TERRAKOYA AI</p>}
-                <p className="text-sm whitespace-pre-line">{msg.content}</p>
+                {msg.role === 'ai' && <p className="text-xs text-purple-400 font-medium mb-1.5">テラ先生</p>}
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
               </div>
             </div>
           ))}
+
           {loading && (
-            <div className="flex justify-start">
-              <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
-                <p className="text-xs text-blue-400 mb-1">🤖 TERRAKOYA AI</p>
-                <p className="text-sm text-gray-400 animate-pulse">考え中...</p>
+            <div className="flex justify-start gap-2">
+              <div className="w-7 h-7 rounded-full bg-purple-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1">AI</div>
+              <div className="bg-slate-800 border border-slate-700 rounded-2xl rounded-bl-sm px-4 py-3">
+                <p className="text-xs text-purple-400 font-medium mb-2">テラ先生</p>
+                <div className="flex gap-1 items-center">
+                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
+                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}}/>
+                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}}/>
+                </div>
               </div>
             </div>
           )}
+
+          {/* 最初のみサジェスト表示 */}
+          {messages.length === 1 && !loading && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {SUGGESTIONS.map(s => (
+                <button key={s} onClick={() => handleSend(s)}
+                  className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-full transition-colors text-gray-300">
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div ref={bottomRef} />
         </div>
       </div>
 
-      <div className="border-t border-slate-800 p-4">
-        <div className="max-w-4xl mx-auto flex gap-3">
+      {/* 入力エリア */}
+      <div className="border-t border-slate-800 bg-slate-900 px-4 py-3 flex-shrink-0">
+        <div className="max-w-3xl mx-auto flex gap-2">
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
-            placeholder="質問を入力..."
-            className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white"
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
+            placeholder="テラ先生に質問する..."
+            className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
           />
-          <button onClick={handleSend} disabled={loading || !input.trim()} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-6 py-3 rounded-xl font-bold transition">
+          <button
+            onClick={() => handleSend()}
+            disabled={loading || !input.trim()}
+            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed px-5 py-2.5 rounded-xl font-medium text-sm transition-colors whitespace-nowrap"
+          >
             送信
           </button>
         </div>
