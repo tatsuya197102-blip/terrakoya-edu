@@ -49,7 +49,7 @@ const EMPTY_LESSON: Omit<Lesson, 'id'> = {
 export default function AdminPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'lessons' | 'notify'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'lessons' | 'notify' | 'live'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -66,7 +66,7 @@ export default function AdminPage() {
   const [notifyType, setNotifyType] = useState<'reminder' | 'new_course' | 'progress'>('new_course');
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user: import("firebase/auth").User | null) => {
       if (!user || user.email !== ADMIN_EMAIL) { router.push('/'); return; }
       const [uSnap, cSnap, lSnap] = await Promise.all([
         getDocs(collection(db, 'users')),
@@ -175,7 +175,7 @@ export default function AdminPage() {
       </div>
 
       <div className="flex border-b border-gray-800 px-8">
-        {([['users', '👥 ユーザー'], ['courses', '📚 コース'], ['lessons', '🎥 レッスン'], ['notify', '🔔 通知']] as const).map(([tab, label]) => (
+        {([['users', '👥 ユーザー'], ['courses', '📚 コース'], ['lessons', '🎥 レッスン'], ['notify', '🔔 通知'], ['live', '📡 ライブ授業']] as const).map(([tab, label]) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}>
             {label}
@@ -417,6 +417,141 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+        {/* ライブ授業管理 */}
+        {activeTab === 'live' && <LiveAdmin showToast={showToast} />}
+      </div>
+    </div>
+  );
+}
+
+// ---- ライブ授業管理コンポーネント ----
+function LiveAdmin({ showToast }: { showToast: (msg: string, type: 'success' | 'error') => void }) {
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    title: '', description: '', instructor: '',
+    meetingUrl: '', platform: 'zoom',
+    scheduledAt: '', durationMin: 60,
+  });
+
+  const load = async () => {
+    const { getDocs, collection, orderBy, query } = await import('firebase/firestore');
+    const { db } = await import('@/lib/firebase');
+    const q = query(collection(db, 'liveLessons'), orderBy('scheduledAt', 'asc'));
+    const snap = await getDocs(q);
+    setLessons(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleSave = async () => {
+    if (!form.title || !form.meetingUrl || !form.scheduledAt) {
+      showToast('タイトル・URL・日時は必須です', 'error'); return;
+    }
+    setSaving(true);
+    try {
+      const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+      await addDoc(collection(db, 'liveLessons'), { ...form, createdAt: serverTimestamp() });
+      showToast('✅ ライブ授業を登録しました', 'success');
+      setForm({ title: '', description: '', instructor: '', meetingUrl: '', platform: 'zoom', scheduledAt: '', durationMin: 60 });
+      setShowForm(false);
+      await load();
+    } catch (e) {
+      showToast('登録に失敗しました', 'error');
+    }
+    setSaving(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('削除しますか？')) return;
+    const { deleteDoc, doc } = await import('firebase/firestore');
+    const { db } = await import('@/lib/firebase');
+    await deleteDoc(doc(db, 'liveLessons', id));
+    showToast('削除しました', 'success');
+    await load();
+  };
+
+  return (
+    <div className="max-w-2xl">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-bold">ライブ授業管理</h2>
+        <button onClick={() => setShowForm(v => !v)}
+          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+          {showForm ? '✕ 閉じる' : '＋ 新規登録'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-gray-800 rounded-xl p-6 mb-6 space-y-4">
+          <h3 className="font-medium">新規ライブ授業</h3>
+          {[
+            { label: 'タイトル *', key: 'title', type: 'text', placeholder: '例: 漫画基礎 第1回ライブQ&A' },
+            { label: '説明', key: 'description', type: 'text', placeholder: '授業内容の説明（任意）' },
+            { label: '講師名', key: 'instructor', type: 'text', placeholder: '例: 岡本先生' },
+            { label: 'Zoom/Meet URL *', key: 'meetingUrl', type: 'url', placeholder: 'https://zoom.us/j/...' },
+          ].map(({ label, key, type, placeholder }) => (
+            <div key={key}>
+              <label className="text-sm text-gray-400 block mb-1">{label}</label>
+              <input type={type} value={(form as any)[key]}
+                onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                placeholder={placeholder}
+                className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            </div>
+          ))}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm text-gray-400 block mb-1">プラットフォーム</label>
+              <select value={form.platform} onChange={e => setForm(f => ({ ...f, platform: e.target.value }))}
+                className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm">
+                <option value="zoom">Zoom</option>
+                <option value="meet">Google Meet</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm text-gray-400 block mb-1">時間（分）</label>
+              <input type="number" value={form.durationMin}
+                onChange={e => setForm(f => ({ ...f, durationMin: Number(e.target.value) }))}
+                className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
+          <div>
+            <label className="text-sm text-gray-400 block mb-1">開催日時 *</label>
+            <input type="datetime-local" value={form.scheduledAt}
+              onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))}
+              className="w-full bg-gray-700 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <button onClick={handleSave} disabled={saving}
+            className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-40 py-2.5 rounded-lg text-sm font-medium transition-colors">
+            {saving ? '登録中...' : '✅ 登録する'}
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {lessons.length === 0 && (
+          <div className="text-center text-gray-500 py-12">
+            <p className="text-4xl mb-3">📡</p>
+            <p>ライブ授業がまだ登録されていません</p>
+          </div>
+        )}
+        {lessons.map((l: any) => (
+          <div key={l.id} className="bg-gray-800 rounded-xl p-4 flex items-start gap-4">
+            <div className="flex-1">
+              <p className="font-medium">{l.title}</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {l.platform.toUpperCase()} · {l.instructor} · {new Date(l.scheduledAt).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} · {l.durationMin}分
+              </p>
+              <p className="text-xs text-blue-400 mt-1 truncate">{l.meetingUrl}</p>
+            </div>
+            <button onClick={() => handleDelete(l.id)}
+              className="text-red-400 hover:text-red-300 text-xs underline flex-shrink-0">
+              削除
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

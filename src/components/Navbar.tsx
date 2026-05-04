@@ -59,6 +59,7 @@ export default function Navbar() {
 
 {[
             { href: '/lessons', label: 'レッスン', icon: '🎓' },
+            { href: '/live', label: 'ライブ', icon: '📡' },
             { href: '/auto-4manga', label: '4コマ', icon: '📖' },
             { href: '/auto-animate', label: 'アニメ', icon: '🎬' },
             { href: '/submissions', label: '課題', icon: '📝' },
