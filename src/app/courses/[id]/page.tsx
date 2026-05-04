@@ -18,8 +18,8 @@ const COURSES: Record<string, {
   lessons: { id: string; title: Record<string, string>; duration: string; free: boolean }[];
 }> = {
   'manga-basics': {
-    title: { ja: '漫画基礎講座', en: 'Manga Basics', ar: 'أساسيات المانغا' },
-    description: { ja: 'キャラクターデザインから背景まで、漫画の基礎を学びます', en: 'Learn manga fundamentals from character design to backgrounds', ar: 'تعلم أساسيات المانغا من تصميم الشخصيات إلى الخلفيات' },
+    title: { ja: '漫画基礎講座', en: 'Manga Basics', ar: 'أساسيات المانغا', zh: '漫画基础课', hi: 'मंगा बेसिक्स', vi: 'Cơ bản Manga', es: 'Básicos del Manga' },
+    description: { ja: 'キャラクターデザインから背景まで、漫画の基礎を学びます', en: 'Learn manga fundamentals from character design to backgrounds', ar: 'تعلم أساسيات المانغا من تصميم الشخصيات إلى الخلفيات', zh: '从角色设计到背景，学习漫画基础', hi: 'किरदार डिज़ाइन से पृष्ठभूमि तक मंगा की बेसिक्स सीखें', vi: 'Học cơ bản manga từ thiết kế nhân vật đến hậu cảnh', es: 'Aprende los fundamentos del manga desde el diseño de personajes hasta los fondos' },
     level: 'beginner', thumbnail: '🎨', rating: 4.8, students: 1250,
     lessons: [
       { id: 'l1', title: { ja: 'キャラクターの描き方基礎', en: 'Character Drawing Basics', ar: 'أساسيات رسم الشخصيات' }, duration: '30min', free: true },
@@ -30,8 +30,8 @@ const COURSES: Record<string, {
     ],
   },
   'digital-illust': {
-    title: { ja: 'デジタルイラスト入門', en: 'Digital Illustration', ar: 'الرسم الرقمي' },
-    description: { ja: 'CLIPSTUDIOを使ったデジタルイラストの基礎', en: 'Digital illustration basics using CLIPSTUDIO', ar: 'أساسيات الرسم الرقمي باستخدام CLIPSTUDIO' },
+    title: { ja: 'デジタルイラスト入門', en: 'Digital Illustration', ar: 'الرسم الرقمي', zh: '数字插画入门', hi: 'डिजिटल इलस्ट्रेशन', vi: 'Minh họa kỹ thuật số', es: 'Ilustración Digital' },
+    description: { ja: 'CLIPSTUDIOを使ったデジタルイラストの基礎', en: 'Digital illustration basics using CLIPSTUDIO', ar: 'أساسيات الرسم الرقمي باستخدام CLIPSTUDIO', zh: '使用CLIPSTUDIO的数字插画基础', hi: 'CLIPSTUDIO का उपयोग करके डिजिटल इलस्ट्रेशन की बेसिक्स', vi: 'Cơ bản minh họa kỹ thuật số với CLIPSTUDIO', es: 'Básicos de ilustración digital usando CLIPSTUDIO' },
     level: 'beginner', thumbnail: '🖌️', rating: 4.6, students: 890,
     lessons: [
       { id: 'l1', title: { ja: 'CLIPSTUDIOの基本操作', en: 'CLIPSTUDIO Basics', ar: 'أساسيات CLIPSTUDIO' }, duration: '20min', free: true },
@@ -41,8 +41,8 @@ const COURSES: Record<string, {
     ],
   },
   'story-making': {
-    title: { ja: 'ストーリー作り', en: 'Story Creation', ar: 'كتابة القصص' },
-    description: { ja: '読者を引きつけるストーリーの作り方', en: 'How to create compelling stories', ar: 'كيفية إنشاء قصص جذابة' },
+    title: { ja: 'ストーリー作り', en: 'Story Creation', ar: 'كتابة القصص', zh: '故事创作', hi: 'कहानी निर्माण', vi: 'Tạo câu chuyện', es: 'Creación de Historias' },
+    description: { ja: '読者を引きつけるストーリーの作り方', en: 'How to create compelling stories', ar: 'كيفية إنشاء قصص جذابة', zh: '如何创作引人入胜的故事', hi: 'आकर्षक कहानियां कैसे लिखें', vi: 'Cách tạo câu chuyện hấp dẫn', es: 'Cómo crear historias cautivadoras' },
     level: 'intermediate', thumbnail: '📖', rating: 4.9, students: 650,
     lessons: [
       { id: 'l1', title: { ja: 'ストーリーの基本構造', en: 'Story Structure Basics', ar: 'أساسيات بنية القصة' }, duration: '30min', free: true },
@@ -51,8 +51,8 @@ const COURSES: Record<string, {
     ],
   },
   'animation-basics': {
-    title: { ja: 'アニメーション基礎', en: 'Animation Basics', ar: 'أساسيات الرسوم المتحركة' },
-    description: { ja: 'キャラクターに動きをつける基礎技術', en: 'Basic techniques for animating characters', ar: 'تقنيات أساسية لتحريك الشخصيات' },
+    title: { ja: 'アニメーション基礎', en: 'Animation Basics', ar: 'أساسيات الرسوم المتحركة', zh: '动画基础', hi: 'एनिमेशन बेसिक्स', vi: 'Cơ bản Hoạt hình', es: 'Básicos de Animación' },
+    description: { ja: 'キャラクターに動きをつける基礎技術', en: 'Basic techniques for animating characters', ar: 'تقنيات أساسية لتحريك الشخصيات', zh: '给角色添加动作的基本技巧', hi: 'किरदारों को एनिमेट करने की बेसिक तकनीकें', vi: 'Kỹ thuật cơ bản để hoạt hình hóa nhân vật', es: 'Técnicas básicas para animar personajes' },
     level: 'intermediate', thumbnail: '🎬', rating: 4.7, students: 430,
     lessons: [
       { id: 'l1', title: { ja: 'アニメーションの原理', en: 'Animation Principles', ar: 'مبادئ الرسوم المتحركة' }, duration: '25min', free: true },

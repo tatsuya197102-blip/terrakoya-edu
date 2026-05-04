@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const { t, i18n } = useTranslation();
@@ -42,16 +44,7 @@ export default function Home() {
       <nav className="flex justify-between items-center px-6 py-4">
         <h1 className="text-white text-xl font-bold tracking-wide">TERRAKOYA</h1>
         <div className="flex items-center gap-3">
-          <div className="flex gap-1 flex-wrap">
-            {['ja', 'en', 'ar', 'zh', 'hi', 'vi', 'es'].map(lng => (
-              <button key={lng} onClick={() => i18n.changeLanguage(lng)}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition ${
-                  i18n.language === lng ? 'bg-white text-blue-900' : 'text-white border border-white/30 hover:bg-white/10'
-                }`}>
-                {({ ja:'JP', en:'EN', ar:'AR', zh:'ZH', hi:'HI', vi:'VI', es:'ES' } as Record<string,string>)[lng]}
-              </button>
-            ))}
-          </div>
+          <LanguageSwitcher />
           <button onClick={() => router.push(user ? '/dashboard' : '/login')}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-400 transition whitespace-nowrap">
             {user ? ({'ar':'لوحة التحكم','en':'Dashboard','ja':'ダッシュボード','zh':'学习面板','hi':'डैशबोर्ड','vi':'Bảng điều khiển','es':'Panel'}[lang as string] || 'Dashboard')

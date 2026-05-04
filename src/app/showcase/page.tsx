@@ -54,18 +54,18 @@ export default function ShowcasePage() {
   };
 
   const t = {
-    heading: lang === 'ar' ? 'عالم المانجا والأنيمي الياباني' : lang === 'en' ? 'Japanese Manga & Anime World' : '日本漫画・アニメの世界へようこそ',
-    sub1: lang === 'ar' ? 'اكتشف أعمال الفنانين اليابانيين' : lang === 'en' ? 'Discover talented Japanese creators' : '日本の才能あるクリエイターを発見',
-    all: lang === 'ar' ? 'الكل' : lang === 'en' ? 'All' : 'すべて',
-    manga: lang === 'ar' ? 'المانجا' : lang === 'en' ? 'Manga' : '漫画',
-    anime: lang === 'ar' ? 'الأنيمي' : lang === 'en' ? 'Anime' : 'アニメ',
-    loading: lang === 'ar' ? 'جاري التحميل...' : lang === 'en' ? 'Loading...' : '作品を読み込み中...',
-    noResults: lang === 'ar' ? 'لا توجد أعمال' : lang === 'en' ? 'No works found' : '該当する作品がありません',
-    partner: lang === 'ar' ? 'هل تريد الشراكة معنا؟' : lang === 'en' ? 'Interested in a partnership?' : 'パートナーシップについてご関心がありますか？',
-    contact: lang === 'ar' ? 'تواصل معنا' : lang === 'en' ? 'Contact Us' : 'お問い合わせ',
-    jmcTitle: lang === 'ar' ? 'خدمات J-MANGA CREATE' : lang === 'en' ? 'J-MANGA CREATE Services' : 'J-MANGA CREATE の制作実績',
-    jmcSub: lang === 'ar' ? 'شريكك في إنتاج الأنيمي والمانجا' : lang === 'en' ? 'Your anime & manga production partner' : 'アニメ・漫画制作のパートナー',
-    featured: lang === 'ar' ? 'أعمال مميزة' : lang === 'en' ? 'Featured Works' : 'おすすめ作品',
+    heading: ({'ar':'عالم المانجا والأنيمي الياباني','en':'Japanese Manga & Anime World','ja':'日本漫画・アニメの世界へようこそ','zh':'日本漫画与动漫世界','hi':'जापानी मंगा और एनीमे की दुनिया','vi':'Thế giới Manga & Anime Nhật Bản','es':'El mundo del Manga y Anime japonés'}[lang as string] || 'Japanese Manga & Anime World'),
+    sub1: ({'ar':'اكتشف أعمال الفنانين اليابانيين','en':'Discover talented Japanese creators','ja':'日本の才能あるクリエイターを発見','zh':'发现日本才华横溢的创作者','hi':'प्रतिभाशाली जापानी क्रिएटर खोजें','vi':'Khám phá các nhà sáng tạo Nhật Bản','es':'Descubre creadores japoneses talentosos'}[lang as string] || 'Discover talented Japanese creators'),
+    all: ({'ar':'الكل','en':'All','ja':'すべて','zh':'全部','hi':'सभी','vi':'Tất cả','es':'Todos'}[lang as string] || 'All'),
+    manga: ({'ar':'المانجا','en':'Manga','ja':'漫画','zh':'漫画','hi':'मंगा','vi':'Manga','es':'Manga'}[lang as string] || 'Manga'),
+    anime: ({'ar':'الأنيمي','en':'Anime','ja':'アニメ','zh':'动漫','hi':'एनिमे','vi':'Anime','es':'Anime'}[lang as string] || 'Anime'),
+    loading: ({'ar':'جاري التحميل...','en':'Loading...','ja':'作品を読み込み中...','zh':'加载中...','hi':'लोड हो रहा है...','vi':'Đang tải...','es':'Cargando...'}[lang as string] || 'Loading...'),
+    noResults: ({'ar':'لا توجد أعمال','en':'No works found','ja':'該当する作品がありません','zh':'没有找到作品','hi':'कोई काम नहीं मिला','vi':'Không tìm thấy tác phẩm','es':'No se encontraron obras'}[lang as string] || 'No works found'),
+    partner: ({'ar':'هل تريد الشراكة معنا؟','en':'Interested in a partnership?','ja':'パートナーシップについてご関心がありますか？','zh':'对合作感兴趣吗？','hi':'साझेदारी में रुचि है?','vi':'Quan tâm đến hợp tác?','es':'¿Interesado en una asociación?'}[lang as string] || 'Interested in a partnership?'),
+    contact: ({'ar':'تواصل معنا','en':'Contact Us','ja':'お問い合わせ','zh':'联系我们','hi':'हमसे संपर्क करें','vi':'Liên hệ chúng tôi','es':'Contáctanos'}[lang as string] || 'Contact Us'),
+    jmcTitle: ({'ar':'خدمات J-MANGA CREATE','en':'J-MANGA CREATE Services','ja':'J-MANGA CREATE の制作実績','zh':'J-MANGA CREATE 服务','hi':'J-MANGA CREATE सेवाएं','vi':'Dịch vụ J-MANGA CREATE','es':'Servicios de J-MANGA CREATE'}[lang as string] || 'J-MANGA CREATE Services'),
+    jmcSub: ({'ar':'شريكك في إنتاج الأنيمي والمانجا','en':'Your anime & manga production partner','ja':'アニメ・漫画制作のパートナー','zh':'您的动漫制作伙伴','hi':'आपका एनीमे और मंगा प्रोडक्शन पार्टनर','vi':'Đối tác sản xuất anime và manga của bạn','es':'Tu socio de producción de anime y manga'}[lang as string] || 'Your anime & manga production partner'),
+    featured: ({'ar':'أعمال مميزة','en':'Featured Works','ja':'おすすめ作品','zh':'精选作品','hi':'विशेष रचनाएं','vi':'Tác phẩm nổi bật','es':'Obras destacadas'}[lang as string] || 'Featured Works'),
   };
 
   if (loading) {

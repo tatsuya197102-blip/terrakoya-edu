@@ -10,8 +10,9 @@ i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    fallbackLng: 'ja',
-    debug: true,
+    fallbackLng: 'en',
+    supportedLngs: languages,
+    debug: false,
     interpolation: {
       escapeValue: false,
     },
@@ -23,7 +24,9 @@ i18n
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
+      lookupLocalStorage: 'i18nextLng',
     },
+    load: 'languageOnly',
   });
 
 export default i18n;
