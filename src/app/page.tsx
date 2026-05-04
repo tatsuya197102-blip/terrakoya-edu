@@ -27,11 +27,11 @@ export default function Home() {
 
   // 言語別キャッチコピー（改行なし・スマホ対応）
   const headlines: Record<string, { main: string; sub: string }> = {
-    ja: { main: '漫画・アニメで夢をかなえよう', sub: 'プロから学ぶ、エジプト発の創作プラットフォーム' },
-    en: { main: 'Draw Your Future', sub: 'Learn manga & anime from professionals — from Egypt to the world' },
-    ar: { main: 'ارسم مستقبلك', sub: 'تعلم المانغا والأنيمي من المحترفين — من مصر إلى العالم' },
-    zh: { main: '用漫画描绘你的未来', sub: '向专业人士学习漫画和动漫——从埃及走向世界' },
-    vi: { main: 'Vẽ Tương Lai Của Bạn', sub: 'Học manga và anime từ các chuyên gia — từ Ai Cập ra thế giới' },
+    ja: { main: 'アニメで夢をかなえよう', sub: 'プロから学ぶ、エジプト発の創作プラットフォーム' },
+    en: { main: 'Achieve Your Dreams with Anime', sub: 'Learn from professionals — a creative platform from Egypt' },
+    ar: { main: 'حقق أحلامك مع الأنيمي', sub: 'تعلم من المحترفين — منصة إبداعية من مصر' },
+    zh: { main: '用动漫实现你的梦想', sub: '向专业人士学习——来自埃及的创作平台' },
+    vi: { main: 'Thực hiện ước mơ với Anime', sub: 'Học từ chuyên gia — nền tảng sáng tạo từ Ai Cập' },
   };
 
   const headline = headlines[lang] || headlines.ja;
