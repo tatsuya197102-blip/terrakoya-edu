@@ -54,11 +54,11 @@ export default function CoursesPage() {
   };
 
   const cats = [
-    { id: 'all',         label: t('common.all'),   icon: '📚' },
-    { id: 'manga',       label: 'Manga',            icon: '🎨' },
-    { id: 'illustration',label: 'Illust',           icon: '🖌️' },
-    { id: 'story',       label: 'Story',            icon: '📖' },
-    { id: 'animation',   label: 'Anime',            icon: '🎬' },
+    { id: 'all',         label: { ja: 'すべて', en: 'All',   ar: 'الكل'    }, icon: '📚' },
+    { id: 'manga',       label: { ja: '漫画',   en: 'Manga', ar: 'مانغا'   }, icon: '🎨' },
+    { id: 'illustration',label: { ja: 'イラスト',en: 'Illust',ar: 'رسم'    }, icon: '🖌️' },
+    { id: 'story',       label: { ja: 'ストーリー',en: 'Story',ar: 'قصص'   }, icon: '📖' },
+    { id: 'animation',   label: { ja: 'アニメ', en: 'Anime', ar: 'أنيمي'   }, icon: '🎬' },
   ];
 
   const filtered = DEFAULT_COURSES.filter(c => {
@@ -84,7 +84,7 @@ export default function CoursesPage() {
               className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 filter === c.id ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
               }`}>
-              {c.icon} {c.label}
+              {c.icon} {(c.label as Record<string,string>)[lang] || (c.label as Record<string,string>).ja}
             </button>
           ))}
           <input value={search} onChange={e => setSearch(e.target.value)}

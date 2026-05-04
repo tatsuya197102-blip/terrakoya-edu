@@ -31,6 +31,11 @@ export default function AIConsultPage() {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // 言語切り替え時に挨拶を更新
+  useEffect(() => {
+    setMessages([{ role: 'ai', content: GREETINGS[lang] || GREETINGS.ja }]);
+  }, [lang]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
