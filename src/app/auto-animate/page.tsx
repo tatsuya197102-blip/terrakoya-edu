@@ -1,362 +1,220 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
-import { useState, useRef } from 'react';
-import Toast from '@/components/Toast';
+import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
-interface Frame {
-  id: number;
-  imageUrl?: string;
-}
+const ANIMATIONS = [
+  { id: 'walk', labelJa: '🚶 歩く', labelAr: '🚶 يمشي', frames: 8 },
+  { id: 'jump', labelJa: '🤸 ジャンプ', labelAr: '🤸 يقفز', frames: 6 },
+  { id: 'wave', labelJa: '👋 手を振る', labelAr: '👋 يلوح', frames: 6 },
+  { id: 'dance', labelJa: '💃 踊る', labelAr: '💃 يرقص', frames: 8 },
+  { id: 'bounce', labelJa: '⚽ はねる', labelAr: '⚽ يرتد', frames: 6 },
+];
 
 export default function AutoAnimatePage() {
-  const [frames, setFrames] = useState<Frame[]>(
-    Array.from({ length: 6 }, (_, i) => ({ id: i + 1 }))
-  );
-  const [selectedFrame, setSelectedFrame] = useState(0);
-  const [animationSpeed, setAnimationSpeed] = useState(300);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentFrame, setCurrentFrame] = useState(0);
+  const { i18n } = useTranslation();
+  const lang = i18n.language;
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [toast, setToast] = useState({ message: '', type: '' as 'success' | 'error' });
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [preview, setPreview] = useState('');
+  const [animType, setAnimType] = useState('walk');
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(100);
+  const frameRef = useRef(0);
+  const animRef = useRef<number>(0);
 
-  // フレーム画像アップロード
-  const handleFrameUpload = (frameId: number, file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const imageUrl = e.target?.result as string;
-      setFrames((prev) =>
-        prev.map((f) => (f.id === frameId ? { ...f, imageUrl } : f))
-      );
-      setToast({ message: `フレーム ${frameId} が追加されました！`, type: 'success' });
-    };
-    reader.readAsDataURL(file);
+  const t = {
+    title: lang === 'ar' ? 'صانع الرسوم المتحركة القصيرة' : 'ショートアニメメーカー',
+    sub: lang === 'ar' ? 'حرّك رسمتك!' : 'きみの絵を動かそう！',
+    upload: lang === 'ar' ? 'ارفع رسمتك' : 'キャラクターの絵をアップロード',
+    selectAnim: lang === 'ar' ? 'اختر نوع الحركة' : 'アニメーションを選ぼう',
+    play: lang === 'ar' ? '▶️ تشغيل' : '▶️ 再生',
+    stop: lang === 'ar' ? '⏹️ إيقاف' : '⏹️ 停止',
+    speed: lang === 'ar' ? 'السرعة' : 'スピード',
+    slow: lang === 'ar' ? 'بطيء' : 'ゆっくり',
+    fast: lang === 'ar' ? 'سريع' : 'はやい',
+    download: lang === 'ar' ? '📥 تحميل' : '📥 ダウンロード',
+    tip1: lang === 'ar' ? 'ارسم شخصيتك على ورق أبيض' : '白い紙にキャラクターを描こう',
+    tip2: lang === 'ar' ? 'التقط صورة واضحة' : 'はっきり写真を撮ろう',
+    tip3: lang === 'ar' ? 'اختر حركة وشاهد شخصيتك تتحرك!' : 'アニメーションを選んで動かそう！',
   };
 
-  // フレーム追加
-  const addFrame = () => {
-    if (frames.length < 12) {
-      const newFrame = { id: Math.max(...frames.map((f) => f.id)) + 1 };
-      setFrames([...frames, newFrame]);
-    } else {
-      setToast({ message: 'フレーム上限は12フレームです', type: 'error' });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => setImage(img);
+        img.src = ev.target?.result as string;
+        setPreview(ev.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  // フレーム削除
-  const removeFrame = (frameId: number) => {
-    if (frames.length > 2) {
-      setFrames(frames.filter((f) => f.id !== frameId));
-    } else {
-      setToast({ message: '最低2フレーム必要です', type: 'error' });
+  const animate = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !image) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const anim = ANIMATIONS.find(a => a.id === animType);
+    if (!anim) return;
+
+    const frame = frameRef.current % anim.frames;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#f0f4ff';
+    ctx.fillRect(0, 0, w, h);
+
+    const imgW = 150;
+    const imgH = (image.height / image.width) * imgW;
+    let x = w / 2 - imgW / 2;
+    let y = h / 2 - imgH / 2;
+    let scaleX = 1;
+    let scaleY = 1;
+    let rotation = 0;
+
+    switch (animType) {
+      case 'walk':
+        x = (frame / anim.frames) * (w - imgW);
+        y = h / 2 - imgH / 2 + Math.sin(frame * Math.PI / 2) * 10;
+        scaleX = frame < anim.frames / 2 ? 1 : -1;
+        break;
+      case 'jump':
+        const jumpHeight = Math.sin(frame / anim.frames * Math.PI) * 100;
+        y = h / 2 - imgH / 2 - jumpHeight;
+        scaleY = 1 + Math.sin(frame / anim.frames * Math.PI) * 0.1;
+        break;
+      case 'wave':
+        rotation = Math.sin(frame * Math.PI / 3) * 0.15;
+        break;
+      case 'dance':
+        x = w / 2 - imgW / 2 + Math.sin(frame * Math.PI / 2) * 30;
+        rotation = Math.sin(frame * Math.PI / 2) * 0.1;
+        scaleX = frame % 2 === 0 ? 1 : -1;
+        break;
+      case 'bounce':
+        const bounceH = Math.abs(Math.sin(frame / anim.frames * Math.PI * 2)) * 80;
+        y = h / 2 - imgH / 2 - bounceH;
+        scaleY = 1 - Math.abs(Math.sin(frame / anim.frames * Math.PI * 2)) * 0.15;
+        scaleX = 1 + Math.abs(Math.sin(frame / anim.frames * Math.PI * 2)) * 0.1;
+        break;
     }
+
+    ctx.save();
+    ctx.translate(x + imgW / 2, y + imgH / 2);
+    ctx.rotate(rotation);
+    ctx.scale(scaleX, scaleY);
+    ctx.drawImage(image, -imgW / 2, -imgH / 2, imgW, imgH);
+    ctx.restore();
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('TERRAKOYA Animation', 10, h - 10);
+
+    frameRef.current++;
   };
 
-  // アニメーション再生
-  const playAnimation = () => {
-    setIsPlaying(true);
-    let currentIdx = 0;
+  useEffect(() => {
+    if (!playing || !image) return;
+    const interval = setInterval(animate, speed);
+    return () => clearInterval(interval);
+  }, [playing, image, animType, speed]);
 
-    const interval = setInterval(() => {
-      setCurrentFrame(currentIdx % frames.length);
-      currentIdx++;
-
-      if (currentIdx >= frames.length * 2) {
-        setIsPlaying(false);
-        clearInterval(interval);
-      }
-    }, animationSpeed);
+  const handlePlay = () => {
+    frameRef.current = 0;
+    setPlaying(true);
   };
 
-  // フレームをダウンロード（個別PNG）
-  const downloadFrames = async () => {
-    const uploadedFrames = frames.filter((f) => f.imageUrl);
-    if (uploadedFrames.length === 0) {
-      setToast({ message: '少なくとも1つのフレームが必要です', type: 'error' });
-      return;
-    }
-
-    try {
-      uploadedFrames.forEach((frame, idx) => {
-        if (frame.imageUrl) {
-          const a = document.createElement('a');
-          a.href = frame.imageUrl;
-          a.download = `frame_${String(idx + 1).padStart(2, '0')}.png`;
-          a.click();
-        }
-      });
-
-      setToast({ message: `${uploadedFrames.length}枚のフレームをダウンロードしました！`, type: 'success' });
-    } catch (error) {
-      console.error('Download error:', error);
-      setToast({ message: 'ダウンロードに失敗しました', type: 'error' });
-    }
+  const handleStop = () => {
+    setPlaying(false);
   };
 
-  // パラパラ漫画プレビュー
-  const currentFrameImage = frames[currentFrame]?.imageUrl;
+  const handleDownload = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = 'terrakoya_animation.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-100 to-cyan-50 p-4">
-      <div className="max-w-6xl mx-auto">
-        {/* ヘッダー */}
-        <div className="text-center mb-8 mt-4">
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">
-            🎬 自動ショートアニメ作成ツール
-          </h1>
-          <p className="text-gray-600">
-            パラパラ漫画で簡単アニメーション！フレームを描いて動かそう
-          </p>
+    <div className="min-h-screen bg-slate-950 text-white" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="bg-gradient-to-r from-green-900 via-teal-900 to-blue-900 py-16 px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-green-300 text-sm tracking-widest mb-4">TERRAKOYA ANIMATOR</p>
+          <h1 className="text-4xl font-bold mb-4">{t.title}</h1>
+          <p className="text-gray-300 text-lg">{t.sub}</p>
         </div>
+      </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* 左側：フレーム管理 */}
-          <div className="md:col-span-1">
-            <div className="bg-white rounded-lg shadow-lg p-6 sticky top-4">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">📹 フレーム管理</h2>
+      <div className="max-w-4xl mx-auto px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-              {/* フレーム一覧 */}
-              <div className="space-y-2 mb-4 max-h-96 overflow-y-auto">
-                {frames.map((frame, idx) => (
-                  <div
-                    key={frame.id}
-                    className={`border-2 rounded p-2 cursor-pointer transition ${
-                      selectedFrame === idx
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300 hover:border-blue-300'
-                    }`}
-                    onClick={() => setSelectedFrame(idx)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-sm text-gray-700">
-                        Frame {idx + 1}
-                      </span>
-                      {frame.imageUrl ? (
-                        <span className="text-xl">✓</span>
-                      ) : (
-                        <span className="text-xs text-gray-500">未設定</span>
-                      )}
-                    </div>
-                    {frame.imageUrl && (
-                      <img
-                        src={frame.imageUrl}
-                        alt={`Frame ${idx + 1}`}
-                        className="w-full mt-2 rounded h-20 object-cover"
-                      />
-                    )}
-                  </div>
+          <div className="space-y-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <h2 className="text-xl font-bold mb-4">{t.upload}</h2>
+              <input type="file" accept="image/*" onChange={handleFileChange} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white" />
+              {preview && (
+                <div className="mt-4">
+                  <img src={preview} alt="Preview" className="max-h-48 rounded-lg border border-slate-700 mx-auto" />
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <h2 className="text-xl font-bold mb-4">{t.selectAnim}</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {ANIMATIONS.map(anim => (
+                  <button key={anim.id} onClick={() => setAnimType(anim.id)} className={`p-4 rounded-xl text-center transition ${animType === anim.id ? 'bg-blue-600 text-white border-2 border-blue-400' : 'bg-slate-800 text-gray-300 hover:bg-slate-700 border-2 border-transparent'}`}>
+                    {lang === 'ar' ? anim.labelAr : anim.labelJa}
+                  </button>
                 ))}
               </div>
+            </div>
 
-              {/* フレーム操作 */}
-              <div className="space-y-2 mb-6">
-                <button
-                  onClick={addFrame}
-                  className="w-full bg-blue-400 text-white font-bold py-2 px-4 rounded hover:bg-blue-500 transition text-sm"
-                >
-                  + フレーム追加（{frames.length}/12）
-                </button>
-                {frames.length > 2 && (
-                  <button
-                    onClick={() => removeFrame(frames[selectedFrame].id)}
-                    className="w-full bg-red-400 text-white font-bold py-2 px-4 rounded hover:bg-red-500 transition text-sm"
-                  >
-                    🗑️ このフレーム削除
-                  </button>
-                )}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <h2 className="text-xl font-bold mb-4">{t.speed}</h2>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-400">{t.slow}</span>
+                <input type="range" min="30" max="200" value={200 - speed + 30} onChange={(e) => setSpeed(200 - parseInt(e.target.value) + 30)} className="flex-1" />
+                <span className="text-sm text-gray-400">{t.fast}</span>
               </div>
+            </div>
 
-              {/* 速度設定 */}
-              <div className="mb-6">
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  ⚡ アニメーション速度
-                </label>
-                <input
-                  type="range"
-                  min="100"
-                  max="800"
-                  step="50"
-                  value={animationSpeed}
-                  onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-                  className="w-full"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  {animationSpeed}ms / フレーム
-                </p>
-              </div>
-
-              {/* アクション */}
-              <div className="space-y-2">
-                <button
-                  onClick={playAnimation}
-                  disabled={isPlaying}
-                  className="w-full bg-green-400 text-white font-bold py-2 px-4 rounded hover:bg-green-500 transition disabled:opacity-50"
-                >
-                  ▶️ アニメーション再生
-                </button>
-                <button
-                  onClick={downloadFrames}
-                  className="w-full bg-purple-400 text-white font-bold py-2 px-4 rounded hover:bg-purple-500 transition text-sm"
-                >
-                  📥 フレームをダウンロード
-                </button>
-              </div>
-
-              {/* 情報 */}
-              <div className="mt-6 p-3 bg-green-50 rounded border-2 border-green-300 text-xs">
-                <p className="font-bold text-green-800 mb-2">✨ 完全無料</p>
-                <p className="text-green-700">
-                  広告なし、登録不要。存分に動画を作ってね！
-                </p>
-              </div>
+            <div className="flex gap-4">
+              <button onClick={playing ? handleStop : handlePlay} disabled={!image} className={`flex-1 px-6 py-3 rounded-xl font-bold transition ${playing ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} disabled:opacity-50`}>
+                {playing ? t.stop : t.play}
+              </button>
+              <button onClick={handleDownload} disabled={!image} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-6 py-3 rounded-xl font-bold transition">
+                {t.download}
+              </button>
             </div>
           </div>
 
-          {/* 中央：フレーム編集 */}
-          <div className="md:col-span-1">
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">
-                🎨 フレーム {selectedFrame + 1} を編集
-              </h2>
-
-              {/* 画像表示領域 */}
-              <div className="border-4 border-dashed border-blue-300 rounded-lg aspect-square flex items-center justify-center bg-blue-50 mb-4">
-                {frames[selectedFrame]?.imageUrl ? (
-                  <img
-                    src={frames[selectedFrame].imageUrl}
-                    alt={`Frame ${selectedFrame + 1}`}
-                    className="w-full h-full object-contain rounded"
-                  />
-                ) : (
-                  <div className="text-center">
-                    <p className="text-3xl mb-2">🖼️</p>
-                    <p className="text-sm text-gray-600">
-                      ここに絵を描いて
-                      <br />
-                      アップロードしよう
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* アップロード */}
-              <label className="w-full block">
-                <span className="w-full block bg-blue-400 text-white font-bold py-3 px-4 rounded text-center cursor-pointer hover:bg-blue-500 transition">
-                  📁 画像をアップロード
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      handleFrameUpload(
-                        frames[selectedFrame].id,
-                        e.target.files[0]
-                      );
-                    }
-                  }}
-                />
-              </label>
-
-              {/* フレーム情報 */}
-              <div className="mt-4 p-3 bg-blue-50 rounded border-2 border-blue-200">
-                <p className="text-xs text-blue-800">
-                  <strong>💡 ヒント：</strong>
-                  <br />
-                  前のフレームと少しだけ違う絵を描くと、スムーズなアニメーションになります！
-                </p>
-              </div>
+          <div>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <h2 className="text-xl font-bold mb-4">{lang === 'ar' ? 'معاينة' : 'プレビュー'}</h2>
+              <canvas ref={canvasRef} width={400} height={400} className="w-full rounded-xl border border-slate-700 bg-slate-100" />
             </div>
-          </div>
 
-          {/* 右側：プレビュー */}
-          <div className="md:col-span-1">
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">👀 プレビュー</h2>
-
-              {/* パラパラ漫画プレビュー */}
-              <div className="border-4 border-black rounded-lg aspect-square flex items-center justify-center bg-white mb-4 overflow-hidden">
-                {currentFrameImage ? (
-                  <img
-                    src={currentFrameImage}
-                    alt="Preview"
-                    className="w-full h-full object-contain animate-fade-in"
-                    key={currentFrame}
-                  />
-                ) : (
-                  <div className="text-center">
-                    <p className="text-4xl mb-2">🎬</p>
-                    <p className="text-sm text-gray-600">
-                      アニメーションプレビュー
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* フレームカウンター */}
-              <div className="text-center mb-4">
-                <p className="text-sm font-bold text-gray-700">
-                  フレーム {currentFrame + 1} / {frames.length}
-                </p>
-              </div>
-
-              {/* フレームナビゲーション */}
-              <div className="flex gap-2 mb-4">
-                <button
-                  onClick={() =>
-                    setCurrentFrame((p) => (p - 1 + frames.length) % frames.length)
-                  }
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 rounded"
-                >
-                  ⬅️
-                </button>
-                <button
-                  onClick={() => setCurrentFrame((p) => (p + 1) % frames.length)}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 rounded"
-                >
-                  ➡️
-                </button>
-              </div>
-
-              {/* 情報 */}
-              <div className="p-3 bg-blue-50 rounded border-2 border-blue-200 text-xs">
-                <p className="font-bold text-blue-800 mb-2">📝 こんな風に使おう</p>
-                <ol className="text-blue-700 space-y-1">
-                  <li>1️⃣ 各フレームに絵を描く</li>
-                  <li>2️⃣ 速度を調整</li>
-                  <li>3️⃣ 再生ボタンで確認</li>
-                  <li>4️⃣ ダウンロード！</li>
-                </ol>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mt-6">
+              <h3 className="text-lg font-bold mb-3">💡 {lang === 'ar' ? 'نصائح' : 'やり方'}</h3>
+              <div className="space-y-2 text-gray-300 text-sm">
+                <p>1️⃣ {t.tip1}</p>
+                <p>2️⃣ {t.tip2}</p>
+                <p>3️⃣ {t.tip3}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* CSS アニメーション定義 */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        :global(.animate-fade-in) {
-          animation: fadeIn 0.1s ease-in-out;
-        }
-      `}</style>
-
-      {/* トースト通知 */}
-      {toast.message && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ message: '', type: '' })}
-        />
-      )}
-    </main>
+    </div>
   );
 }
