@@ -7,12 +7,14 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 const ADMIN_EMAIL = 'tatsuya197102@gmail.com';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useTranslation();
   const [user, setUser] = useState<{ displayName: string; email: string; photoURL: string | null } | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -57,14 +59,14 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-0.5 overflow-hidden">
 
 {[
-          { href: '/dashboard', label: 'ホーム', icon: '🏠' },
-          { href: '/lessons', label: 'レッスン', icon: '🎓' },
-          { href: '/courses', label: 'コース', icon: '📚' },
-          { href: '/live', label: 'ライブ', icon: '📡' },
-          { href: '/auto-4manga', label: '4コマ', icon: '📖' },
-          { href: '/auto-animate', label: 'アニメ', icon: '🎬' },
-          { href: '/contest', label: 'コンテスト', icon: '🏆' },
-          { href: '/ai-consult', label: 'AI相談', icon: '🤖' },
+          { href: '/dashboard',   label: t('nav.home'),      icon: '🏠' },
+          { href: '/lessons',     label: t('nav.lessons'),   icon: '🎓' },
+          { href: '/courses',     label: t('nav.courses'),   icon: '📚' },
+          { href: '/live',        label: t('nav.live'),      icon: '📡' },
+          { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
+          { href: '/auto-animate',label: t('nav.anime'),     icon: '🎬' },
+          { href: '/contest',     label: t('nav.contest'),   icon: '🏆' },
+          { href: '/ai-consult',  label: t('nav.aiConsult'), icon: '🤖' },
           ].map(({ href, label, icon }) => (
 
             <Link key={href} href={href}
@@ -115,23 +117,23 @@ export default function Navbar() {
                   <div className="py-1">
                     <Link href="/profile" onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
-                      👤 プロフィール
+                      👤 {t('nav.profile')}
                     </Link>
                     <Link href="/notifications" onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
-                      🔔 通知
+                      🔔 {t('nav.notifications')}
                       {unreadCount > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-1.5 rounded-full">{unreadCount}</span>}
                     </Link>
                     {isAdmin && (
                       <Link href="/admin" onClick={() => setMenuOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-yellow-400 hover:bg-gray-700 transition-colors">
-                        🛠️ 管理者パネル
+                        🛠️ {t('nav.admin')}
                       </Link>
                     )}
                     <hr className="border-gray-700 my-1" />
                     <button onClick={handleSignOut}
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors">
-                      🚪 ログアウト
+                      🚪 {t('nav.logout')}
                     </button>
                   </div>
                 </div>
@@ -145,10 +147,10 @@ export default function Navbar() {
       <div className="md:hidden flex border-t border-gray-800">
 
 {[
-          { href: '/lessons', label: 'レッスン', icon: '🎓' },
-          { href: '/courses', label: 'コース', icon: '📚' },
-          { href: '/live', label: 'ライブ', icon: '📡' },
-          { href: '/dashboard', label: 'ホーム', icon: '🏠' },
+          { href: '/lessons',  label: t('nav.lessons'), icon: '🎓' },
+          { href: '/courses',  label: t('nav.courses'), icon: '📚' },
+          { href: '/live',     label: t('nav.live'),    icon: '📡' },
+          { href: '/dashboard',label: t('nav.home'),    icon: '🏠' },
         ].map(({ href, label, icon }) => (
 
           <Link key={href} href={href}

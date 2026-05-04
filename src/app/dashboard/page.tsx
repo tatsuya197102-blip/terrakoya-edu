@@ -4,14 +4,15 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 const COURSES: Record<string, { title: string; thumbnail: string; lessons: number }> = {
-  'manga-basics': { title: '漫画基礎講座', thumbnail: '🎨', lessons: 5 },
-  'digital-illust': { title: 'デジタルイラスト入門', thumbnail: '🖌️', lessons: 4 },
-  'story-making': { title: 'ストーリー作り', thumbnail: '📖', lessons: 3 },
-  'animation-basics': { title: 'アニメーション基礎', thumbnail: '🎬', lessons: 4 },
+  'manga-basics':    { title: '漫画基礎講座',         thumbnail: '🎨', lessons: 5 },
+  'digital-illust':  { title: 'デジタルイラスト入門', thumbnail: '🖌️', lessons: 4 },
+  'story-making':    { title: 'ストーリー作り',        thumbnail: '📖', lessons: 3 },
+  'animation-basics':{ title: 'アニメーション基礎',   thumbnail: '🎬', lessons: 4 },
 };
 
 function generateCalendar(activityDates: string[]) {
@@ -33,17 +34,15 @@ function calcStreak(activityDates: string[]): number {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const key = d.toISOString().split('T')[0];
-    if (activityDates.includes(key)) {
-      streak++;
-    } else {
-      break;
-    }
+    if (activityDates.includes(key)) streak++;
+    else break;
   }
   return streak;
 }
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [userName, setUserName] = useState('');
   const [enrolledCourses, setEnrolledCourses] = useState<string[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
@@ -59,18 +58,13 @@ export default function DashboardPage() {
         const data = snap.data();
         setUserName(data.displayName || user.displayName || 'ユーザー');
         setEnrolledCourses(data.enrolledCourses || []);
-
-        // 進捗計算
         const pm: Record<string, number> = {};
-        const enrolled = data.enrolledCourses || [];
-        for (const cid of enrolled) {
+        for (const cid of (data.enrolledCourses || [])) {
           const completed = data.completedLessons?.[cid] || [];
           const total = COURSES[cid]?.lessons || 1;
           pm[cid] = Math.round((completed.length / total) * 100);
         }
         setProgressMap(pm);
-
-        // アクティビティ日付（仮：今日含む過去7日をアクティブに）
         const dates = data.activityDates || [];
         const today = new Date().toISOString().split('T')[0];
         if (!dates.includes(today)) dates.push(today);
@@ -88,7 +82,14 @@ export default function DashboardPage() {
     : 0;
   const completedCourses = Object.values(progressMap).filter(p => p === 100).length;
 
-  if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">読み込み中...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"/>
+        <p className="text-gray-400 text-sm">{t('common.loading')}</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6">
@@ -96,17 +97,17 @@ export default function DashboardPage() {
 
         {/* ウェルカムバナー */}
         <div className="bg-gradient-to-r from-blue-700 to-blue-900 rounded-2xl p-6 mb-6">
-          <h1 className="text-2xl font-bold mb-1">ようこそ、{userName}さん！ 👋</h1>
-          <p className="text-blue-200 text-sm">今日も学習を続けましょう 🎯</p>
+          <h1 className="text-2xl font-bold mb-1">{t('dashboard.welcome', { name: userName })}</h1>
+          <p className="text-blue-200 text-sm">{t('dashboard.subtitle')}</p>
         </div>
 
         {/* 統計カード */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
-            { label: '進捗状況', value: `${totalProgress}%`, icon: '📊', color: 'text-blue-400' },
-            { label: '登録コース数', value: enrolledCourses.length, icon: '📚', color: 'text-green-400' },
-            { label: '完了したコース', value: completedCourses, icon: '🏆', color: 'text-yellow-400' },
-            { label: '連続学習日数', value: `${streak}日`, icon: '🔥', color: 'text-orange-400' },
+            { label: t('dashboard.progress'),         value: `${totalProgress}%`, icon: '📊', color: 'text-blue-400' },
+            { label: t('dashboard.enrolledCourses'),  value: enrolledCourses.length, icon: '📚', color: 'text-green-400' },
+            { label: t('dashboard.completedCourses'), value: completedCourses, icon: '🏆', color: 'text-yellow-400' },
+            { label: t('dashboard.streakDays'),       value: `${streak}${t('dashboard.days')}`, icon: '🔥', color: 'text-orange-400' },
           ].map((stat, i) => (
             <div key={i} className="bg-gray-800 rounded-xl p-4 text-center">
               <p className="text-2xl mb-1">{stat.icon}</p>
@@ -120,38 +121,33 @@ export default function DashboardPage() {
           {/* 学習カレンダー */}
           <div className="bg-gray-800 rounded-xl p-5">
             <h2 className="font-bold mb-4 flex items-center gap-2">
-              📅 学習カレンダー
-              <span className="text-xs text-gray-400 font-normal">（過去30日）</span>
+              📅 {t('dashboard.calendar')}
+              <span className="text-xs text-gray-400 font-normal">（{t('dashboard.calendarSub')}）</span>
             </h2>
             <div className="grid grid-cols-10 gap-1">
               {calendarDays.map((day, i) => (
                 <div key={i} title={day.date}
-                  className={`w-6 h-6 rounded-sm ${day.active ? 'bg-blue-500' : 'bg-gray-700'}`}>
-                </div>
+                  className={`w-6 h-6 rounded-sm ${day.active ? 'bg-blue-500' : 'bg-gray-700'}`}/>
               ))}
             </div>
             <div className="flex items-center gap-2 mt-3 text-xs text-gray-400">
-              <div className="w-3 h-3 rounded-sm bg-gray-700"></div>
-              <span>未学習</span>
-              <div className="w-3 h-3 rounded-sm bg-blue-500 ml-2"></div>
-              <span>学習済み</span>
+              <div className="w-3 h-3 rounded-sm bg-gray-700"/><span>{t('dashboard.notStudied')}</span>
+              <div className="w-3 h-3 rounded-sm bg-blue-500 ml-2"/><span>{t('dashboard.studied')}</span>
             </div>
           </div>
 
-          {/* 連続学習ストリーク */}
+          {/* ストリーク */}
           <div className="bg-gray-800 rounded-xl p-5">
-            <h2 className="font-bold mb-4">🔥 学習ストリーク</h2>
+            <h2 className="font-bold mb-4">🔥 {t('dashboard.streak')}</h2>
             <div className="text-center py-4">
               <p className="text-6xl font-bold text-orange-400">{streak}</p>
-              <p className="text-gray-400 mt-2">日連続学習中！</p>
-              {streak >= 7 && <p className="text-yellow-400 text-sm mt-2">🏆 1週間達成！すごい！</p>}
-              {streak >= 30 && <p className="text-yellow-400 text-sm mt-1">🌟 30日達成！圧倒的！</p>}
-              {streak === 0 && <p className="text-gray-500 text-sm mt-2">今日から始めよう！</p>}
+              <p className="text-gray-400 mt-2">{t('dashboard.streakDaysContinue')}</p>
+              {streak >= 30 && <p className="text-yellow-400 text-sm mt-2">{t('dashboard.streakMonth')}</p>}
+              {streak >= 7 && streak < 30 && <p className="text-yellow-400 text-sm mt-2">{t('dashboard.streakWeek')}</p>}
+              {streak === 0 && <p className="text-gray-500 text-sm mt-2">{t('dashboard.streakStart')}</p>}
             </div>
             <div className="bg-gray-700 rounded-lg p-3 mt-2">
-              <p className="text-xs text-gray-400 text-center">
-                レッスンを完了すると学習日として記録されます
-              </p>
+              <p className="text-xs text-gray-400 text-center">{t('dashboard.streakNote')}</p>
             </div>
           </div>
         </div>
@@ -159,17 +155,17 @@ export default function DashboardPage() {
         {/* 学習中のコース */}
         <div className="bg-gray-800 rounded-xl p-5 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold">📚 学習中のコース</h2>
-            <Link href="/courses" className="text-blue-400 hover:underline text-sm">すべて見る →</Link>
+            <h2 className="font-bold">📚 {t('dashboard.myCourses')}</h2>
+            <Link href="/courses" className="text-blue-400 hover:underline text-sm">{t('dashboard.viewAll')}</Link>
           </div>
           {enrolledCourses.length === 0 ? (
             <div className="text-center py-8 space-y-4">
               <p className="text-5xl">🎌</p>
-              <p className="text-gray-300 font-medium">ようこそTERRAKOYAへ！</p>
-              <p className="text-gray-400 text-sm">まずはレッスンを見るか、コースに登録してみましょう</p>
+              <p className="text-gray-300 font-medium">{t('dashboard.welcomeTitle')}</p>
+              <p className="text-gray-400 text-sm">{t('dashboard.welcomeNote')}</p>
               <div className="flex gap-3 justify-center flex-wrap">
-                <a href="/lessons" className="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg text-sm transition-colors">🎓 レッスンを見る</a>
-                <a href="/courses" className="bg-gray-700 hover:bg-gray-600 px-5 py-2 rounded-lg text-sm transition-colors">📚 コース一覧</a>
+                <a href="/lessons" className="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg text-sm transition-colors">{t('dashboard.goLessons')}</a>
+                <a href="/courses" className="bg-gray-700 hover:bg-gray-600 px-5 py-2 rounded-lg text-sm transition-colors">{t('dashboard.goCourses')}</a>
               </div>
             </div>
           ) : (
@@ -185,14 +181,13 @@ export default function DashboardPage() {
                       <p className="font-medium text-sm">{course.title}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex-1 bg-gray-600 rounded-full h-1.5">
-                          <div className="bg-blue-500 h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }}></div>
+                          <div className="bg-blue-500 h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }}/>
                         </div>
                         <span className="text-xs text-gray-400">{progress}%</span>
                       </div>
                     </div>
-                    <Link href={`/courses/${cid}`}
-                      className="text-blue-400 hover:text-blue-300 text-sm whitespace-nowrap">
-                      {progress === 100 ? '復習する' : '続きを学ぶ →'}
+                    <Link href={`/courses/${cid}`} className="text-blue-400 hover:text-blue-300 text-sm whitespace-nowrap">
+                      {progress === 100 ? t('dashboard.review') : t('dashboard.continue')}
                     </Link>
                   </div>
                 );
@@ -204,12 +199,12 @@ export default function DashboardPage() {
         {/* クイックアクション */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           {[
-            { href: '/courses', label: 'コース一覧', icon: '📚' },
-            { href: '/lessons', label: 'レッスン', icon: '🎓' },
-            { href: '/auto-4manga', label: '4コマ漫画', icon: '📖' },
-            { href: '/auto-animate', label: 'アニメーション', icon: '🎬' },
-            { href: '/live', label: 'ライブ授業', icon: '📡' },
-            { href: '/portfolio', label: '作品集', icon: '💎' },
+            { href: '/courses',     label: t('nav.courses'),   icon: '📚' },
+            { href: '/lessons',     label: t('nav.lessons'),   icon: '🎓' },
+            { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
+            { href: '/auto-animate',label: t('nav.anime'),     icon: '🎬' },
+            { href: '/live',        label: t('nav.live'),      icon: '📡' },
+            { href: '/portfolio',   label: t('nav.portfolio'), icon: '💎' },
           ].map((action, i) => (
             <Link key={i} href={action.href}
               className="bg-gray-800 hover:bg-gray-700 rounded-xl p-4 text-center transition-colors">
