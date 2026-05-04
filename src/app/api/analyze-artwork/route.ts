@@ -15,8 +15,11 @@ export async function POST(req: NextRequest) {
   try {
     const { courseId, fileName, fileType, comment, imageBase64 } = await req.json();
 
+    console.log('API Key exists:', !!CLAUDE_API_KEY);
+    console.log('API Key prefix:', CLAUDE_API_KEY?.substring(0, 10));
+
     if (!CLAUDE_API_KEY) {
-      return NextResponse.json({ feedback: 'APIキーが設定されていません。' });
+      return NextResponse.json({ feedback: 'APIキーが設定されていません。Vercelの環境変数を確認してください。' });
     }
 
     const courseLabel = COURSE_LABELS[courseId] || courseId;
@@ -55,8 +58,8 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const err = await response.text();
-      console.error('Claude API Error:', err);
-      return NextResponse.json({ feedback: 'フィードバックの生成に失敗しました。しばらくしてお試しください。' });
+      console.error('Claude API Error:', response.status, err);
+      return NextResponse.json({ feedback: `APIエラー(${response.status}): ${err.substring(0, 100)}` });
     }
 
     const data = await response.json();
