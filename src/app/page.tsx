@@ -57,7 +57,7 @@ export default function Home() {
         <div className="inline-block bg-blue-500/20 text-blue-300 text-xs px-4 py-1.5 rounded-full mb-6 border border-blue-400/30">
           🎌 JP · EN · AR · ZH · VI
         </div>
-        <h2 style={{fontSize:'clamp(2rem,6vw,3.5rem)', fontWeight:'bold', color:'white', marginBottom:'1rem', lineHeight:1.2, maxWidth:'32rem', direction: isAr ? 'rtl' : 'ltr'}}>
+        <h2 style={{fontSize:'clamp(1.6rem,5vw,3.5rem)', fontWeight:'bold', color:'white', marginBottom:'1rem', lineHeight:1.2, maxWidth:'32rem', direction: isAr ? 'rtl' : 'ltr'}}>
           {headline.main}
         </h2>
         <p style={{fontSize:'clamp(1rem,2.5vw,1.25rem)', color:'#bfdbfe', marginBottom:'2.5rem', maxWidth:'28rem', lineHeight:1.7, direction: isAr ? 'rtl' : 'ltr'}}>
