@@ -31,9 +31,8 @@ const LESSONS: Lesson[] = [
   { id: 10, titleJa: '起承転結って何？コマ割りを知ろう', titleAr: 'ما هي البنية الدرامية؟ تعلم تقسيم اللوحات', descJa: 'ストーリーの基本構造とコマ割りのテクニック。', descAr: 'تعلم البنية الأساسية للقصة وتقنيات تقسيم اللوحات.', category: 'ストーリー', duration: '30分', pages: 'P36-43', videoJa: 'qGroRIqDCSA', videoAr: 'CtuyK2yF4XE', icon: '📐' },
   { id: 11, titleJa: '起承転結って何？コマ割りを知ろう（講座）', titleAr: 'البنية الدرامية وتقسيم اللوحات (محاضرة)', descJa: '浜田ブリトニー先生による起承転結・コマ割り講座。', descAr: 'محاضرة البنية الدرامية وتقسيم اللوحات مع المعلمة.', category: 'ストーリー', duration: '30分', pages: 'P36-43', videoJa: 'cCCda4FKI78', videoAr: '8zvzNxbMbYA', icon: '🎓' },
   { id: 12, titleJa: '4コマ漫画を描いてみよう', titleAr: 'لنرسم مانجا من 4 لوحات', descJa: '起承転結を4コマで表現し、オリジナル4コマ漫画を描きます。', descAr: 'تعلم التعبير عن البنية الدرامية في 4 لوحات.', category: 'ストーリー', duration: '25分', pages: 'P44-47', videoJa: '_Jm9hf8y2BM', videoAr: 'y6yebS0WXZw', icon: '📝' },
-  { id: 13, titleJa: '4コマ漫画を描いてみよう（講座）', titleAr: 'لنرسم مانجا من 4 لوحات (محاضرة)', descJa: '浜田ブリトニー先生による4コマ漫画の講座。', descAr: 'محاضرة مانجا من 4 لوحات مع المعلمة.', category: 'ストーリー', duration: '25分', pages: 'P44-47', videoJa: 'cCCda4FKI78', videoAr: '8zvzNxbMbYA', icon: '🎓' },
-  { id: 14, titleJa: 'キャラクターが動く仕組み・パラパラ漫画', titleAr: 'آلية حركة الشخصيات - رسوم متحركة بالورق', descJa: 'アニメーションの基本原理を学び、パラパラ漫画を作ります。', descAr: 'تعلم المبادئ الأساسية للرسوم المتحركة واصنع كتاب قلب.', category: 'アニメーション', duration: '25分', pages: 'P48-53', videoJa: 'a2Pk92FbYVY', videoAr: '1AOKDO_5dTk', icon: '🎬' },
-  { id: 15, titleJa: 'CLIP STUDIO DEBUTの楽しみ方', titleAr: 'كيفية الاستمتاع بـ CLIP STUDIO DEBUT', descJa: 'デジタル作画ソフトの基本ツールの使い方を学びます。（これから作成）', descAr: 'تعلم استخدام الأدوات الأساسية لبرنامج الرسم الرقمي. (قيد الإعداد)', category: 'デジタル', duration: '30分', pages: 'P60-65', videoJa: '', videoAr: '', icon: '🖥️' },
+  { id: 13, titleJa: 'キャラクターが動く仕組み・パラパラ漫画', titleAr: 'آلية حركة الشخصيات - رسوم متحركة بالورق', descJa: 'アニメーションの基本原理を学び、パラパラ漫画を作ります。', descAr: 'تعلم المبادئ الأساسية للرسوم المتحركة واصنع كتاب قلب.', category: 'アニメーション', duration: '25分', pages: 'P48-53', videoJa: 'a2Pk92FbYVY', videoAr: '1AOKDO_5dTk', icon: '🎬' },
+  { id: 14, titleJa: 'CLIP STUDIO DEBUTの楽しみ方', titleAr: 'كيفية الاستمتاع بـ CLIP STUDIO DEBUT', descJa: 'デジタル作画ソフトの基本ツールの使い方を学びます。（これから作成）', descAr: 'تعلم استخدام الأدوات الأساسية لبرنامج الرسم الرقمي. (قيد الإعداد)', category: 'デジタル', duration: '30分', pages: 'P60-65', videoJa: '', videoAr: '', icon: '🖥️' },
 ];
 
 export default function LessonsPage() {
@@ -102,7 +101,7 @@ export default function LessonsPage() {
           <p className="text-pink-300 text-sm tracking-widest mb-4">TERRAKOYA LESSONS</p>
           <h1 className="text-4xl font-bold mb-4">{lang === 'ar' ? 'دروس المانجا' : 'マンガの教科書 - レッスン動画'}</h1>
           <p className="text-gray-300 text-lg">{lang === 'ar' ? 'تعلم رسم المانجا خطوة بخطوة' : 'YouTube動画でステップバイステップで学ぼう'}</p>
-          <p className="text-gray-400 mt-2">{lang === 'ar' ? '١٥ درس' : '全15レッスン'}</p>
+<p className="text-gray-400 mt-2">{lang === 'ar' ? '١٤ درس' : '全14レッスン'}</p>
         </div>
       </div>
       <div className="max-w-6xl mx-auto px-8 py-12">
