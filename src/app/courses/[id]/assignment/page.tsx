@@ -3,9 +3,8 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, getDocs, orderBy, query, updateDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
 
@@ -93,46 +92,57 @@ export default function AssignmentPage() {
     setFile(f);
   };
 
+  // 画像をCanvasで圧縮してbase64に変換（Firestoreの1MB制限対策）
+  const compressImage = (file: File): Promise<{ base64: string; fileType: string }> => {
+    return new Promise((res, rej) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 800;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+          else { width = Math.round(width * MAX / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        URL.revokeObjectURL(url);
+        res({ base64: dataUrl.split(',')[1], fileType: 'image/jpeg' });
+      };
+      img.onerror = () => rej(new Error('画像の読み込みに失敗'));
+      img.src = url;
+    });
+  };
+
   const handleSubmit = async () => {
     const user = auth.currentUser;
     if (!user || !file) { showToast('ファイルを選択してください', 'error'); return; }
     setSubmitting(true);
     try {
-      // 1. Firebase Storageに画像をアップロード
-      const path = `submissions/${user.uid}/${Date.now()}_${file.name}`;
-      const sRef = storageRef(storage, path);
-      await uploadBytes(sRef, file);
-      const imageUrl = await getDownloadURL(sRef);
+      // 画像を圧縮（最大800px、JPEG70%品質）
+      const { base64, fileType } = await compressImage(file);
 
-      // 2. base64はAI分析用にのみ使用（Firestoreには保存しない）
-      const base64: string = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res((r.result as string).split(',')[1]);
-        r.onerror = () => rej(new Error('読み込み失敗'));
-        r.readAsDataURL(file);
-      });
-
-      // 3. FirestoreにはURLのみ保存
       const fsRef = collection(db, 'users', user.uid, 'submissions');
       const docRef = await addDoc(fsRef, {
-        courseId, fileName: file.name, fileType: file.type, comment,
-        imageUrl, submittedAt: new Date().toISOString(),
+        courseId, fileName: file.name, fileType, comment,
+        imageBase64: base64, submittedAt: new Date().toISOString(),
         aiFeedback: null, feedbackStatus: 'pending',
         gradeResult: null, gradingStatus: 'idle',
       });
 
       const newSub: Submission = {
-        id: docRef.id, fileName: file.name, fileType: file.type, comment,
-        imageUrl, submittedAt: new Date().toISOString(),
+        id: docRef.id, fileName: file.name, fileType, comment,
+        imageBase64: base64, submittedAt: new Date().toISOString(),
         feedbackStatus: 'pending', gradingStatus: 'idle',
       };
 
       setSubmissions(prev => [newSub, ...prev]);
       setFile(null); setPreview(''); setComment('');
       showToast('✅ 提出しました！AIがフィードバックを生成中…', 'success');
-
-      // 4. AI分析にはbase64を使用（メモリ内のみ、Firestoreには保存しない）
-      await streamFeedback(docRef.id, courseId, file.name, file.type, comment, base64, user.uid);
+      await streamFeedback(docRef.id, courseId, file.name, fileType, comment, base64, user.uid);
     } catch (e) {
       console.error('Submit error:', e);
       showToast('提出に失敗しました', 'error');
@@ -190,24 +200,12 @@ export default function AssignmentPage() {
     ));
 
     try {
-      // imageUrl から base64 を再取得
-      let base64 = sub.imageBase64 || '';
-      if (!base64 && sub.imageUrl) {
-        const resp = await fetch(sub.imageUrl);
-        const blob = await resp.blob();
-        base64 = await new Promise<string>((res) => {
-          const r = new FileReader();
-          r.onload = () => res((r.result as string).split(',')[1]);
-          r.readAsDataURL(blob);
-        });
-      }
-
       const res = await fetch('/api/grade-artwork', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           courseId, fileName: sub.fileName, fileType: sub.fileType,
-          comment: sub.comment, imageBase64: base64,
+          comment: sub.comment, imageBase64: sub.imageBase64,
         }),
       });
       const data = await res.json();
