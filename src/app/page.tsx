@@ -27,11 +27,11 @@ export default function Home() {
 
   // 言語別キャッチコピー（改行なし・スマホ対応）
   const headlines: Record<string, { main: string; sub: string }> = {
-    ja: { main: '漫画・アニメで、夢を現実に。', sub: '創作の力で、未来を描く。' },
-    en: { main: 'Turn Your Dreams into Reality.', sub: 'Draw your future with the power of creation.' },
-    ar: { main: 'حوّل أحلامك إلى واقع.', sub: 'ارسم مستقبلك بقوة الإبداع.' },
-    zh: { main: '用漫画与动漫，让梦想成真。', sub: '以创作之力，描绘未来。' },
-    vi: { main: 'Biến Ước Mơ Thành Hiện Thực.', sub: 'Vẽ tương lai của bạn bằng sức mạnh sáng tạo.' },
+    ja: { main: '漫画・アニメで、夢を現実に。', sub: '創作の力で、未来を描く' },
+    en: { main: 'Turn Your Dreams into Reality.', sub: 'Draw your future with the power of creation' },
+    ar: { main: 'حوّل أحلامك إلى واقع.', sub: 'ارسم مستقبلك بقوة الإبداع' },
+    zh: { main: '用漫画与动漫，让梦想成真。', sub: '以创作之力，描绘未来' },
+    vi: { main: 'Biến Ước Mơ Thành Hiện Thực.', sub: 'Vẽ tương lai của bạn bằng sức mạnh sáng tạo' },
   };
 
   const headline = headlines[lang] || headlines.ja;
