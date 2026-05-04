@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { languages } from '@/i18n/config';
 
 const langLabels: Record<string, string> = {
-  ja: '🇯🇵',
-  en: '🇬🇧',
-  ar: '🇪🇬',
+  ja: 'JP',
+  en: 'EN',
+  ar: 'AR',
 };
 
 export default function LanguageSwitcher() {
