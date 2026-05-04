@@ -116,7 +116,7 @@ export default function LessonsPage() {
             {{'ar':'تعلم خطوة بخطوة مع فيديوهات يوتيوب','en':'Learn step by step with YouTube videos','ja':'YouTube動画でステップバイステップで学ぼう','zh':'通过YouTube视频一步步学习','hi':'YouTube वीडियो के साथ चरण दर चरण सीखें','vi':'Học từng bước với video YouTube','es':'Aprende paso a paso con videos de YouTube'}[lang as string] || 'Learn step by step with YouTube videos'}
           </p>
           <p className="text-purple-300 text-sm mt-2">
-            {`${LESSONS.length} ${{ar:'درس',en:'lessons',ja:'レッスン',zh:'课',hi:'पाठ',vi:'bài học',es:'lecciones'}[lang as string] || 'lessons'}`}
+            {`${LESSONS.length} ${{ar:'درس',en:'lessons',ja:'レッスン',zh:'课',vi:'bài học'}[lang as string] || 'lessons'}`}
           </p>
         </div>
       </div>

@@ -32,7 +32,6 @@ export default function Home() {
     ar: { main: 'ارسم مستقبلك', sub: 'تعلم المانغا والأنيمي من المحترفين — من مصر إلى العالم' },
     zh: { main: '用漫画描绘你的未来', sub: '向专业人士学习漫画和动漫——从埃及走向世界' },
     vi: { main: 'Vẽ Tương Lai Của Bạn', sub: 'Học manga và anime từ các chuyên gia — từ Ai Cập ra thế giới' },
-    es: { main: 'Dibuja tu Futuro', sub: 'Aprende manga y anime de profesionales — desde Egipto al mundo' },
   };
 
   const headline = headlines[lang] || headlines.ja;
@@ -47,8 +46,8 @@ export default function Home() {
           <LanguageSwitcher />
           <button onClick={() => router.push(user ? '/dashboard' : '/login')}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-400 transition whitespace-nowrap">
-            {user ? ({'ar':'لوحة التحكم','en':'Dashboard','ja':'ダッシュボード','zh':'学习面板','hi':'डैशबोर्ड','vi':'Bảng điều khiển','es':'Panel'}[lang as string] || 'Dashboard')
-                   : ({'ar':'تسجيل الدخول','en':'Login','ja':'ログイン','zh':'登录','hi':'लॉग इन','vi':'Đăng nhập','es':'Iniciar sesión'}[lang as string] || 'Login')}
+            {user ? ({'ar':'لوحة التحكم','en':'Dashboard','ja':'ダッシュボード','zh':'学习面板','vi':'Bảng điều khiển'}[lang as string] || 'Dashboard')
+                   : ({'ar':'تسجيل الدخول','en':'Login','ja':'ログイン','zh':'登录','vi':'Đăng nhập'}[lang as string] || 'Login')}
           </button>
         </div>
       </nav>
@@ -68,12 +67,12 @@ export default function Home() {
           <button onClick={() => router.push(user ? '/dashboard' : '/register')}
             style={{background:'#3b82f6', color:'white', padding:'0.75rem 2rem', borderRadius:'0.75rem', fontWeight:'500', fontSize:'1rem', width:'100%', cursor:'pointer', border:'none'}}>
             {user
-              ? ({'ar':'واصل التعلم','en':'Continue Learning','ja':'学習を続ける','zh':'继续学习','hi':'सीखना जारी रखें','vi':'Tiếp tục học','es':'Continuar aprendiendo'}[lang as string] || 'Continue Learning')
-              : ({'ar':'ابدأ مجاناً','en':'Start for Free','ja':'無料で始める','zh':'免费开始','hi':'मुफ्त शुरू करें','vi':'Bắt đầu miễn phí','es':'Comenzar gratis'}[lang as string] || 'Start for Free')}
+              ? ({'ar':'واصل التعلم','en':'Continue Learning','ja':'学習を続ける','zh':'继续学习','vi':'Tiếp tục học'}[lang as string] || 'Continue Learning')
+              : ({'ar':'ابدأ مجاناً','en':'Start for Free','ja':'無料で始める','zh':'免费开始','vi':'Bắt đầu miễn phí'}[lang as string] || 'Start for Free')}
           </button>
           <button onClick={() => router.push('/lessons')}
             style={{background:'transparent', color:'white', padding:'0.75rem 2rem', borderRadius:'0.75rem', fontWeight:'500', fontSize:'1rem', width:'100%', cursor:'pointer', border:'1px solid rgba(255,255,255,0.3)'}}>
-            {{'ar':'استعرض الدروس','en':'Browse Lessons','ja':'レッスンを見る','zh':'浏览课程','hi':'पाठ देखें','vi':'Xem bài học','es':'Ver lecciones'}[lang as string] || 'Browse Lessons'}
+            {{'ar':'استعرض الدروس','en':'Browse Lessons','ja':'レッスンを見る','zh':'浏览课程','vi':'Xem bài học'}[lang as string] || 'Browse Lessons'}
           </button>
         </div>
       </section>
