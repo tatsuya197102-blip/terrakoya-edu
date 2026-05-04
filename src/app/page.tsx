@@ -33,8 +33,7 @@ export default function Home() {
   const headline = headlines[lang] || headlines.ja;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900"
-      dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900">
 
       {/* ナビ */}
       <nav className="flex justify-between items-center px-6 py-4">
@@ -63,10 +62,12 @@ export default function Home() {
         <div className="inline-block bg-blue-500/20 text-blue-300 text-xs px-4 py-1.5 rounded-full mb-6 border border-blue-400/30">
           🎌 JP · EN · AR
         </div>
-        <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight max-w-lg">
+        <h2 className={`text-4xl md:text-6xl font-bold text-white mb-4 leading-tight max-w-lg ${isAr ? 'font-arabic' : ''}`}
+          dir={isAr ? 'rtl' : 'ltr'}>
           {headline.main}
         </h2>
-        <p className="text-base md:text-xl text-blue-200 mb-10 max-w-md leading-relaxed">
+        <p className="text-base md:text-xl text-blue-200 mb-10 max-w-md leading-relaxed"
+          dir={isAr ? 'rtl' : 'ltr'}>
           {headline.sub}
         </p>
         <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs sm:max-w-none sm:justify-center">
