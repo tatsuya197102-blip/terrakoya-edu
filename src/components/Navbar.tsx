@@ -62,6 +62,8 @@ export default function Navbar() {
             { href: '/auto-4manga', label: '4コマ', icon: '📖' },
             { href: '/auto-animate', label: 'アニメ', icon: '🎬' },
             { href: '/submissions', label: '課題', icon: '📝' },
+            { href: '/contest', label: 'コンテスト', icon: '🏆' },
+            { href: '/portfolio', label: '作品集', icon: '💎' },
             { href: '/ai-consult', label: 'AI相談', icon: '🤖' },
           ].map(({ href, label, icon }) => (
 
