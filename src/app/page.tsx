@@ -30,8 +30,6 @@ export default function Home() {
     ja: { main: '漫画・アニメで、夢を現実に', sub: '創作の力で、未来を描く' },
     en: { main: 'Turn Your Dreams into Reality', sub: 'Draw your future with the power of creation' },
     ar: { main: 'حوّل أحلامك إلى واقع', sub: 'ارسم مستقبلك بقوة الإبداع' },
-    zh: { main: '用漫画与动漫，让梦想成真', sub: '以创作之力，描绘未来' },
-    vi: { main: 'Biến Ước Mơ Thành Hiện Thực', sub: 'Vẽ tương lai của bạn bằng sức mạnh sáng tạo' },
   };
 
   const headline = headlines[lang] || headlines.ja;
@@ -46,8 +44,8 @@ export default function Home() {
           <LanguageSwitcher />
           <button onClick={() => router.push(user ? '/dashboard' : '/login')}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-400 transition whitespace-nowrap">
-            {user ? ({'ar':'لوحة التحكم','en':'Dashboard','ja':'ダッシュボード','zh':'学习面板','vi':'Bảng điều khiển'}[lang as string] || 'Dashboard')
-                   : ({'ar':'تسجيل الدخول','en':'Login','ja':'ログイン','zh':'登录','vi':'Đăng nhập'}[lang as string] || 'Login')}
+            {user ? ({'ar':'لوحة التحكم','en':'Dashboard','ja':'ダッシュボード'}[lang as string] || 'Dashboard')
+                   : ({'ar':'تسجيل الدخول','en':'Login','ja':'ログイン'}[lang as string] || 'Login')}
           </button>
         </div>
       </nav>
@@ -55,7 +53,7 @@ export default function Home() {
       {/* ヒーロー */}
       <section style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:'4rem 1.5rem'}}>
         <div className="inline-block bg-blue-500/20 text-blue-300 text-xs px-4 py-1.5 rounded-full mb-6 border border-blue-400/30">
-          🎌 JP · EN · AR · ZH · VI
+          🎌 JP · EN · AR
         </div>
         <h2 style={{fontSize:'clamp(1.6rem,5vw,3.5rem)', fontWeight:'bold', color:'white', marginBottom:'1rem', lineHeight:1.2, maxWidth:'32rem', direction: isAr ? 'rtl' : 'ltr'}}>
           {headline.main}
@@ -67,12 +65,12 @@ export default function Home() {
           <button onClick={() => router.push(user ? '/dashboard' : '/register')}
             style={{background:'#3b82f6', color:'white', padding:'0.75rem 2rem', borderRadius:'0.75rem', fontWeight:'500', fontSize:'1rem', width:'100%', cursor:'pointer', border:'none'}}>
             {user
-              ? ({'ar':'واصل التعلم','en':'Continue Learning','ja':'学習を続ける','zh':'继续学习','vi':'Tiếp tục học'}[lang as string] || 'Continue Learning')
-              : ({'ar':'ابدأ مجاناً','en':'Start for Free','ja':'無料で始める','zh':'免费开始','vi':'Bắt đầu miễn phí'}[lang as string] || 'Start for Free')}
+              ? ({'ar':'واصل التعلم','en':'Continue Learning','ja':'学習を続ける'}[lang as string] || 'Continue Learning')
+              : ({'ar':'ابدأ مجاناً','en':'Start for Free','ja':'無料で始める'}[lang as string] || 'Start for Free')}
           </button>
           <button onClick={() => router.push('/lessons')}
             style={{background:'transparent', color:'white', padding:'0.75rem 2rem', borderRadius:'0.75rem', fontWeight:'500', fontSize:'1rem', width:'100%', cursor:'pointer', border:'1px solid rgba(255,255,255,0.3)'}}>
-            {{'ar':'استعرض الدروس','en':'Browse Lessons','ja':'レッスンを見る','zh':'浏览课程','vi':'Xem bài học'}[lang as string] || 'Browse Lessons'}
+            {{'ar':'استعرض الدروس','en':'Browse Lessons','ja':'レッスンを見る'}[lang as string] || 'Browse Lessons'}
           </button>
         </div>
       </section>

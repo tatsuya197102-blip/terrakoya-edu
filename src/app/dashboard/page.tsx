@@ -9,10 +9,10 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
 const COURSES: Record<string, { title: Record<string,string>; thumbnail: string; lessons: number }> = {
-  'manga-basics':    { title: { ja: '漫画基礎講座', en: 'Manga Basics', ar: 'أساسيات المانغا', zh: '漫画基础课', vi: 'Cơ bản Manga' }, thumbnail: '🎨', lessons: 5 },
-  'digital-illust':  { title: { ja: 'デジタルイラスト入門', en: 'Digital Illustration', ar: 'الرسم الرقمي', zh: '数字插画入门', vi: 'Minh họa kỹ thuật số' }, thumbnail: '🖌️', lessons: 4 },
-  'story-making':    { title: { ja: 'ストーリー作り', en: 'Story Creation', ar: 'كتابة القصص', zh: '故事创作', vi: 'Tạo câu chuyện' }, thumbnail: '📖', lessons: 3 },
-  'animation-basics':{ title: { ja: 'アニメーション基礎', en: 'Animation Basics', ar: 'أساسيات الرسوم المتحركة', zh: '动画基础', vi: 'Cơ bản Hoạt hình' }, thumbnail: '🎬', lessons: 4 },
+  'manga-basics':    { title: { ja: '漫画基礎講座', en: 'Manga Basics', ar: 'أساسيات المانغا' }, thumbnail: '🎨', lessons: 5 },
+  'digital-illust':  { title: { ja: 'デジタルイラスト入門', en: 'Digital Illustration', ar: 'الرسم الرقمي' }, thumbnail: '🖌️', lessons: 4 },
+  'story-making':    { title: { ja: 'ストーリー作り', en: 'Story Creation', ar: 'كتابة القصص' }, thumbnail: '📖', lessons: 3 },
+  'animation-basics':{ title: { ja: 'アニメーション基礎', en: 'Animation Basics', ar: 'أساسيات الرسوم المتحركة' }, thumbnail: '🎬', lessons: 4 },
 };
 
 function generateCalendar(activityDates: string[]) {

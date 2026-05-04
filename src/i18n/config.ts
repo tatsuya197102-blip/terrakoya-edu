@@ -3,7 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import HttpBackend from 'i18next-http-backend';
 
-const languages = ['ja', 'en', 'ar', 'zh', 'vi'];
+const languages = ['ja', 'en', 'ar'];
 
 i18n
   .use(HttpBackend)
@@ -11,14 +11,10 @@ i18n
   .use(initReactI18next)
   .init({
     fallbackLng: 'en',
-    supportedLngs: ['ja', 'en', 'ar', 'zh', 'vi'],
+    supportedLngs: ['ja', 'en', 'ar'],
     debug: false,
-    interpolation: {
-      escapeValue: false,
-    },
-    backend: {
-      loadPath: '/locales/{{lng}}/{{ns}}.json',
-    },
+    interpolation: { escapeValue: false },
+    backend: { loadPath: '/locales/{{lng}}/{{ns}}.json' },
     ns: ['translation'],
     defaultNS: 'translation',
     detection: {

@@ -9,10 +9,10 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
 const DEFAULT_COURSES = [
-  { id: 'manga-basics',    title: { ja: '漫画基礎講座', en: 'Manga Basics', ar: 'أساسيات المانغا', zh: '漫画基础课', vi: 'Cơ bản Manga' }, description: { ja: 'キャラクターデザインから背景まで', en: 'From character design to backgrounds', ar: 'من تصميم الشخصيات إلى الخلفيات', zh: '从角色设计到背景', vi: 'Từ thiết kế nhân vật đến hậu cảnh' }, level: 'beginner',     category: 'manga',         lessons: 12, duration: '6h', thumbnail: '🎨', rating: 4.8, students: 1250, tags: ['キャラクター','背景','コマ割り'] },
-  { id: 'digital-illust',  title: { ja: 'デジタルイラスト入門', en: 'Digital Illustration', ar: 'الرسم الرقمي', zh: '数字插画入门', vi: 'Minh họa kỹ thuật số' }, description: { ja: 'CLIPSTUDIOの基礎', en: 'CLIPSTUDIO basics', ar: 'أساسيات CLIPSTUDIO', zh: 'CLIPSTUDIO基础', vi: 'Cơ bản CLIPSTUDIO' }, level: 'beginner',     category: 'illustration',  lessons: 8,  duration: '4h', thumbnail: '🖌️', rating: 4.6, students: 890,  tags: ['CLIPSTUDIO','レイヤー','色塗り'] },
-  { id: 'story-making',    title: { ja: 'ストーリー作り', en: 'Story Creation', ar: 'كتابة القصص', zh: '故事创作', vi: 'Tạo câu chuyện' }, description: { ja: '読者を引きつけるストーリーの作り方', en: 'How to create compelling stories', ar: 'كيفية إنشاء قصص جذابة', zh: '如何创作引人入胜的故事', vi: 'Cách tạo câu chuyện hấp dẫn' }, level: 'intermediate', category: 'story',         lessons: 10, duration: '5h', thumbnail: '📖', rating: 4.9, students: 650,  tags: ['構成','キャラクター設定','起承転結'] },
-  { id: 'animation-basics',title: { ja: 'アニメーション基礎', en: 'Animation Basics', ar: 'أساسيات الرسوم المتحركة', zh: '动画基础', vi: 'Cơ bản Hoạt hình' }, description: { ja: 'キャラクターに動きをつける', en: 'Adding movement to characters', ar: 'إضافة حركة للشخصيات', zh: '给角色添加动作', vi: 'Thêm chuyển động cho nhân vật' }, level: 'intermediate', category: 'animation',     lessons: 15, duration: '8h', thumbnail: '🎬', rating: 4.7, students: 430,  tags: ['モーション','タイミング','ウォークサイクル'] },
+  { id: 'manga-basics',    title: { ja: '漫画基礎講座', en: 'Manga Basics', ar: 'أساسيات المانغا' }, description: { ja: 'キャラクターデザインから背景まで', en: 'From character design to backgrounds', ar: 'من تصميم الشخصيات إلى الخلفيات' }, level: 'beginner',     category: 'manga',         lessons: 12, duration: '6h', thumbnail: '🎨', rating: 4.8, students: 1250, tags: ['キャラクター','背景','コマ割り'] },
+  { id: 'digital-illust',  title: { ja: 'デジタルイラスト入門', en: 'Digital Illustration', ar: 'الرسم الرقمي' }, description: { ja: 'CLIPSTUDIOの基礎', en: 'CLIPSTUDIO basics', ar: 'أساسيات CLIPSTUDIO' }, level: 'beginner',     category: 'illustration',  lessons: 8,  duration: '4h', thumbnail: '🖌️', rating: 4.6, students: 890,  tags: ['CLIPSTUDIO','レイヤー','色塗り'] },
+  { id: 'story-making',    title: { ja: 'ストーリー作り', en: 'Story Creation', ar: 'كتابة القصص' }, description: { ja: '読者を引きつけるストーリーの作り方', en: 'How to create compelling stories', ar: 'كيفية إنشاء قصص جذابة' }, level: 'intermediate', category: 'story',         lessons: 10, duration: '5h', thumbnail: '📖', rating: 4.9, students: 650,  tags: ['構成','キャラクター設定','起承転結'] },
+  { id: 'animation-basics',title: { ja: 'アニメーション基礎', en: 'Animation Basics', ar: 'أساسيات الرسوم المتحركة' }, description: { ja: 'キャラクターに動きをつける', en: 'Adding movement to characters', ar: 'إضافة حركة للشخصيات' }, level: 'intermediate', category: 'animation',     lessons: 15, duration: '8h', thumbnail: '🎬', rating: 4.7, students: 430,  tags: ['モーション','タイミング','ウォークサイクル'] },
 ];
 
 export default function CoursesPage() {
@@ -54,11 +54,11 @@ export default function CoursesPage() {
   };
 
   const cats = [
-    { id: 'all',         label: { ja: 'すべて', en: 'All',   ar: 'الكل',   zh: '全部', vi: 'Tất cả' }, icon: '📚' },
-    { id: 'manga',       label: { ja: '漫画',   en: 'Manga', ar: 'مانغا',  zh: '漫画', vi: 'Manga' }, icon: '🎨' },
-    { id: 'illustration',label: { ja: 'イラスト',en: 'Illust',ar: 'رسم',   zh: '插画', vi: 'Minh họa' }, icon: '🖌️' },
-    { id: 'story',       label: { ja: 'ストーリー',en: 'Story',ar: 'قصص',  zh: '故事', vi: 'Câu chuyện' }, icon: '📖' },
-    { id: 'animation',   label: { ja: 'アニメ', en: 'Anime', ar: 'أنيمي',  zh: '动漫', vi: 'Anime' }, icon: '🎬' },
+    { id: 'all',         label: { ja: 'すべて', en: 'All',   ar: 'الكل' }, icon: '📚' },
+    { id: 'manga',       label: { ja: '漫画',   en: 'Manga', ar: 'مانغا' }, icon: '🎨' },
+    { id: 'illustration',label: { ja: 'イラスト',en: 'Illust',ar: 'رسم' }, icon: '🖌️' },
+    { id: 'story',       label: { ja: 'ストーリー',en: 'Story',ar: 'قصص' }, icon: '📖' },
+    { id: 'animation',   label: { ja: 'アニメ', en: 'Anime', ar: 'أنيمي' }, icon: '🎬' },
   ];
 
   const filtered = DEFAULT_COURSES.filter(c => {
