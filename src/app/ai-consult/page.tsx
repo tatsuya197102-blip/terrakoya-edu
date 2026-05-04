@@ -9,16 +9,15 @@ interface Message {
   content: string;
 }
 
-const SUGGESTIONS = [
-  'キャラクターの目の描き方を教えて',
-  'コマ割りのコツは？',
-  '起承転結のストーリーの作り方',
-  '線を安定させる練習方法',
-  'CLIPSTUDIOの使い方',
-];
+const SUGGESTIONS: Record<string, string[]> = {
+  ja: ['キャラクターの目の描き方を教えて', 'コマ割りのコツは？', '起承転結のストーリーの作り方', '線を安定させる練習方法', 'CLIPSTUDIOの使い方'],
+  en: ['How to draw character eyes', 'Tips for panel layouts', 'How to structure a story', 'How to improve line stability', 'How to use CLIPSTUDIO'],
+  ar: ['كيف أرسم عيون الشخصيات', 'نصائح لتقسيم اللوحات', 'كيف أبني قصة متماسكة', 'كيف أثبّت الخطوط', 'كيف أستخدم CLIPSTUDIO'],
+};
 
 export default function AIConsultPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'ai',
@@ -112,7 +111,7 @@ export default function AIConsultPage() {
           {/* 最初のみサジェスト表示 */}
           {messages.length === 1 && !loading && (
             <div className="flex flex-wrap gap-2 pt-2">
-              {SUGGESTIONS.map(s => (
+              {(SUGGESTIONS[lang] || SUGGESTIONS.ja).map(s => (
                 <button key={s} onClick={() => handleSend(s)}
                   className="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-full transition-colors text-gray-300">
                   {s}

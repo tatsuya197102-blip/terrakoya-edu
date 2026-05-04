@@ -5,11 +5,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const THEMES = [
-  { id: 'school', labelJa: '🏫 学校の日常', labelAr: '🏫 الحياة المدرسية' },
-  { id: 'adventure', labelJa: '⚔️ 冒険', labelAr: '⚔️ مغامرة' },
-  { id: 'funny', labelJa: '😂 おもしろ', labelAr: '😂 مضحك' },
-  { id: 'friendship', labelJa: '🤝 友情', labelAr: '🤝 صداقة' },
-  { id: 'free', labelJa: '✨ 自由テーマ', labelAr: '✨ موضوع حر' },
+  { id: 'school',     labelJa: '🏫 学校の日常', labelEn: '🏫 School Life',    labelAr: '🏫 الحياة المدرسية' },
+  { id: 'adventure',  labelJa: '⚔️ 冒険',       labelEn: '⚔️ Adventure',      labelAr: '⚔️ مغامرة' },
+  { id: 'funny',      labelJa: '😂 おもしろ',   labelEn: '😂 Comedy',         labelAr: '😂 مضحك' },
+  { id: 'friendship', labelJa: '🤝 友情',        labelEn: '🤝 Friendship',     labelAr: '🤝 صداقة' },
+  { id: 'free',       labelJa: '✨ 自由テーマ',  labelEn: '✨ Free Theme',     labelAr: '✨ موضوع حر' },
 ];
 
 interface Story {
@@ -18,8 +18,8 @@ interface Story {
 }
 
 export default function Auto4MangaPage() {
-  const { i18n } = useTranslation();
-  const lang = i18n.language;
+  const { i18n, t: tr } = useTranslation();
+  const lang = i18n.language as 'ja' | 'en' | 'ar';
   const [characterName, setCharacterName] = useState('');
   const [theme, setTheme] = useState('');
   const [stories, setStories] = useState<Story[]>([]);
@@ -28,27 +28,29 @@ export default function Auto4MangaPage() {
   const [submitMsg, setSubmitMsg] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const t = {
-    title: lang === 'ar' ? 'صانع المانجا ذات 4 لوحات' : '自動4コマ漫画メーカー',
-    sub: lang === 'ar' ? 'أنشئ قصة مانجا أصلية مع الذكاء الاصطناعي' : 'AIがオリジナルストーリーを提案します',
-    charName: lang === 'ar' ? 'اسم الشخصية' : 'キャラクターの名前',
-    charPlaceholder: lang === 'ar' ? 'مثال: سارة، يوسف' : '例: タロウ、サクラ',
-    selectTheme: lang === 'ar' ? 'اختر الموضوع' : 'テーマを選ぼう',
-    generate: lang === 'ar' ? 'إنشاء القصة' : '🎲 ストーリーを生成！',
-    generating: lang === 'ar' ? 'جاري الإنشاء...' : '生成中...',
-    panel: lang === 'ar' ? 'اللوحة' : 'コマ',
-    scene: lang === 'ar' ? 'المشهد' : '場面',
-    dialogue: lang === 'ar' ? 'الحوار' : 'セリフ',
-    useThis: lang === 'ar' ? 'استخدم هذه القصة' : 'このストーリーで描く！',
-    draw: lang === 'ar' ? 'ارسم المانجا' : '4コマ漫画を描こう！',
-    back: lang === 'ar' ? 'العودة' : '← 戻る',
-    ki: lang === 'ar' ? 'البداية' : '起',
-    sho: lang === 'ar' ? 'التطور' : '承',
-    ten: lang === 'ar' ? 'التحول' : '転',
-    ketsu: lang === 'ar' ? 'النهاية' : '結',
-    download: lang === 'ar' ? 'تحميل القالب' : '📄 テンプレートをダウンロード',
-    tips: lang === 'ar' ? 'نصائح' : 'ワンポイントアドバイス',
+  const { useT } = { useT: null }; // dummy
+  const tl = {
+    title: tr('manga4.title'),
+    sub: tr('manga4.subtitle'),
+    charName: tr('manga4.characterName'),
+    charPlaceholder: lang === 'ar' ? 'مثال: سارة، يوسف' : lang === 'en' ? 'e.g. Sakura, Taro' : '例: タロウ、サクラ',
+    selectTheme: tr('manga4.theme'),
+    generate: tr('manga4.generate'),
+    generating: tr('manga4.generating'),
+    panel: lang === 'ar' ? 'اللوحة' : lang === 'en' ? 'Panel' : 'コマ',
+    scene: lang === 'ar' ? 'المشهد' : lang === 'en' ? 'Scene' : '場面',
+    dialogue: lang === 'ar' ? 'الحوار' : lang === 'en' ? 'Dialogue' : 'セリフ',
+    useThis: tr('manga4.useThis'),
+    draw: tr('manga4.draw'),
+    back: tr('manga4.back'),
+    ki:    lang === 'ar' ? 'البداية' : lang === 'en' ? 'Setup'   : '起',
+    sho:   lang === 'ar' ? 'التطور'  : lang === 'en' ? 'Build'   : '承',
+    ten:   lang === 'ar' ? 'التحول'  : lang === 'en' ? 'Turn'    : '転',
+    ketsu: lang === 'ar' ? 'النهاية' : lang === 'en' ? 'Payoff'  : '結',
+    download: tr('manga4.download'),
+    tips: tr('manga4.tips'),
   };
+  const t = tl;
 
   const panelLabels = [t.ki, t.sho, t.ten, t.ketsu];
 
@@ -187,7 +189,7 @@ export default function Auto4MangaPage() {
     const user = auth.currentUser;
     if (!user) { setSubmitMsg('ログインが必要です'); return; }
     setSubmitting(true);
-    setSubmitMsg('⏳ 提出中...');
+    setSubmitMsg(tr('manga4.submitting'));
     try {
       const base64: string = await new Promise((res) => {
         const img = new Image();
@@ -220,7 +222,7 @@ export default function Auto4MangaPage() {
         gradeResult: null, gradingStatus: 'idle',
       });
 
-      setSubmitMsg('🤖 AIがフィードバックを生成中...');
+      setSubmitMsg(tr('manga4.analyzing'));
 
       const res = await fetch('/api/analyze-artwork', {
         method: 'POST',
@@ -316,10 +318,10 @@ export default function Auto4MangaPage() {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
             <h3 className="text-lg font-bold mb-3">💡 {t.tips}</h3>
             <ul className="text-gray-300 text-sm space-y-2">
-              <li>・キャラクターの表情をしっかり描こう</li>
-              <li>・セリフは吹き出しの中に書こう</li>
-              <li>・背景も簡単でいいから描いてみよう</li>
-              <li>・4コマ目のオチが大事！</li>
+              <li>・{lang==='ar'?'ارسم تعبيرات واضحة':lang==='en'?'Draw clear expressions':'キャラクターの表情をしっかり描こう'}</li>
+              <li>・{lang==='ar'?'اكتب الحوار في بالونات الكلام':lang==='en'?'Write dialogue in speech bubbles':'セリフは吹き出しの中に書こう'}</li>
+              <li>・{lang==='ar'?'ارسم خلفية بسيطة':lang==='en'?'Add a simple background':'背景も簡単でいいから描いてみよう'}</li>
+              <li>・{lang==='ar'?'النهاية المضحكة مهمة!':lang==='en'?'The punchline in panel 4 matters!':'4コマ目のオチが大事！'}</li>
             </ul>
           </div>
 
@@ -328,7 +330,7 @@ export default function Auto4MangaPage() {
               {t.download}
             </button>
             <label className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition flex-1 text-center cursor-pointer">
-              📤 {lang === 'ar' ? 'تقديم العمل' : '完成したら提出する'}
+              📤 {tr('manga4.submit')}
               <input type="file" accept="image/*" className="hidden" onChange={handleMangaSubmit} />
             </label>
           </div>
@@ -381,7 +383,7 @@ export default function Auto4MangaPage() {
             <div className="grid grid-cols-2 gap-3">
               {THEMES.map(th => (
                 <button key={th.id} onClick={() => setTheme(th.id)} className={`p-4 rounded-xl text-left transition ${theme === th.id ? 'bg-blue-600 text-white border-2 border-blue-400' : 'bg-slate-800 text-gray-300 hover:bg-slate-700 border-2 border-transparent'}`}>
-                  {lang === 'ar' ? th.labelAr : th.labelJa}
+                  {lang === 'ar' ? (th as any).labelAr : lang === 'en' ? (th as any).labelEn : (th as any).labelJa}
                 </button>
               ))}
             </div>
