@@ -15,14 +15,17 @@ const SUGGESTIONS: Record<string, string[]> = {
   ar: ['كيف أرسم عيون الشخصيات', 'نصائح لتقسيم اللوحات', 'كيف أبني قصة متماسكة', 'كيف أثبّت الخطوط', 'كيف أستخدم CLIPSTUDIO'],
 };
 
+const GREETINGS: Record<string, string> = {
+  ja: 'こんにちは！テラ先生です ✏️\n\n漫画・アニメ制作について何でも聞いてください。キャラクターの描き方、ストーリー構成、デジタルツールの使い方など、プロの視点でアドバイスします！',
+  en: "Hello! I'm Tera-sensei ✏️\n\nAsk me anything about manga & anime creation! Character drawing, story structure, digital tools — I'll give you professional advice!",
+  ar: 'مرحباً! أنا المعلم تيرا ✏️\n\naسألني أي شيء عن إنشاء المانغا والأنيمي! رسم الشخصيات، بنية القصة، الأدوات الرقمية — سأعطيك نصائح احترافية!',
+};
+
 export default function AIConsultPage() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'ai',
-      content: 'こんにちは！テラ先生です ✏️\n\n漫画・アニメ制作について何でも聞いてください。キャラクターの描き方、ストーリー構成、デジタルツールの使い方など、プロの視点でアドバイスします！',
-    }
+    { role: 'ai', content: GREETINGS[lang] || GREETINGS.ja }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

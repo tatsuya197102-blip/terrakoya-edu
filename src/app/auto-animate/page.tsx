@@ -20,9 +20,9 @@ interface Skeleton {
 // ---- アニメーション定義（各フレームのジョイント角度オフセット） ----
 type AnimFrame = Partial<Record<keyof Skeleton, { dx: number; dy: number }>>;
 
-const ANIM_PRESETS: Record<string, { label: string; labelAr: string; frames: AnimFrame[] }> = {
+const ANIM_PRESETS: Record<string, { label: string; labelEn: string; labelAr: string; frames: AnimFrame[] }> = {
   walk: {
-    label: '🚶 歩く', labelAr: '🚶 مشي',
+    label: '🚶 歩く', labelEn: '🚶 Walk', labelAr: '🚶 مشي',
     frames: [
       { shoulder_l:{dx:-15,dy:0}, shoulder_r:{dx:15,dy:0}, elbow_l:{dx:-20,dy:10}, elbow_r:{dx:20,dy:10}, wrist_l:{dx:-25,dy:20}, wrist_r:{dx:25,dy:20}, hip_l:{dx:-5,dy:0}, hip_r:{dx:5,dy:0}, knee_l:{dx:-15,dy:30}, knee_r:{dx:10,dy:15}, ankle_l:{dx:-20,dy:55}, ankle_r:{dx:15,dy:50} },
       { shoulder_l:{dx:-10,dy:0}, shoulder_r:{dx:10,dy:0}, elbow_l:{dx:-15,dy:12}, elbow_r:{dx:15,dy:12}, wrist_l:{dx:-18,dy:22}, wrist_r:{dx:18,dy:22}, hip_l:{dx:-5,dy:0}, hip_r:{dx:5,dy:0}, knee_l:{dx:-8,dy:20}, knee_r:{dx:15,dy:25}, ankle_l:{dx:-10,dy:48}, ankle_r:{dx:20,dy:52} },
@@ -31,14 +31,14 @@ const ANIM_PRESETS: Record<string, { label: string; labelAr: string; frames: Ani
     ],
   },
   run: {
-    label: '🏃 走る', labelAr: '🏃 جري',
+    label: '🏃 走る', labelEn: '🏃 Run', labelAr: '🏃 جري',
     frames: [
       { shoulder_l:{dx:-25,dy:-5}, shoulder_r:{dx:20,dy:5}, elbow_l:{dx:-35,dy:5}, elbow_r:{dx:30,dy:15}, wrist_l:{dx:-40,dy:15}, wrist_r:{dx:35,dy:25}, hip_l:{dx:-8,dy:-3}, hip_r:{dx:8,dy:3}, knee_l:{dx:-25,dy:20}, knee_r:{dx:20,dy:35}, ankle_l:{dx:-30,dy:45}, ankle_r:{dx:25,dy:55} },
       { shoulder_l:{dx:20,dy:5}, shoulder_r:{dx:-25,dy:-5}, elbow_l:{dx:30,dy:15}, elbow_r:{dx:-35,dy:5}, wrist_l:{dx:35,dy:25}, wrist_r:{dx:-40,dy:15}, hip_l:{dx:8,dy:3}, hip_r:{dx:-8,dy:-3}, knee_l:{dx:20,dy:35}, knee_r:{dx:-25,dy:20}, ankle_l:{dx:25,dy:55}, ankle_r:{dx:-30,dy:45} },
     ],
   },
   jump: {
-    label: '🤸 ジャンプ', labelAr: '🤸 قفز',
+    label: '🤸 ジャンプ', labelEn: '🤸 Jump', labelAr: '🤸 قفز',
     frames: [
       { knee_l:{dx:-5,dy:10}, knee_r:{dx:5,dy:10}, ankle_l:{dx:-8,dy:25}, ankle_r:{dx:8,dy:25}, shoulder_l:{dx:-10,dy:5}, shoulder_r:{dx:10,dy:5} },
       { knee_l:{dx:-15,dy:25}, knee_r:{dx:15,dy:25}, ankle_l:{dx:-20,dy:50}, ankle_r:{dx:20,dy:50}, shoulder_l:{dx:-20,dy:-10}, shoulder_r:{dx:20,dy:-10}, elbow_l:{dx:-30,dy:-20}, elbow_r:{dx:30,dy:-20} },
@@ -47,7 +47,7 @@ const ANIM_PRESETS: Record<string, { label: string; labelAr: string; frames: Ani
     ],
   },
   wave: {
-    label: '👋 手を振る', labelAr: '👋 تلويح',
+    label: '👋 手を振る', labelEn: '👋 Wave', labelAr: '👋 تلويح',
     frames: [
       { shoulder_r:{dx:30,dy:-20}, elbow_r:{dx:25,dy:-40}, wrist_r:{dx:20,dy:-60} },
       { shoulder_r:{dx:35,dy:-25}, elbow_r:{dx:20,dy:-45}, wrist_r:{dx:10,dy:-65} },
@@ -56,7 +56,7 @@ const ANIM_PRESETS: Record<string, { label: string; labelAr: string; frames: Ani
     ],
   },
   dance: {
-    label: '💃 踊る', labelAr: '💃 رقص',
+    label: '💃 踊る', labelEn: '💃 Dance', labelAr: '💃 رقص',
     frames: [
       { shoulder_l:{dx:-30,dy:-15}, shoulder_r:{dx:30,dy:-15}, elbow_l:{dx:-45,dy:-25}, elbow_r:{dx:45,dy:-25}, wrist_l:{dx:-55,dy:-15}, wrist_r:{dx:55,dy:-15}, knee_l:{dx:-10,dy:15}, hip_l:{dx:-8,dy:-5} },
       { shoulder_l:{dx:-20,dy:-25}, shoulder_r:{dx:35,dy:-10}, elbow_l:{dx:-30,dy:-40}, elbow_r:{dx:50,dy:-20}, wrist_l:{dx:-20,dy:-55}, wrist_r:{dx:60,dy:-10}, knee_r:{dx:15,dy:15}, hip_r:{dx:8,dy:-5} },
@@ -278,7 +278,7 @@ export default function AutoAnimatePage() {
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       animType === id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
                     }`}>
-                    {lang === 'ar' ? anim.labelAr : anim.label}
+                    {lang === 'ar' ? (anim as any).labelAr : lang === 'en' ? (anim as any).labelEn : anim.label}
                   </button>
                 ))}
               </div>

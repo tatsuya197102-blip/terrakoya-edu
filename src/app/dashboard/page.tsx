@@ -8,11 +8,11 @@ import { doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
-const COURSES: Record<string, { title: string; thumbnail: string; lessons: number }> = {
-  'manga-basics':    { title: '漫画基礎講座',         thumbnail: '🎨', lessons: 5 },
-  'digital-illust':  { title: 'デジタルイラスト入門', thumbnail: '🖌️', lessons: 4 },
-  'story-making':    { title: 'ストーリー作り',        thumbnail: '📖', lessons: 3 },
-  'animation-basics':{ title: 'アニメーション基礎',   thumbnail: '🎬', lessons: 4 },
+const COURSES: Record<string, { title: Record<string,string>; thumbnail: string; lessons: number }> = {
+  'manga-basics':    { title: { ja: '漫画基礎講座',         en: 'Manga Basics',         ar: 'أساسيات المانغا'         }, thumbnail: '🎨', lessons: 5 },
+  'digital-illust':  { title: { ja: 'デジタルイラスト入門', en: 'Digital Illustration',  ar: 'الرسم الرقمي'            }, thumbnail: '🖌️', lessons: 4 },
+  'story-making':    { title: { ja: 'ストーリー作り',        en: 'Story Creation',        ar: 'كتابة القصص'            }, thumbnail: '📖', lessons: 3 },
+  'animation-basics':{ title: { ja: 'アニメーション基礎',   en: 'Animation Basics',      ar: 'أساسيات الرسوم المتحركة' }, thumbnail: '🎬', lessons: 4 },
 };
 
 function generateCalendar(activityDates: string[]) {
@@ -42,7 +42,8 @@ function calcStreak(activityDates: string[]): number {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language as 'ja' | 'en' | 'ar';
   const [userName, setUserName] = useState('');
   const [enrolledCourses, setEnrolledCourses] = useState<string[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
@@ -178,7 +179,7 @@ export default function DashboardPage() {
                   <div key={cid} className="flex items-center gap-4 p-3 bg-gray-700 rounded-lg">
                     <span className="text-2xl">{course.thumbnail}</span>
                     <div className="flex-1">
-                      <p className="font-medium text-sm">{course.title}</p>
+                      <p className="font-medium text-sm">{course.title[lang] || course.title.ja}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex-1 bg-gray-600 rounded-full h-1.5">
                           <div className="bg-blue-500 h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }}/>
