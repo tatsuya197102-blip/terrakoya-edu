@@ -330,7 +330,7 @@ export default function AutoAnimatePage() {
                 }`}>
                 {playing
                   ? (lang === 'ar' ? '⏹ إيقاف' : '⏹ 停止')
-                  : (lang === 'ar' ? '▶ تشغيل' : '▶ 再生')}
+                  : t('animate.play')}
               </button>
               <button onClick={handleDownload}
                 className="bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-xl text-sm transition-colors">
@@ -350,11 +350,7 @@ export default function AutoAnimatePage() {
             {/* 説明 */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 mt-4">
               <p className="text-xs text-gray-400 font-medium mb-2">💡 {t('animate.howItWorks')}</p>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                {lang === 'ar'
-                  ? 'يستخدم هيكل عظمي حقيقي مع 13 مفصلاً. كل حركة محسوبة رياضياً مع تنعيم بين الإطارات.'
-                  : '13の関節をリグで接続した骨格システム。フレーム間を補間してなめらかに動かしています。アニメーションの12の原則（タイミング・スペーシング）を実装しています。'}
-              </p>
+              <p className="text-xs text-gray-500 leading-relaxed">{t('animate.howItWorksDesc')}</p>
             </div>
           </div>
         </div>
