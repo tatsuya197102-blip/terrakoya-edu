@@ -122,10 +122,10 @@ export default function LessonsPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-8 py-8">
-        <div className="flex flex-wrap gap-2 mb-8 justify-center">
+        <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide" style={{scrollbarWidth:'none'}}>
           {cats.map(c => (
             <button key={c.id} onClick={() => setFilter(c.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition ${
                 filter === c.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
               }`}>
               {c.label[lang as 'ja' | 'en' | 'ar'] || c.label.ja}
