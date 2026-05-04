@@ -3,8 +3,9 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, getDocs, orderBy, query, updateDoc } from 'firebase/firestore';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
 
@@ -30,7 +31,8 @@ type Submission = {
   fileType: string;
   comment: string;
   submittedAt: string;
-  imageBase64?: string;
+  imageUrl?: string;       // Firebase Storage URL
+  imageBase64?: string;    // 後方互換（古いデータ用）
   aiFeedback?: string;
   feedbackStatus?: 'pending' | 'done' | 'error';
   gradeResult?: GradeResult;
@@ -96,6 +98,13 @@ export default function AssignmentPage() {
     if (!user || !file) { showToast('ファイルを選択してください', 'error'); return; }
     setSubmitting(true);
     try {
+      // 1. Firebase Storageに画像をアップロード
+      const path = `submissions/${user.uid}/${Date.now()}_${file.name}`;
+      const sRef = storageRef(storage, path);
+      await uploadBytes(sRef, file);
+      const imageUrl = await getDownloadURL(sRef);
+
+      // 2. base64はAI分析用にのみ使用（Firestoreには保存しない）
       const base64: string = await new Promise((res, rej) => {
         const r = new FileReader();
         r.onload = () => res((r.result as string).split(',')[1]);
@@ -103,26 +112,29 @@ export default function AssignmentPage() {
         r.readAsDataURL(file);
       });
 
-      const ref = collection(db, 'users', user.uid, 'submissions');
-      const docRef = await addDoc(ref, {
+      // 3. FirestoreにはURLのみ保存
+      const fsRef = collection(db, 'users', user.uid, 'submissions');
+      const docRef = await addDoc(fsRef, {
         courseId, fileName: file.name, fileType: file.type, comment,
-        imageBase64: base64, submittedAt: new Date().toISOString(),
+        imageUrl, submittedAt: new Date().toISOString(),
         aiFeedback: null, feedbackStatus: 'pending',
         gradeResult: null, gradingStatus: 'idle',
       });
 
       const newSub: Submission = {
         id: docRef.id, fileName: file.name, fileType: file.type, comment,
-        imageBase64: base64, submittedAt: new Date().toISOString(),
+        imageUrl, submittedAt: new Date().toISOString(),
         feedbackStatus: 'pending', gradingStatus: 'idle',
       };
 
       setSubmissions(prev => [newSub, ...prev]);
       setFile(null); setPreview(''); setComment('');
       showToast('✅ 提出しました！AIがフィードバックを生成中…', 'success');
+
+      // 4. AI分析にはbase64を使用（メモリ内のみ、Firestoreには保存しない）
       await streamFeedback(docRef.id, courseId, file.name, file.type, comment, base64, user.uid);
     } catch (e) {
-      console.error(e);
+      console.error('Submit error:', e);
       showToast('提出に失敗しました', 'error');
     }
     setSubmitting(false);
@@ -171,19 +183,31 @@ export default function AssignmentPage() {
   // AI採点
   const handleGrade = async (sub: Submission) => {
     const user = auth.currentUser;
-    if (!user || !sub.imageBase64) return;
+    if (!user) return;
 
     setSubmissions(prev => prev.map(s =>
       s.id === sub.id ? { ...s, gradingStatus: 'grading' } : s
     ));
 
     try {
+      // imageUrl から base64 を再取得
+      let base64 = sub.imageBase64 || '';
+      if (!base64 && sub.imageUrl) {
+        const resp = await fetch(sub.imageUrl);
+        const blob = await resp.blob();
+        base64 = await new Promise<string>((res) => {
+          const r = new FileReader();
+          r.onload = () => res((r.result as string).split(',')[1]);
+          r.readAsDataURL(blob);
+        });
+      }
+
       const res = await fetch('/api/grade-artwork', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           courseId, fileName: sub.fileName, fileType: sub.fileType,
-          comment: sub.comment, imageBase64: sub.imageBase64,
+          comment: sub.comment, imageBase64: base64,
         }),
       });
       const data = await res.json();
@@ -416,9 +440,9 @@ function SubmissionCard({
     <div className="bg-gray-800 rounded-xl overflow-hidden">
       {/* 提出情報 */}
       <div className="p-4 flex gap-4">
-        {sub.imageBase64 && (
+        {(sub.imageUrl || sub.imageBase64) && (
           <img
-            src={`data:${sub.fileType};base64,${sub.imageBase64}`}
+            src={sub.imageUrl || `data:${sub.fileType};base64,${sub.imageBase64}`}
             alt={sub.fileName}
             className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
           />
