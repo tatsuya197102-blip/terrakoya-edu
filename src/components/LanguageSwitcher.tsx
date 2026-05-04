@@ -7,6 +7,8 @@ const langLabels: Record<string, string> = {
   ja: 'JP',
   en: 'EN',
   ar: 'AR',
+  zh: 'ZH',
+  hi: 'HI',
 };
 
 export default function LanguageSwitcher() {
