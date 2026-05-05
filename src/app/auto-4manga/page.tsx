@@ -77,19 +77,233 @@ export default function Auto4MangaPage() {
   };
 
   const generateFallbackStories = (name: string, themeId: string): Story[] => {
+    // 言語別フォールバックストーリー
+    if (lang === 'en') {
+      const en: Record<string, Story[]> = {
+        school: [
+          { title: `${name}'s Lunch Time`, panels: [
+            { panel:1, scene:`${name} is excited about lunch`, dialogue:'I wonder what lunch is today?' },
+            { panel:2, scene:'Sees the menu and is surprised', dialogue:'Curry! My favorite!' },
+            { panel:3, scene:'Tries to get seconds but...', dialogue:'None left!?' },
+            { panel:4, scene:'A friend shares their portion', dialogue:`Friend: Here, have half! / ${name}: Thank you!` },
+          ]},
+          { title: `${name} Forgot Something`, panels: [
+            { panel:1, scene:`${name} heads to school cheerfully`, dialogue:'What a nice day!' },
+            { panel:2, scene:'Class begins', dialogue:"Open your textbooks, please..." },
+            { panel:3, scene:'No textbook!', dialogue:'Oh no! I forgot my textbook!' },
+            { panel:4, scene:'A classmate shares theirs', dialogue:`Classmate: Let's share! / ${name}: You're a lifesaver!` },
+          ]},
+          { title: `${name}'s PE Class`, panels: [
+            { panel:1, scene:`${name} does warm-up exercises eagerly`, dialogue:"Let's go! Soccer time!" },
+            { panel:2, scene:'Tries to kick the ball', dialogue:'Here I go!' },
+            { panel:3, scene:'Misses and falls', dialogue:'Oops!' },
+            { panel:4, scene:'Everyone laughs and has fun', dialogue:"Haha! One more time!" },
+          ]},
+        ],
+        adventure: [
+          { title: `${name}'s Treasure Hunt`, panels: [
+            { panel:1, scene:`${name} finds an old map`, dialogue:"This is... a treasure map!" },
+            { panel:2, scene:'Sets off on the adventure', dialogue:"Let's go!" },
+            { panel:3, scene:'Discovers a huge cave', dialogue:'Is the treasure in here...?' },
+            { panel:4, scene:'The treasure chest holds photos of friends', dialogue:'The real treasure was friendship!' },
+          ]},
+          { title: `${name} and the Dragon`, panels: [
+            { panel:1, scene:`${name} finds a mysterious egg in the forest`, dialogue:"What's this egg?" },
+            { panel:2, scene:'A dragon hatches from the egg', dialogue:`Dragon: Squeak! / ${name}: So cute!` },
+            { panel:3, scene:'The dragon breathes fire — oh no!', dialogue:`${name}: Whoa, it's hot!` },
+            { panel:4, scene:'They become best friends', dialogue:`${name}: Your name is Blaze!` },
+          ]},
+          { title: `${name}'s Flying Adventure`, panels: [
+            { panel:1, scene:`${name} finds a flying broom`, dialogue:'Can this thing really fly?' },
+            { panel:2, scene:'Takes off into the sky', dialogue:'Amazing! The sky is so close!' },
+            { panel:3, scene:'Discovers a kingdom above the clouds', dialogue:'A kingdom up here!?' },
+            { panel:4, scene:'Makes friends with the kingdom folk', dialogue:'Come visit again!' },
+          ]},
+        ],
+        funny: [
+          { title: `${name}'s Big Sneeze`, panels: [
+            { panel:1, scene:`${name} is about to sneeze`, dialogue:'Ah... ah...' },
+            { panel:2, scene:'Everyone braces for impact', dialogue:"Here it comes!" },
+            { panel:3, scene:'A massive sneeze!', dialogue:'ACHOO!!' },
+            { panel:4, scene:"The teacher's wig flies off", dialogue:"Uh oh, teacher's wig...!" },
+          ]},
+          { title: `${name}'s Funny Face`, panels: [
+            { panel:1, scene:`${name} practices funny faces in the mirror`, dialogue:"I'm gonna win the funny face contest!" },
+            { panel:2, scene:'Tries many expressions', dialogue:'Hmm, I need something even better...' },
+            { panel:3, scene:'Nails the perfect funny face', dialogue:'This is it! Perfect!' },
+            { panel:4, scene:'The face gets stuck', dialogue:"Wait... it won't go back!?" },
+          ]},
+          { title: `${name} Walks the Dog`, panels: [
+            { panel:1, scene:`${name} sets out for a dog walk`, dialogue:"Let's go for a walk!" },
+            { panel:2, scene:'The dog spots a cat and bolts', dialogue:'Whoa! Wait!' },
+            { panel:3, scene:'Gets dragged through the whole town', dialogue:'Someone help me!!' },
+            { panel:4, scene:'The dog and cat end up best friends', dialogue:"...Well, at least they're friends now." },
+          ]},
+        ],
+        friendship: [
+          { title: `${name} and the New Student`, panels: [
+            { panel:1, scene:'A new student arrives', dialogue:'Umm, nice to meet you...' },
+            { panel:2, scene:`${name} invites them to lunch`, dialogue:"Let's have lunch together!" },
+            { panel:3, scene:'They discover they love manga', dialogue:`New student: You like manga? Me too!` },
+            { panel:4, scene:'They become best friends', dialogue:"Let's be friends!" },
+          ]},
+          { title: `${name} Cheers Up a Friend`, panels: [
+            { panel:1, scene:'A friend is upset about a bad test score', dialogue:"I give up..." },
+            { panel:2, scene:`${name} suggests studying together`, dialogue:"Let's study together!" },
+            { panel:3, scene:'Daily after-school study sessions', dialogue:`${name}: Here's how! / Friend: I get it now!` },
+            { panel:4, scene:'Friend scores high on the next test', dialogue:`Friend: 90 points! Thank you!` },
+          ]},
+          { title: `${name}'s Fight and Make Up`, panels: [
+            { panel:1, scene:'A small argument with a friend', dialogue:"I'm done with you!" },
+            { panel:2, scene:'Awkward silence between them', dialogue:'...' },
+            { panel:3, scene:"It starts raining and friend has no umbrella", dialogue:'Oh...' },
+            { panel:4, scene:`${name} shares their umbrella`, dialogue:`${name}: Let's walk home together. / Friend: ...Yeah!` },
+          ]},
+        ],
+        free: [
+          { title: `${name}'s Dream`, panels: [
+            { panel:1, scene:`${name} flies through the sky in a dream`, dialogue:"Wow, I'm flying!" },
+            { panel:2, scene:'Finds a mountain of cake in the dream', dialogue:'All-you-can-eat!' },
+            { panel:3, scene:'The alarm goes off', dialogue:'RING RING RING!' },
+            { panel:4, scene:'Wakes up with drool on the pillow', dialogue:'...Just a dream. But it tasted so good!' },
+          ]},
+          { title: `${name}'s Time Machine`, panels: [
+            { panel:1, scene:`${name} finds a time machine in the closet`, dialogue:"No way... is this real?" },
+            { panel:2, scene:'Lands in the age of dinosaurs', dialogue:'Real dinosaurs!!' },
+            { panel:3, scene:'Gets chased by a dinosaur', dialogue:'Run!!' },
+            { panel:4, scene:'Returns home safely', dialogue:'Home sweet home...' },
+          ]},
+          { title: `${name}'s Magic Pen`, panels: [
+            { panel:1, scene:`${name} picks up a glowing pen`, dialogue:'What is this pen?' },
+            { panel:2, scene:'Everything drawn comes to life', dialogue:`Drew a cake and it's real!` },
+            { panel:3, scene:'Gets cocky and draws a lion', dialogue:`Lion: ROAR! / ${name}: Ahhh!` },
+            { panel:4, scene:'Erases it with a magic eraser', dialogue:'...The eraser was magic too!' },
+          ]},
+        ],
+      };
+      return en[themeId] || en.free;
+    }
+
+    if (lang === 'ar') {
+      const ar: Record<string, Story[]> = {
+        school: [
+          { title: `وقت الغداء مع ${name}`, panels: [
+            { panel:1, scene:`${name} يتطلع للغداء بفارغ الصبر`, dialogue:'يا ترى ماذا يوجد في الغداء اليوم؟' },
+            { panel:2, scene:'يرى القائمة ويتفاجأ', dialogue:'كاري! أحبه جداً!' },
+            { panel:3, scene:'يحاول أخذ المزيد لكن...', dialogue:'لم يبقَ شيء!؟' },
+            { panel:4, scene:'صديق يشاركه نصيبه', dialogue:`صديق: خذ نصفي! / ${name}: شكراً لك!` },
+          ]},
+          { title: `${name} ينسى أشياءه`, panels: [
+            { panel:1, scene:`${name} يذهب للمدرسة بسعادة`, dialogue:'يوم جميل!' },
+            { panel:2, scene:'يبدأ الدرس', dialogue:'افتحوا كتبكم...' },
+            { panel:3, scene:'لا كتاب!', dialogue:'أوه لا! نسيت كتابي!' },
+            { panel:4, scene:'زميل يشاركه كتابه', dialogue:`زميل: تعال نشترك! / ${name}: أنقذتني!` },
+          ]},
+          { title: `حصة التربية البدنية مع ${name}`, panels: [
+            { panel:1, scene:`${name} يتحمس للحصة`, dialogue:'رائع! كرة القدم اليوم!' },
+            { panel:2, scene:'يحاول ركل الكرة', dialogue:'هيا!' },
+            { panel:3, scene:'يخطئ ويقع', dialogue:'آه!' },
+            { panel:4, scene:'الجميع يضحك ويستمتع', dialogue:'هاها! مرة ثانية!' },
+          ]},
+        ],
+        adventure: [
+          { title: `${name} يبحث عن الكنز`, panels: [
+            { panel:1, scene:`${name} يجد خريطة قديمة`, dialogue:'هذه... خريطة كنز!' },
+            { panel:2, scene:'ينطلق في المغامرة', dialogue:'هيا ننطلق!' },
+            { panel:3, scene:'يكتشف كهفاً ضخماً', dialogue:'هل الكنز هنا؟' },
+            { panel:4, scene:'الكنز هو صور الأصدقاء', dialogue:'الكنز الحقيقي هو الصداقة!' },
+          ]},
+          { title: `${name} والتنين`, panels: [
+            { panel:1, scene:`${name} يجد بيضة غريبة في الغابة`, dialogue:'ما هذه البيضة؟' },
+            { panel:2, scene:'تنين يفقس من البيضة', dialogue:`تنين: صرير! / ${name}: كم هو لطيف!` },
+            { panel:3, scene:'التنين يتنفس ناراً', dialogue:`${name}: واو! حار جداً!` },
+            { panel:4, scene:'يصبحان أصدقاء مقربين', dialogue:`${name}: اسمك لهيب!` },
+          ]},
+          { title: `مغامرة ${name} الطائرة`, panels: [
+            { panel:1, scene:`${name} يجد مكنسة طائرة`, dialogue:'هل يمكن أن تطير هذه؟' },
+            { panel:2, scene:'يحلق في السماء', dialogue:'رائع! السماء قريبة جداً!' },
+            { panel:3, scene:'يكتشف مملكة فوق الغيوم', dialogue:'مملكة هنا!؟' },
+            { panel:4, scene:'يصادق أهل المملكة', dialogue:'تعال مرة أخرى!' },
+          ]},
+        ],
+        funny: [
+          { title: `عطسة ${name} الكبيرة`, panels: [
+            { panel:1, scene:`${name} على وشك العطس`, dialogue:'آه... آه...' },
+            { panel:2, scene:'الجميع يستعد', dialogue:'إنها قادمة!' },
+            { panel:3, scene:'عطسة هائلة!', dialogue:'آتشووو!!' },
+            { panel:4, scene:'شعر المعلم يطير', dialogue:'يا إلهي، شعر المعلم!!' },
+          ]},
+          { title: `وجوه ${name} المضحكة`, panels: [
+            { panel:1, scene:`${name} يتدرب أمام المرآة`, dialogue:'سأفوز بمسابقة الوجوه المضحكة!' },
+            { panel:2, scene:'يجرب تعبيرات مختلفة', dialogue:'أحتاج شيئاً أفضل...' },
+            { panel:3, scene:'يجد الوجه المثالي!', dialogue:'هذا هو! مثالي!' },
+            { panel:4, scene:'وجهه لا يعود لطبيعته', dialogue:'مهلاً... لا يعود!؟' },
+          ]},
+          { title: `${name} يمشي الكلب`, panels: [
+            { panel:1, scene:`${name} يخرج لتمشية الكلب`, dialogue:'هيا نتمشى!' },
+            { panel:2, scene:'الكلب يرى قطة ويجري', dialogue:'مهلاً! انتظر!' },
+            { panel:3, scene:'يُسحب عبر المدينة', dialogue:'أنقذوني!!' },
+            { panel:4, scene:'الكلب والقطة يصبحان أصدقاء', dialogue:'...على الأقل هما أصدقاء الآن.' },
+          ]},
+        ],
+        friendship: [
+          { title: `${name} والطالب الجديد`, panels: [
+            { panel:1, scene:'يصل طالب جديد', dialogue:'أهلاً... سعيد بلقائكم...' },
+            { panel:2, scene:`${name} يدعوه للغداء`, dialogue:'تعال نتغدى معاً!' },
+            { panel:3, scene:'يكتشفان أنهما يحبان المانغا', dialogue:`طالب جديد: تحب المانغا؟ أنا أيضاً!` },
+            { panel:4, scene:'يصبحان أصدقاء مقربين', dialogue:'لنكن أصدقاء!' },
+          ]},
+          { title: `${name} يشجع صديقه`, panels: [
+            { panel:1, scene:'صديق محبط من درجته المنخفضة', dialogue:'استسلمت...' },
+            { panel:2, scene:`${name} يقترح الدراسة معاً`, dialogue:'لندرس معاً!' },
+            { panel:3, scene:'يتدربان يومياً بعد المدرسة', dialogue:`${name}: هكذا! / صديق: فهمت الآن!` },
+            { panel:4, scene:'الصديق يحصل على درجة عالية', dialogue:`صديق: 90 نقطة! شكراً!` },
+          ]},
+          { title: `${name} والمصالحة`, panels: [
+            { panel:1, scene:'خلاف صغير مع صديق', dialogue:'لا أريد التحدث إليك!' },
+            { panel:2, scene:'أجواء متوترة بينهما', dialogue:'...' },
+            { panel:3, scene:'يبدأ المطر والصديق بلا مظلة', dialogue:'أوه...' },
+            { panel:4, scene:`${name} يشاركه المظلة`, dialogue:`${name}: هيا نمشي معاً. / صديق: ...نعم!` },
+          ]},
+        ],
+        free: [
+          { title: `حلم ${name}`, panels: [
+            { panel:1, scene:`${name} يطير في السماء في حلم`, dialogue:'رائع، أنا أطير!' },
+            { panel:2, scene:'يجد جبلاً من الحلوى في الحلم', dialogue:'أكل بلا حدود!' },
+            { panel:3, scene:'يرن المنبه', dialogue:'رن رن رن!' },
+            { panel:4, scene:'يستيقظ وفمه يسيل', dialogue:'...كان حلماً. كان لذيذاً جداً!' },
+          ]},
+          { title: `آلة الزمن مع ${name}`, panels: [
+            { panel:1, scene:`${name} يجد آلة زمن في الخزانة`, dialogue:'لا يصدق... هل هذه حقيقية؟' },
+            { panel:2, scene:'ينتقل إلى عصر الديناصورات', dialogue:'ديناصورات حقيقية!!' },
+            { panel:3, scene:'ديناصور يطارده', dialogue:'اجري!!' },
+            { panel:4, scene:'يعود سالماً', dialogue:'الحياة العصرية أفضل...' },
+          ]},
+          { title: `قلم ${name} السحري`, panels: [
+            { panel:1, scene:`${name} يجد قلماً متوهجاً`, dialogue:'ما هذا القلم؟' },
+            { panel:2, scene:'كل ما يرسمه يتحول لحقيقة', dialogue:'رسمت كعكة وأصبحت حقيقية!' },
+            { panel:3, scene:'يرسم أسداً بثقة زائدة', dialogue:`أسد: زئير! / ${name}: آه!` },
+            { panel:4, scene:'يمحوه بالممحاة السحرية', dialogue:'...الممحاة سحرية أيضاً!' },
+          ]},
+        ],
+      };
+      return ar[themeId] || ar.free;
+    }
+
+    // 日本語フォールバック
     const themeStories: Record<string, Story[]> = {
       school: [
         { title: `${name}の給食タイム`, panels: [
           { panel: 1, scene: `${name}が給食を楽しみにしている`, dialogue: '今日の給食はなんだろう？' },
           { panel: 2, scene: 'メニューを見て驚く', dialogue: 'え！カレーだ！大好き！' },
           { panel: 3, scene: 'おかわりしようとしたら...', dialogue: 'もう無い！？' },
-          { panel: 4, scene: '友達が分けてくれる', dialogue: '半分あげるよ！ / ありがとう！' },
+          { panel: 4, scene: '友達が分けてくれる', dialogue: `友達：半分あげるよ！ / ${name}：ありがとう！` },
         ]},
         { title: `${name}の忘れ物`, panels: [
           { panel: 1, scene: `${name}が元気に登校`, dialogue: '今日もいい天気！' },
           { panel: 2, scene: '授業が始まる', dialogue: 'では教科書を開いて...' },
           { panel: 3, scene: '教科書がない！', dialogue: 'あれ！？教科書忘れた！' },
-          { panel: 4, scene: '隣の席の子が見せてくれる', dialogue: '一緒に見よう！ / 助かった〜！' },
+          { panel: 4, scene: '隣の席の子が見せてくれる', dialogue: `クラスメート：一緒に見よう！ / ${name}：助かった〜！` },
         ]},
         { title: `${name}の体育の時間`, panels: [
           { panel: 1, scene: `${name}が張り切って準備体操`, dialogue: 'よし！今日はサッカーだ！' },
@@ -107,9 +321,9 @@ export default function Auto4MangaPage() {
         ]},
         { title: `${name}とドラゴン`, panels: [
           { panel: 1, scene: `${name}が森で不思議な卵を見つける`, dialogue: 'なんだこの卵？' },
-          { panel: 2, scene: '卵からドラゴンが生まれる', dialogue: 'ピィー！ / か、可愛い！' },
-          { panel: 3, scene: 'ドラゴンが火を吹いて大変', dialogue: 'うわぁ！熱い！' },
-          { panel: 4, scene: 'ドラゴンと仲良くなる', dialogue: 'よし、お前の名前はヒノ！' },
+          { panel: 2, scene: '卵からドラゴンが生まれる', dialogue: `ドラゴン：ピィー！ / ${name}：か、可愛い！` },
+          { panel: 3, scene: 'ドラゴンが火を吹いて大変', dialogue: `${name}：うわぁ！熱い！` },
+          { panel: 4, scene: 'ドラゴンと仲良くなる', dialogue: `${name}：お前の名前はヒノ！` },
         ]},
         { title: `${name}の空飛ぶ冒険`, panels: [
           { panel: 1, scene: `${name}が空飛ぶ箒を見つける`, dialogue: 'これ...飛べるの？' },
@@ -142,20 +356,20 @@ export default function Auto4MangaPage() {
         { title: `${name}と転校生`, panels: [
           { panel: 1, scene: '新しい転校生が来る', dialogue: 'はじめまして...' },
           { panel: 2, scene: `${name}が声をかける`, dialogue: '一緒にお昼食べよう！' },
-          { panel: 3, scene: '趣味が同じだと判明', dialogue: 'え！マンガ好きなの？私も！' },
+          { panel: 3, scene: '趣味が同じだと判明', dialogue: `転校生：え！マンガ好きなの？私も！` },
           { panel: 4, scene: '親友になる', dialogue: 'これからよろしくね！' },
         ]},
         { title: `${name}の応援`, panels: [
           { panel: 1, scene: '友達がテストで落ち込んでいる', dialogue: 'もうダメだ...' },
           { panel: 2, scene: `${name}が一緒に勉強を提案`, dialogue: '一緒に勉強しよう！' },
-          { panel: 3, scene: '毎日放課後に特訓', dialogue: 'ここはこうだよ！ / なるほど！' },
-          { panel: 4, scene: '友達がテストで高得点', dialogue: '90点取れた！ありがとう！' },
+          { panel: 3, scene: '毎日放課後に特訓', dialogue: `${name}：ここはこうだよ！ / 友達：なるほど！` },
+          { panel: 4, scene: '友達がテストで高得点', dialogue: `友達：90点取れた！ありがとう！` },
         ]},
         { title: `${name}とケンカ`, panels: [
           { panel: 1, scene: '些細なことで友達とケンカ', dialogue: 'もう知らない！' },
           { panel: 2, scene: 'お互い気まずい', dialogue: '...' },
           { panel: 3, scene: '雨が降ってきて友達が傘がない', dialogue: 'あっ...' },
-          { panel: 4, scene: `${name}が傘を差し出す`, dialogue: '...一緒に帰ろ / うん！' },
+          { panel: 4, scene: `${name}が傘を差し出す`, dialogue: `${name}：...一緒に帰ろ / 友達：うん！` },
         ]},
       ],
       free: [
@@ -174,7 +388,7 @@ export default function Auto4MangaPage() {
         { title: `${name}の魔法のペン`, panels: [
           { panel: 1, scene: `${name}が光るペンを拾う`, dialogue: 'なんだこのペン？' },
           { panel: 2, scene: '描いたものが本物になる', dialogue: 'ケーキを描いたら...本物だ！' },
-          { panel: 3, scene: '調子に乗ってライオンを描く', dialogue: 'ガオー！！ / ぎゃー！' },
+          { panel: 3, scene: '調子に乗ってライオンを描く', dialogue: `ライオン：ガオー！！ / ${name}：ぎゃー！` },
           { panel: 4, scene: '消しゴムで消して解決', dialogue: '...消しゴムも魔法だった！' },
         ]},
       ],

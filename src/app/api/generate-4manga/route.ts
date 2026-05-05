@@ -10,8 +10,10 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = lang === 'ar'
-      ? `أنت كاتب مانجا للأطفال. أنشئ 3 قصص مانجا من 4 لوحات للشخصية "${characterName}" حول موضوع "${theme}". أجب بتنسيق JSON فقط: [{"title":"...","panels":[{"panel":1,"scene":"...","dialogue":"..."},{"panel":2,"scene":"...","dialogue":"..."},{"panel":3,"scene":"...","dialogue":"..."},{"panel":4,"scene":"...","dialogue":"..."}]}]`
-      : `あなたは子供向けマンガの作家です。キャラクター「${characterName}」の「${theme}」テーマの4コマ漫画を3つ作ってください。JSON形式のみで回答: [{"title":"...","panels":[{"panel":1,"scene":"...","dialogue":"..."},{"panel":2,"scene":"...","dialogue":"..."},{"panel":3,"scene":"...","dialogue":"..."},{"panel":4,"scene":"...","dialogue":"..."}]}]`;
+      ? `أنت كاتب مانجا للأطفال. أنشئ 3 قصص مانجا من 4 لوحات للشخصية "${characterName}" حول موضوع "${theme}". أجب بتنسيق JSON فقط بدون أي نص آخر: [{"title":"...","panels":[{"panel":1,"scene":"...","dialogue":"..."},{"panel":2,"scene":"...","dialogue":"..."},{"panel":3,"scene":"...","dialogue":"..."},{"panel":4,"scene":"...","dialogue":"..."}]}]`
+      : lang === 'en'
+      ? `You are a children's manga writer. Create 3 four-panel manga stories for the character "${characterName}" on the theme "${theme}". Reply in JSON format only, no other text: [{"title":"...","panels":[{"panel":1,"scene":"...","dialogue":"..."},{"panel":2,"scene":"...","dialogue":"..."},{"panel":3,"scene":"...","dialogue":"..."},{"panel":4,"scene":"...","dialogue":"..."}]}]`
+      : `あなたは子供向けマンガの作家です。キャラクター「${characterName}」の「${theme}」テーマの4コマ漫画を3つ作ってください。JSON形式のみで回答（他のテキスト不要）: [{"title":"...","panels":[{"panel":1,"scene":"...","dialogue":"..."},{"panel":2,"scene":"...","dialogue":"..."},{"panel":3,"scene":"...","dialogue":"..."},{"panel":4,"scene":"...","dialogue":"..."}]}]`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
