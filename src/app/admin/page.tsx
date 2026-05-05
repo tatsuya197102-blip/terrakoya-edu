@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, addDoc, serverTimestamp, getDoc, query, where, orderBy } from 'firebase/firestore';
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
 
@@ -49,7 +49,7 @@ const EMPTY_LESSON: Omit<Lesson, 'id'> = {
 export default function AdminPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'lessons' | 'notify' | 'live'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'lessons' | 'notify' | 'live' | 'contest'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -180,10 +180,10 @@ export default function AdminPage() {
         <div className="text-sm text-gray-400">ユーザー: {users.length} / コース: {courses.length} / レッスン: {lessons.length}</div>
       </div>
 
-      <div className="flex border-b border-gray-800 px-8">
-        {([['users', '👥 ユーザー'], ['courses', '📚 コース'], ['lessons', '🎥 レッスン'], ['notify', '🔔 通知'], ['live', '📡 ライブ授業']] as const).map(([tab, label]) => (
+      <div className="flex border-b border-gray-800 px-8 overflow-x-auto">
+        {([['users', '👥 ユーザー'], ['courses', '📚 コース'], ['lessons', '🎥 レッスン'], ['notify', '🔔 通知'], ['live', '📡 ライブ授業'], ['contest', '🏆 コンテスト']] as const).map(([tab, label]) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}>
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}>
             {label}
           </button>
         ))}
@@ -425,6 +425,7 @@ export default function AdminPage() {
         )}
         {/* ライブ授業管理 */}
         {activeTab === 'live' && <LiveAdmin showToast={showToast} />}
+        {activeTab === 'contest' && <ContestAdmin showToast={showToast} />}
       </div>
     </div>
   );
@@ -559,6 +560,139 @@ function LiveAdmin({ showToast }: { showToast: (msg: string, type: 'success' | '
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+// ---- コンテスト管理コンポーネント ----
+function ContestAdmin({ showToast }: { showToast: (msg: string, type: 'success' | 'error') => void }) {
+  const CONTESTS = [
+    { id: 'contest-001', name: 'テーマ：友情' },
+    { id: 'contest-002', name: 'テーマ：エジプトと日本' },
+  ];
+  const [entries, setEntries] = useState<any[]>([]);
+  const [selectedContest, setSelectedContest] = useState('contest-001');
+  const [loading, setLoading] = useState(false);
+
+  const loadEntries = async (contestId: string) => {
+    setLoading(true);
+    try {
+      const q = query(
+        collection(db, 'contest_entries'),
+        where('contestId', '==', contestId)
+      );
+      const snap = await getDocs(q);
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      data.sort((a: any, b: any) => (b.votes || 0) - (a.votes || 0));
+      setEntries(data);
+    } catch (e: any) {
+      showToast('読み込みに失敗しました: ' + e.message, 'error');
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadEntries(selectedContest); }, [selectedContest]);
+
+  const handleDelete = async (entryId: string) => {
+    if (!confirm('この応募を削除しますか？')) return;
+    try {
+      await deleteDoc(doc(db, 'contest_entries', entryId));
+      setEntries(prev => prev.filter(e => e.id !== entryId));
+      showToast('✅ 削除しました', 'success');
+    } catch (e: any) {
+      showToast('削除に失敗: ' + e.message, 'error');
+    }
+  };
+
+  const handleExportCSV = () => {
+    const rows = [
+      ['順位', 'タイトル', '応募者名', 'UID', '得票数', '応募日時'],
+      ...entries.map((e, i) => [
+        i + 1,
+        `"${e.title || ''}"`,
+        `"${e.studentName || ''}"`,
+        e.studentId || '',
+        e.votes || 0,
+        e.submittedAt?.toDate?.()?.toLocaleDateString('ja-JP') || '',
+      ].join(','))
+    ].join('\n');
+
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `contest_${selectedContest}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ CSVをダウンロードしました', 'success');
+  };
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-bold">🏆 コンテスト管理</h2>
+        <button onClick={handleExportCSV}
+          className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+          📊 CSV出力
+        </button>
+      </div>
+
+      {/* コンテスト選択 */}
+      <div className="flex gap-3 mb-6 flex-wrap">
+        {CONTESTS.map(c => (
+          <button key={c.id} onClick={() => setSelectedContest(c.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              selectedContest === c.id ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }`}>
+            {c.name}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="text-gray-400 text-center py-8">読み込み中...</div>
+      ) : entries.length === 0 ? (
+        <div className="text-gray-400 text-center py-12">
+          <p className="text-4xl mb-3">🎨</p>
+          <p>応募作品がまだありません</p>
+        </div>
+      ) : (
+        <>
+          <p className="text-gray-400 text-sm mb-4">応募数：{entries.length}件</p>
+          <div className="space-y-3">
+            {entries.map((entry, i) => (
+              <div key={entry.id} className="bg-gray-800 rounded-xl p-4 flex items-center gap-4">
+                {/* 順位 */}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                  i === 0 ? 'bg-yellow-500 text-black' : i === 1 ? 'bg-gray-400 text-black' : i === 2 ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300'
+                }`}>
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                </div>
+                {/* サムネイル */}
+                {entry.imageUrl && (
+                  <img src={entry.imageUrl} alt={entry.title} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
+                )}
+                {/* 情報 */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold truncate">{entry.title}</p>
+                  <p className="text-gray-400 text-sm">{entry.studentName}</p>
+                  <p className="text-gray-500 text-xs">{entry.submittedAt?.toDate?.()?.toLocaleDateString('ja-JP') || ''}</p>
+                </div>
+                {/* 得票数 */}
+                <div className="text-center flex-shrink-0">
+                  <p className="text-yellow-400 font-bold text-lg">👍 {entry.votes || 0}</p>
+                  <p className="text-gray-500 text-xs">票</p>
+                </div>
+                {/* 削除ボタン */}
+                <button onClick={() => handleDelete(entry.id)}
+                  className="bg-red-800 hover:bg-red-700 px-3 py-2 rounded-lg text-sm transition flex-shrink-0">
+                  🗑️ 削除
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

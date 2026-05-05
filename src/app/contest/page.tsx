@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { useTranslation } from 'react-i18next';
 
 interface ContestEntry { id: string; studentName: string; title: string; imageUrl: string; votes: number; }
@@ -102,6 +102,18 @@ export default function ContestPage() {
     setContests(prev => prev.map(c => ({ ...c, entries: c.entries.map(e => e.id === entryId ? { ...e, votes: e.votes + 1 } : e) })));
   };
 
+  const handleDeleteEntry = async (entryId: string) => {
+    if (!auth.currentUser) return;
+    const confirmMsg = lang === 'ar' ? 'هل تريد حذف عملك؟' : lang === 'en' ? 'Delete your entry?' : '自分の作品を削除しますか？';
+    if (!confirm(confirmMsg)) return;
+    try {
+      await deleteDoc(doc(db, 'contest_entries', entryId));
+      setContests(prev => prev.map(c => ({ ...c, entries: c.entries.filter(e => e.id !== entryId) })));
+    } catch (err: any) {
+      alert('削除に失敗しました: ' + err.message);
+    }
+  };
+
   const getText = (obj: Record<string,string>) => obj[lang] || obj.ja;
 
   if (selected) {
@@ -146,12 +158,20 @@ export default function ContestPage() {
                   <div className="p-4">
                     <h3 className="font-bold mb-1">{entry.title}</h3>
                     <p className="text-gray-400 text-sm mb-3">{entry.studentName}</p>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-yellow-400 font-bold">👍 {entry.votes}</span>
-                      <button onClick={() => handleVote(entry.id)} disabled={voted.has(entry.id)}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition ${voted.has(entry.id) ? 'bg-gray-700 text-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                        {voted.has(entry.id) ? '✅' : '👍 Vote'}
-                      </button>
+                      <div className="flex gap-2">
+                        {auth.currentUser?.uid === entry.studentId && (
+                          <button onClick={() => handleDeleteEntry(entry.id)}
+                            className="px-3 py-2 rounded-lg text-sm font-bold bg-red-800 hover:bg-red-700 transition">
+                            🗑️
+                          </button>
+                        )}
+                        <button onClick={() => handleVote(entry.id)} disabled={voted.has(entry.id)}
+                          className={`px-4 py-2 rounded-lg text-sm font-bold transition ${voted.has(entry.id) ? 'bg-gray-700 text-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                          {voted.has(entry.id) ? '✅' : '👍 Vote'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
