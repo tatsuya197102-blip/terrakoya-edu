@@ -306,12 +306,20 @@ export default function Auto4MangaPage() {
       return lines;
     }
 
-    // 楕円吹き出し（セリフ折り返し対応）
-    function drawBubble(cx2: number, cy2: number, bw: number, bh: number, text: string, spike: boolean) {
+    // セリフから「名前：」を分離する
+    function parseDialogue(raw: string): { speaker: string; text: string } {
+      const m = raw.match(/^([^：:]+)[：:](.+)$/);
+      if (m) return { speaker: m[1].trim(), text: m[2].trim() };
+      return { speaker: '', text: raw };
+    }
+
+    // 楕円吹き出し（セリフ折り返し対応・方向指定）
+    // tailDir: 'left' = しっぽ左下, 'right' = しっぽ右下
+    function drawBubble(cx2: number, cy2: number, bw: number, bh: number, rawText: string, spike: boolean, tailDir: 'left' | 'right' = 'right') {
       const ctx2 = ctx!;
+      const { speaker, text } = parseDialogue(rawText);
       ctx2.save();
       if (spike) {
-        // ギザギザ
         const r1 = bh * 0.45, r2 = bh * 0.6, spikes = 14;
         ctx2.fillStyle = '#ffffff';
         ctx2.strokeStyle = '#333333';
@@ -320,47 +328,59 @@ export default function Auto4MangaPage() {
         for (let s = 0; s < spikes * 2; s++) {
           const angle = (s / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
           const r = s % 2 === 0 ? r2 : r1;
-          const px = cx2 + Math.cos(angle) * r * (bw / bh);
-          const py = cy2 + Math.sin(angle) * r;
-          s === 0 ? ctx2.moveTo(px, py) : ctx2.lineTo(px, py);
+          const px2 = cx2 + Math.cos(angle) * r * (bw / bh);
+          const py2 = cy2 + Math.sin(angle) * r;
+          s === 0 ? ctx2.moveTo(px2, py2) : ctx2.lineTo(px2, py2);
         }
         ctx2.closePath(); ctx2.fill(); ctx2.stroke();
       } else {
-        // 楕円
         ctx2.fillStyle = '#ffffff';
         ctx2.strokeStyle = '#333333';
         ctx2.lineWidth = 1.8;
         ctx2.beginPath();
         ctx2.ellipse(cx2, cy2, bw / 2, bh / 2, 0, 0, Math.PI * 2);
         ctx2.fill(); ctx2.stroke();
-        // しっぽ
+        // しっぽ（方向で左右切り替え）
+        const sign = tailDir === 'left' ? -1 : 1;
         ctx2.fillStyle = '#ffffff';
         ctx2.beginPath();
-        ctx2.moveTo(cx2 - bw * 0.2, cy2 + bh * 0.4);
-        ctx2.lineTo(cx2 - bw * 0.35, cy2 + bh * 0.7);
-        ctx2.lineTo(cx2 + bw * 0.05, cy2 + bh * 0.42);
+        ctx2.moveTo(cx2 + sign * bw * 0.15, cy2 + bh * 0.38);
+        ctx2.lineTo(cx2 + sign * bw * 0.38, cy2 + bh * 0.68);
+        ctx2.lineTo(cx2 - sign * bw * 0.05, cy2 + bh * 0.4);
         ctx2.fill();
         ctx2.strokeStyle = '#333333'; ctx2.lineWidth = 1.5;
         ctx2.beginPath();
-        ctx2.moveTo(cx2 - bw * 0.2, cy2 + bh * 0.4);
-        ctx2.lineTo(cx2 - bw * 0.35, cy2 + bh * 0.7);
-        ctx2.lineTo(cx2 + bw * 0.05, cy2 + bh * 0.42);
+        ctx2.moveTo(cx2 + sign * bw * 0.15, cy2 + bh * 0.38);
+        ctx2.lineTo(cx2 + sign * bw * 0.38, cy2 + bh * 0.68);
+        ctx2.lineTo(cx2 - sign * bw * 0.05, cy2 + bh * 0.4);
         ctx2.stroke();
+      }
+
+      // スピーカー名ラベル（吹き出し上部）
+      if (speaker) {
+        ctx2.font = `bold 11px "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif`;
+        ctx2.fillStyle = '#555555';
+        ctx2.textAlign = 'center';
+        ctx2.fillText(`(${speaker})`, cx2, cy2 - bh / 2 - 4);
       }
 
       // セリフ（折り返し）
       const fontSize = 14;
-      const maxTW = bw - 24;
+      const maxTW = bw - 28;
       const lines = wrapText(text, maxTW, fontSize);
       const lineH = fontSize * 1.4;
       const totalH = lines.length * lineH;
-      const startY = cy2 - totalH / 2 + fontSize * 0.5;
+      const startY = cy2 - totalH / 2 + fontSize * 0.6;
       ctx2.font = `bold ${fontSize}px "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif`;
       ctx2.fillStyle = '#111111';
       ctx2.textAlign = 'center';
       lines.forEach((line, li) => {
-        ctx2.fillText(line, cx2, startY + li * lineH);
+        ctx2.fillText(`「${li === 0 ? '' : ''}${line}${li === lines.length - 1 ? '' : ''}」`.replace('「」', line).replace(/「|」/g, li === 0 && lines.length === 1 ? '' : ''), cx2, startY + li * lineH);
       });
+      // 「」を1行全体に付ける
+      if (lines.length === 1) {
+        ctx2.fillText(`「${lines[0]}」`, cx2, startY);
+      }
       ctx2.textAlign = 'left';
       ctx2.restore();
     }
@@ -407,10 +427,14 @@ export default function Auto4MangaPage() {
       const dialogue = p?.dialogue || (lang === 'ar' ? 'الحوار هنا' : lang === 'en' ? 'Dialogue here' : 'セリフ');
       const scene = p?.scene || (lang === 'ar' ? 'المشهد هنا' : lang === 'en' ? 'Scene here' : '場面');
       const isSpike = i === 2; // 3コマ目はギザギザ
-      const bw = 200, bh = 80;
-      const bx = panelX + PANEL_W - bw / 2 - 20;
-      const by = panelY + (isSpike ? PANEL_H - bh / 2 - 20 : bh / 2 + 16);
-      drawBubble(bx, by, bw, bh, dialogue, isSpike);
+      // 1・3コマ目→右側、2・4コマ目→左側
+      const tailDir: 'left' | 'right' = (i % 2 === 0) ? 'right' : 'left';
+      const bw = 200, bh = 86;
+      const bx = tailDir === 'right'
+        ? panelX + PANEL_W - bw / 2 - 20
+        : panelX + bw / 2 + 20;
+      const by = panelY + (isSpike ? PANEL_H - bh / 2 - 20 : bh / 2 + 18);
+      drawBubble(bx, by, bw, bh, dialogue, isSpike, tailDir);
 
       // キャプション（右外側）
       drawCaption(panelY, PANEL_H, scene);
