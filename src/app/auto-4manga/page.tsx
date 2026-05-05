@@ -259,7 +259,7 @@ export default function Auto4MangaPage() {
     const TITLE_H = 56;
     const PAD_LEFT = 20;
     const PAD_TOP = 10;
-    const CAPTION_W = 130;
+    const CAPTION_W = 160;
     const PAD_BOTTOM = 16;
 
     canvas.width = PAD_LEFT + PANEL_W + 16 + CAPTION_W + 16;
