@@ -58,15 +58,40 @@ export default function ContestPage() {
     if (!title || !preview || !auth.currentUser) return;
     setSubmitting(true);
     try {
+      // 画像を圧縮（最大600px、JPEG70%）してFirestoreの1MB制限に対応
+      const compressedImage = await new Promise<string>((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 600;
+          let { width, height } = img;
+          if (width > MAX || height > MAX) {
+            if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+            else { width = Math.round(width * MAX / height); height = MAX; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        };
+        img.src = preview;
+      });
+
       await addDoc(collection(db, 'contest_entries'), {
-        contestId: selected?.id, studentId: auth.currentUser.uid,
+        contestId: selected?.id,
+        studentId: auth.currentUser.uid,
         studentName: auth.currentUser.displayName || 'Anonymous',
-        title, imageUrl: preview, votes: 0, submittedAt: serverTimestamp(),
+        title,
+        imageUrl: compressedImage,
+        votes: 0,
+        submittedAt: serverTimestamp(),
       });
       setTitle(''); setPreview(''); setShowSubmit(false);
-      alert(t('contest.enterBtn') + ' ✅');
+      alert('✅ 応募が完了しました！');
       window.location.reload();
-    } catch (err) { console.error(err); }
+    } catch (err: any) {
+      console.error(err);
+      alert('❌ 応募に失敗しました。\n' + (err?.message || 'もう一度お試しください'));
+    }
     setSubmitting(false);
   };
 
