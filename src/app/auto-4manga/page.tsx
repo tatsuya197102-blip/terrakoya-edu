@@ -252,158 +252,175 @@ export default function Auto4MangaPage() {
 
   const downloadTemplate = () => {
     const canvas = document.createElement('canvas');
-    // 横型4コマ（添付レイアウト準拠）
-    canvas.width = 900;
-    canvas.height = 660;
+    // 縦型4コマ（上から下1列、右余白にキャプション）
+    const PANEL_W = 480;
+    const PANEL_H = 200;
+    const GAP = 12;
+    const TITLE_H = 56;
+    const PAD_LEFT = 20;
+    const PAD_TOP = 10;
+    const CAPTION_W = 130;
+    const PAD_BOTTOM = 16;
+
+    canvas.width = PAD_LEFT + PANEL_W + 16 + CAPTION_W + 16;
+    canvas.height = TITLE_H + PAD_TOP + 4 * PANEL_H + 3 * GAP + PAD_BOTTOM;
+    const W = canvas.width;
+    const H = canvas.height;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const W = 900;
-    const H = 660;
-
     // 背景
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#f9f9f9';
     ctx.fillRect(0, 0, W, H);
 
     // 外枠
-    ctx.strokeStyle = '#333333';
+    ctx.strokeStyle = '#222222';
     ctx.lineWidth = 3;
-    ctx.strokeRect(2, 2, W - 4, H - 4);
+    ctx.strokeRect(1, 1, W - 2, H - 2);
 
-    // タイトルバー（上部）
-    const titleH = 52;
-    ctx.fillStyle = '#f5f5f5';
-    ctx.fillRect(2, 2, W - 4, titleH);
-    ctx.strokeStyle = '#333333';
+    // タイトルバー
+    ctx.fillStyle = '#eeeeee';
+    ctx.fillRect(1, 1, W - 2, TITLE_H);
+    ctx.strokeStyle = '#444444';
     ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(2, titleH + 2); ctx.lineTo(W - 2, titleH + 2); ctx.stroke();
-
-    ctx.font = 'bold 24px "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif';
-    ctx.fillStyle = '#222222';
+    ctx.beginPath(); ctx.moveTo(1, TITLE_H + 1); ctx.lineTo(W - 1, TITLE_H + 1); ctx.stroke();
+    ctx.font = 'bold 22px "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif';
+    ctx.fillStyle = '#111111';
     ctx.textAlign = 'center';
-    const title = selectedStory?.title || 'コミックストリップのタイトル';
-    ctx.fillText(title, W / 2, 34);
+    ctx.fillText(selectedStory?.title || '4コマ漫画', W / 2, TITLE_H - 14);
     ctx.textAlign = 'left';
 
-    // 4コマ配置（2列×2行）
-    const padX = 18;
-    const padY = titleH + 16;
-    const gapX = 14;
-    const gapY = 14;
-    const colW = Math.floor((W - padX * 2 - gapX) / 2);
-    const rowH = Math.floor((H - padY - 18 - gapY) / 2);
-
-    // キャプション・吹き出し描画ヘルパー
-    function drawCaption(ctx2: CanvasRenderingContext2D, x: number, y: number, w: number, text: string) {
-      // 左上の小さいキャプション欄
-      const cw = Math.min(w * 0.42, 160);
-      const ch = 28;
-      ctx2.fillStyle = '#f8f8f8';
-      ctx2.fillRect(x + 4, y + 4, cw, ch);
-      ctx2.strokeStyle = '#999999';
-      ctx2.lineWidth = 1;
-      ctx2.strokeRect(x + 4, y + 4, cw, ch);
-      ctx2.font = '11px "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif';
-      ctx2.fillStyle = '#666666';
-      const caption = text.length > 18 ? text.substring(0, 18) + '…' : text;
-      ctx2.fillText(caption, x + 9, y + 21);
-    }
-
-    function drawSpeechBubble(ctx2: CanvasRenderingContext2D, cx2: number, cy2: number, text: string) {
-      // 楕円吹き出し（右上エリア）
-      const bw = 130;
-      const bh = 44;
-      ctx2.fillStyle = '#ffffff';
-      ctx2.strokeStyle = '#333333';
-      ctx2.lineWidth = 1.5;
-      ctx2.beginPath();
-      ctx2.ellipse(cx2, cy2, bw / 2, bh / 2, 0, 0, Math.PI * 2);
-      ctx2.fill(); ctx2.stroke();
-      // しっぽ
-      ctx2.beginPath();
-      ctx2.moveTo(cx2 - 15, cy2 + bh / 2 - 5);
-      ctx2.lineTo(cx2 - 25, cy2 + bh / 2 + 12);
-      ctx2.lineTo(cx2 + 5, cy2 + bh / 2 - 2);
-      ctx2.fillStyle = '#ffffff'; ctx2.fill();
-      ctx2.strokeStyle = '#333333'; ctx2.lineWidth = 1.5; ctx2.stroke();
-
-      ctx2.font = 'bold 12px "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif';
-      ctx2.fillStyle = '#111111';
-      ctx2.textAlign = 'center';
-      const t = text.length > 16 ? text.substring(0, 16) + '…' : text;
-      ctx2.fillText(`「${t}」`, cx2, cy2 + 5);
-      ctx2.textAlign = 'left';
-    }
-
-    function drawSpikeBubble(ctx2: CanvasRenderingContext2D, bx2: number, by2: number, text: string) {
-      // ギザギザ吹き出し（爆発型）
-      const r1 = 44, r2 = 58, spikes = 12;
-      ctx2.fillStyle = '#ffffff';
-      ctx2.strokeStyle = '#333333';
-      ctx2.lineWidth = 1.5;
-      ctx2.beginPath();
-      for (let s = 0; s < spikes * 2; s++) {
-        const angle = (s * Math.PI) / spikes;
-        const r = s % 2 === 0 ? r2 : r1;
-        const px = bx2 + Math.cos(angle) * r;
-        const py = by2 + Math.sin(angle) * r;
-        s === 0 ? ctx2.moveTo(px, py) : ctx2.lineTo(px, py);
+    // テキスト折り返しヘルパー
+    function wrapText(text: string, maxW: number, fontSize: number): string[] {
+      ctx!.font = `${fontSize}px "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif`;
+      const lines: string[] = [];
+      let line = '';
+      for (const ch of text) {
+        const test = line + ch;
+        if (ctx!.measureText(test).width > maxW && line.length > 0) {
+          lines.push(line); line = ch;
+        } else { line = test; }
       }
-      ctx2.closePath(); ctx2.fill(); ctx2.stroke();
-
-      ctx2.font = 'bold 11px "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif';
-      ctx2.fillStyle = '#111111';
-      ctx2.textAlign = 'center';
-      const t = text.length > 10 ? text.substring(0, 10) + '…' : text;
-      ctx2.fillText(t, bx2, by2 - 6);
-      ctx2.fillText(lang === 'ar' ? 'يدخل!' : lang === 'en' ? 'to enter!' : 'を入力!', bx2, by2 + 8);
-      ctx2.textAlign = 'left';
+      if (line) lines.push(line);
+      return lines;
     }
 
-    const panels = [
-      { col: 0, row: 0 }, { col: 1, row: 0 },
-      { col: 0, row: 1 }, { col: 1, row: 1 },
-    ];
-
-    for (let i = 0; i < 4; i++) {
-      const { col, row } = panels[i];
-      const px = padX + col * (colW + gapX);
-      const py = padY + row * (rowH + gapY);
-
-      // パネル背景・枠
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(px, py, colW, rowH);
-      ctx.strokeStyle = '#333333';
-      ctx.lineWidth = 1.8;
-      ctx.strokeRect(px, py, colW, rowH);
-
-      const p = selectedStory?.panels[i];
-      const sceneText = p?.scene || (lang === 'ar' ? 'أدخل المشهد' : lang === 'en' ? 'Enter scene' : 'シーンを入力');
-      const dialogue = p?.dialogue || (lang === 'ar' ? 'أدخل الحوار' : lang === 'en' ? 'Enter dialogue' : 'セリフを入力');
-
-      // キャプション（左上）
-      drawCaption(ctx, px, py, colW, sceneText);
-
-      if (i === 2) {
-        // 3コマ目はギザギザ吹き出し（左下）
-        drawSpikeBubble(ctx, px + 65, py + rowH - 72, dialogue);
+    // 楕円吹き出し（セリフ折り返し対応）
+    function drawBubble(cx2: number, cy2: number, bw: number, bh: number, text: string, spike: boolean) {
+      const ctx2 = ctx!;
+      ctx2.save();
+      if (spike) {
+        // ギザギザ
+        const r1 = bh * 0.45, r2 = bh * 0.6, spikes = 14;
+        ctx2.fillStyle = '#ffffff';
+        ctx2.strokeStyle = '#333333';
+        ctx2.lineWidth = 1.8;
+        ctx2.beginPath();
+        for (let s = 0; s < spikes * 2; s++) {
+          const angle = (s / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
+          const r = s % 2 === 0 ? r2 : r1;
+          const px = cx2 + Math.cos(angle) * r * (bw / bh);
+          const py = cy2 + Math.sin(angle) * r;
+          s === 0 ? ctx2.moveTo(px, py) : ctx2.lineTo(px, py);
+        }
+        ctx2.closePath(); ctx2.fill(); ctx2.stroke();
       } else {
-        // 1・2・4コマ目は楕円吹き出し
-        const bubblePositions = [
-          { bx: px + colW - 78, by: py + 48 },  // 右上
-          { bx: px + colW - 78, by: py + 42 },  // 右上
-          { bx: px + colW - 78, by: py + rowH - 55 }, // 右下
-        ];
-        const bp = bubblePositions[i < 2 ? i : 2];
-        drawSpeechBubble(ctx, bp.bx, bp.by, dialogue);
+        // 楕円
+        ctx2.fillStyle = '#ffffff';
+        ctx2.strokeStyle = '#333333';
+        ctx2.lineWidth = 1.8;
+        ctx2.beginPath();
+        ctx2.ellipse(cx2, cy2, bw / 2, bh / 2, 0, 0, Math.PI * 2);
+        ctx2.fill(); ctx2.stroke();
+        // しっぽ
+        ctx2.fillStyle = '#ffffff';
+        ctx2.beginPath();
+        ctx2.moveTo(cx2 - bw * 0.2, cy2 + bh * 0.4);
+        ctx2.lineTo(cx2 - bw * 0.35, cy2 + bh * 0.7);
+        ctx2.lineTo(cx2 + bw * 0.05, cy2 + bh * 0.42);
+        ctx2.fill();
+        ctx2.strokeStyle = '#333333'; ctx2.lineWidth = 1.5;
+        ctx2.beginPath();
+        ctx2.moveTo(cx2 - bw * 0.2, cy2 + bh * 0.4);
+        ctx2.lineTo(cx2 - bw * 0.35, cy2 + bh * 0.7);
+        ctx2.lineTo(cx2 + bw * 0.05, cy2 + bh * 0.42);
+        ctx2.stroke();
       }
+
+      // セリフ（折り返し）
+      const fontSize = 14;
+      const maxTW = bw - 24;
+      const lines = wrapText(text, maxTW, fontSize);
+      const lineH = fontSize * 1.4;
+      const totalH = lines.length * lineH;
+      const startY = cy2 - totalH / 2 + fontSize * 0.5;
+      ctx2.font = `bold ${fontSize}px "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif`;
+      ctx2.fillStyle = '#111111';
+      ctx2.textAlign = 'center';
+      lines.forEach((line, li) => {
+        ctx2.fillText(line, cx2, startY + li * lineH);
+      });
+      ctx2.textAlign = 'left';
+      ctx2.restore();
     }
 
-    // 下部クレジット
+    // キャプション（右外側）
+    function drawCaption(panelY: number, ph: number, text: string) {
+      const cx2 = PAD_LEFT + PANEL_W + 16;
+      const cw = CAPTION_W;
+      ctx!.fillStyle = '#ffffff';
+      ctx!.strokeStyle = '#aaaaaa';
+      ctx!.lineWidth = 1;
+      ctx!.fillRect(cx2, panelY + 4, cw, 26);
+      ctx!.strokeRect(cx2, panelY + 4, cw, 26);
+      const fontSize = 11;
+      const lines = wrapText(text, cw - 10, fontSize);
+      ctx!.font = `${fontSize}px "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif`;
+      ctx!.fillStyle = '#555555';
+      lines.slice(0, 3).forEach((line, li) => {
+        ctx!.fillText(line, cx2 + 5, panelY + 18 + li * 14);
+      });
+    }
+
+    // 各コマ描画
+    const panelX = PAD_LEFT;
+    for (let i = 0; i < 4; i++) {
+      const panelY = TITLE_H + PAD_TOP + i * (PANEL_H + GAP);
+
+      // コマ枠
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(panelX, panelY, PANEL_W, PANEL_H);
+      ctx.strokeStyle = '#222222';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(panelX, panelY, PANEL_W, PANEL_H);
+
+      // コマ番号（左上）
+      ctx.fillStyle = '#333333';
+      ctx.fillRect(panelX, panelY, 26, 22);
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(`${i + 1}`, panelX + 7, panelY + 15);
+
+      // セリフ吹き出し
+      const p = selectedStory?.panels[i];
+      const dialogue = p?.dialogue || (lang === 'ar' ? 'الحوار هنا' : lang === 'en' ? 'Dialogue here' : 'セリフ');
+      const scene = p?.scene || (lang === 'ar' ? 'المشهد هنا' : lang === 'en' ? 'Scene here' : '場面');
+      const isSpike = i === 2; // 3コマ目はギザギザ
+      const bw = 200, bh = 80;
+      const bx = panelX + PANEL_W - bw / 2 - 20;
+      const by = panelY + (isSpike ? PANEL_H - bh / 2 - 20 : bh / 2 + 16);
+      drawBubble(bx, by, bw, bh, dialogue, isSpike);
+
+      // キャプション（右外側）
+      drawCaption(panelY, PANEL_H, scene);
+    }
+
+    // クレジット
     ctx.font = '10px sans-serif';
     ctx.fillStyle = '#cccccc';
     ctx.textAlign = 'right';
-    ctx.fillText('TERRAKOYA', W - 8, H - 6);
+    ctx.fillText('TERRAKOYA', W - 6, H - 5);
     ctx.textAlign = 'left';
 
     const link = document.createElement('a');
