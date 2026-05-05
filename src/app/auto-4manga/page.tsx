@@ -340,19 +340,20 @@ export default function Auto4MangaPage() {
         ctx2.beginPath();
         ctx2.ellipse(cx2, cy2, bw / 2, bh / 2, 0, 0, Math.PI * 2);
         ctx2.fill(); ctx2.stroke();
-        // しっぽ（方向で左右切り替え）
-        const sign = tailDir === 'left' ? -1 : 1;
+        // しっぽは吹き出し位置の反対側（コマ内側）向き
+        // right位置の吹き出し → しっぽは左下、left位置 → しっぽは右下
+        const sign = tailDir === 'right' ? -1 : 1;
         ctx2.fillStyle = '#ffffff';
         ctx2.beginPath();
         ctx2.moveTo(cx2 + sign * bw * 0.15, cy2 + bh * 0.38);
-        ctx2.lineTo(cx2 + sign * bw * 0.38, cy2 + bh * 0.68);
-        ctx2.lineTo(cx2 - sign * bw * 0.05, cy2 + bh * 0.4);
+        ctx2.lineTo(cx2 + sign * bw * 0.4, cy2 + bh * 0.72);
+        ctx2.lineTo(cx2 - sign * bw * 0.05, cy2 + bh * 0.42);
         ctx2.fill();
         ctx2.strokeStyle = '#333333'; ctx2.lineWidth = 1.5;
         ctx2.beginPath();
         ctx2.moveTo(cx2 + sign * bw * 0.15, cy2 + bh * 0.38);
-        ctx2.lineTo(cx2 + sign * bw * 0.38, cy2 + bh * 0.68);
-        ctx2.lineTo(cx2 - sign * bw * 0.05, cy2 + bh * 0.4);
+        ctx2.lineTo(cx2 + sign * bw * 0.4, cy2 + bh * 0.72);
+        ctx2.lineTo(cx2 - sign * bw * 0.05, cy2 + bh * 0.42);
         ctx2.stroke();
       }
 
