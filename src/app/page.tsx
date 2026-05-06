@@ -53,7 +53,7 @@ export default function Home() {
       {/* ヒーロー */}
       <section style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:'4rem 1.5rem'}}>
         <div className="inline-block bg-blue-500/20 text-blue-300 text-xs px-4 py-1.5 rounded-full mb-6 border border-blue-400/30">
-          🎌 JP · EN · AR
+          JP · EN · AR
         </div>
         <h2 style={{fontSize:'clamp(1.6rem,5vw,3.5rem)', fontWeight:'bold', color:'white', marginBottom:'1rem', lineHeight:1.2, maxWidth:'32rem', direction: isAr ? 'rtl' : 'ltr'}}>
           {headline.main}
