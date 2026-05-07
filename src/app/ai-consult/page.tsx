@@ -58,6 +58,7 @@ export default function AIConsultPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [...history, { role: 'user', content: userMsg }],
+          lang,
         }),
       });
 
