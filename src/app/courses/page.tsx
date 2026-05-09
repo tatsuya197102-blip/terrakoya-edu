@@ -81,7 +81,7 @@ export default function CoursesPage() {
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2" style={{scrollbarWidth:"none"}}>
           {cats.map(c => (
             <button key={c.id} onClick={() => setFilter(c.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                 filter === c.id ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
               }`}>
               {c.icon} {(c.label as Record<string,string>)[lang] || (c.label as Record<string,string>).ja}
@@ -89,7 +89,7 @@ export default function CoursesPage() {
           ))}
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder={t('common.search') + '...'}
-            className="ml-auto bg-gray-800 border border-gray-700 rounded-full px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            className="ml-2 flex-shrink-0 bg-gray-800 border border-gray-700 rounded-full px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 w-32" />
         </div>
 
         <p className="text-gray-400 text-sm mb-6">{filtered.length} {{'ar':'دورة','en':'courses','ja':'コース','zh':'门课程','hi':'कोर्स','vi':'khóa học','es':'cursos'}[lang as string] || 'courses'}</p>
