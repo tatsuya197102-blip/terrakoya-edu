@@ -4,7 +4,10 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getLevelInfo, BADGES, getBadgeLabel } from '@/lib/gamification';
+import { recordLogin } from '@/lib/gamificationActions';
+import XPToast from '@/components/XPToast';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
@@ -49,6 +52,11 @@ export default function DashboardPage() {
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
   const [activityDates, setActivityDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [xp, setXp] = useState(0);
+  const [badges, setBadges] = useState<string[]>([]);
+  const [toastXP, setToastXP] = useState(0);
+  const [toastBadges, setToastBadges] = useState<string[]>([]);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -70,7 +78,21 @@ export default function DashboardPage() {
         const today = new Date().toISOString().split('T')[0];
         if (!dates.includes(today)) dates.push(today);
         setActivityDates(dates);
+        setXp(data.xp || 0);
+        setBadges(data.badges || []);
       }
+      // ログイン記録・XP付与
+      try {
+        const result = await recordLogin(user.uid);
+        if (result.xpGained > 0 || result.newBadges.length > 0) {
+          setToastXP(result.xpGained);
+          setToastBadges(result.newBadges);
+          setShowToast(true);
+          // XP表示を更新
+          const snap2 = await getDoc(doc(db, 'users', user.uid));
+          if (snap2.exists()) setXp(snap2.data().xp || 0);
+        }
+      } catch (e) { console.error(e); }
       setLoading(false);
     });
     return () => unsubscribe();
@@ -96,10 +118,40 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-950 text-white p-6">
       <div className="max-w-5xl mx-auto">
 
-        {/* ウェルカムバナー */}
+        {/* XPトースト */}
+        {showToast && (
+          <XPToast xp={toastXP} badges={toastBadges} onDone={() => setShowToast(false)} />
+        )}
+
+        {/* ウェルカムバナー + レベル */}
         <div className="bg-gradient-to-r from-blue-700 to-blue-900 rounded-2xl p-6 mb-6">
-          <h1 className="text-2xl font-bold mb-1">{t('dashboard.welcome', { name: userName })}</h1>
-          <p className="text-blue-200 text-sm">{t('dashboard.subtitle')}</p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold mb-1">{t('dashboard.welcome', { name: userName })}</h1>
+              <p className="text-blue-200 text-sm">{t('dashboard.subtitle')}</p>
+            </div>
+            {/* レベル表示 */}
+            {(() => {
+              const lv = getLevelInfo(xp, lang);
+              return (
+                <div className="bg-white/10 rounded-xl p-4 min-w-[220px]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-yellow-300 font-bold text-sm">Lv.{lv.lv}</span>
+                    <span className="text-white font-bold text-sm">{lv.title}</span>
+                  </div>
+                  <div className="w-full bg-white/20 rounded-full h-3 mb-1">
+                    <div className="bg-yellow-400 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${lv.progressPct}%` }} />
+                  </div>
+                  <div className="flex justify-between text-xs text-blue-200">
+                    <span>⚡ {xp} XP</span>
+                    {!lv.isMax && <span>{lv.progressXP}/{lv.neededXP} → {lv.nextTitle}</span>}
+                    {lv.isMax && <span>🔥 MAX!</span>}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
         </div>
 
         {/* 統計カード */}
@@ -116,6 +168,35 @@ export default function DashboardPage() {
               <p className="text-gray-400 text-xs mt-1">{stat.label}</p>
             </div>
           ))}
+        </div>
+
+        {/* バッジ一覧 */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-6">
+          <h2 className="font-bold mb-4 flex items-center gap-2">
+            🏅 {lang === 'ar' ? 'شاراتي' : lang === 'en' ? 'My Badges' : 'マイバッジ'}
+            <span className="text-xs text-gray-400 font-normal ml-2">
+              {badges.length}/{BADGES.length}
+            </span>
+          </h2>
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-3">
+            {BADGES.map(badge => {
+              const earned = badges.includes(badge.id);
+              const label = getBadgeLabel(badge, lang);
+              return (
+                <div key={badge.id} title={label}
+                  className={`flex flex-col items-center gap-1 cursor-default transition-all ${
+                    earned ? 'opacity-100' : 'opacity-25 grayscale'
+                  }`}>
+                  <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xl ${
+                    earned ? 'bg-yellow-400/20 border-2 border-yellow-400' : 'bg-gray-800 border-2 border-gray-700'
+                  }`}>
+                    {label.split(' ')[0]}
+                  </div>
+                  <span className="text-xs text-center leading-tight text-gray-400 w-12 truncate">{label.split(' ').slice(1).join(' ')}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
