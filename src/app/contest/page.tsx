@@ -21,25 +21,37 @@ const SAMPLE_CONTESTS: Contest[] = [
     id: 'contest-001',
     theme: { ja: '🌟 テーマ：友情', en: '🌟 Theme: Friendship', ar: '🌟 الموضوع: الصداقة' },
     description: { ja: '「友情」をテーマにした4コマ漫画またはイラストを描こう！', en: 'Draw a 4-koma manga or illustration about "Friendship"!', ar: 'ارسم مانجا من 4 لوحات أو رسم توضيحي حول موضوع "الصداقة"!' },
-    deadline: '2026-06-30', status: 'active', entries: [],
+    deadline: '2026-11-30', status: 'upcoming', entries: [],
   },
   {
     id: 'contest-002',
     theme: { ja: '🏛️ テーマ：ピラミッドの秘密', en: '🏛️ Theme: Secrets of the Pyramids', ar: '🏛️ الموضوع: أسرار الأهرامات' },
     description: { ja: 'ピラミッドを舞台にしたオリジナルキャラクターや冒険ストーリーを描こう！', en: 'Draw an original character or adventure story set in the Pyramids!', ar: 'ارسم شخصية أصلية أو قصة مغامرة تدور حول الأهرامات!' },
-    deadline: '2026-07-31', status: 'upcoming', entries: [],
+    deadline: '2026-12-31', status: 'upcoming', entries: [],
   },
   {
     id: 'contest-003',
     theme: { ja: '🌙 テーマ：ラマダンの夜', en: '🌙 Theme: Ramadan Night', ar: '🌙 الموضوع: ليلة رمضان' },
     description: { ja: 'ラマダンの温かい家族の風景や思い出をイラストで表現しよう！', en: 'Express the warm family scenes and memories of Ramadan in your illustration!', ar: 'عبّر عن مشاهد العائلة الدافئة وذكريات رمضان في رسمك!' },
-    deadline: '2026-08-31', status: 'upcoming', entries: [],
+    deadline: '2027-01-31', status: 'upcoming', entries: [],
   },
   {
     id: 'contest-004',
     theme: { ja: '🇯🇵🇪🇬 テーマ：日本とエジプト', en: '🇯🇵🇪🇬 Theme: Japan & Egypt', ar: '🇯🇵🇪🇬 الموضوع: اليابان ومصر' },
     description: { ja: 'エジプトと日本の文化をミックスしたキャラクターやストーリーを描こう！', en: 'Draw characters or stories mixing Egyptian and Japanese cultures!', ar: 'ارسم شخصيات أو قصص تمزج بين الثقافة المصرية واليابانية!' },
-    deadline: '2026-09-30', status: 'upcoming', entries: [],
+    deadline: '2027-02-28', status: 'upcoming', entries: [],
+  },
+  {
+    id: 'contest-005',
+    theme: { ja: '🌊 テーマ：ナイル川の物語', en: '🌊 Theme: Tales of the Nile', ar: '🌊 الموضوع: حكايات النيل' },
+    description: { ja: 'ナイル川にまつわるキャラクターや風景を自由に描こう！', en: 'Draw characters or scenes inspired by the Nile River!', ar: 'ارسم شخصيات أو مشاهد مستوحاة من نهر النيل!' },
+    deadline: '2027-03-31', status: 'upcoming', entries: [],
+  },
+  {
+    id: 'contest-006',
+    theme: { ja: '🌸 テーマ：春の思い出', en: '🌸 Theme: Spring Memories', ar: '🌸 الموضوع: ذكريات الربيع' },
+    description: { ja: 'この1年で一番楽しかった思い出をイラストにしよう！', en: "Draw your happiest memory from this school year!", ar: 'ارسم أسعد ذكرياتك من هذه السنة الدراسية!' },
+    deadline: '2027-04-30', status: 'upcoming', entries: [],
   },
 ];
 
