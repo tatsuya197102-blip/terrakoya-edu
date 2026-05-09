@@ -54,6 +54,7 @@ export default function AssignmentPage() {
   const [preview, setPreview] = useState('');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isPublic, setIsPublic] = useState(true);
 
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [streamingId, setStreamingId] = useState<string | null>(null);
@@ -133,7 +134,22 @@ export default function AssignmentPage() {
         imageBase64: base64, submittedAt: new Date().toISOString(),
         aiFeedback: null, feedbackStatus: 'pending',
         gradeResult: null, gradingStatus: 'idle',
+        isPublic,
       });
+      // ギャラリー用にsubmissionsコレクションにも追加
+      if (isPublic) {
+        const { addDoc: addGallery, collection: col, serverTimestamp } = await import('firebase/firestore');
+        await addGallery(col(db, 'submissions'), {
+          studentId: user.uid,
+          studentName: user.displayName || 'Anonymous',
+          title: file.name.replace(/\.[^.]+$/, ''),
+          imageUrl: `data:${fileType};base64,${base64}`,
+          courseId, likes: [],
+          createdAt: serverTimestamp(),
+          isPublic: true,
+          sourceId: docRef.id,
+        });
+      }
 
       const newSub: Submission = {
         id: docRef.id, fileName: file.name, fileType, comment,
@@ -300,6 +316,21 @@ export default function AssignmentPage() {
               placeholder="工夫した点、難しかったこと、先生に見てほしいところ..."
               className="w-full bg-gray-700 rounded-lg px-4 py-3 text-sm text-white resize-none h-20 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
+          </div>
+          {/* 公開設定トグル */}
+          <div className="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-3">
+            <div>
+              <p className="text-sm font-medium">
+                {i18n.language === 'ar' ? '🌍 نشر في المعرض العام' : i18n.language === 'en' ? '🌍 Publish to Public Gallery' : '🌍 ギャラリーに公開する'}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {i18n.language === 'ar' ? 'يمكن للجميع رؤية عملك' : i18n.language === 'en' ? 'Everyone can see your artwork' : 'みんなに作品を見せよう！'}
+              </p>
+            </div>
+            <button onClick={() => setIsPublic(v => !v)}
+              className={`w-12 h-6 rounded-full transition-colors relative ${isPublic ? 'bg-blue-500' : 'bg-gray-600'}`}>
+              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${isPublic ? 'left-6' : 'left-0.5'}`} />
+            </button>
           </div>
           <button
             onClick={handleSubmit} disabled={!file || submitting}

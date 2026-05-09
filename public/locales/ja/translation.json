@@ -31,7 +31,8 @@
     "profile": "プロフィール",
     "logout": "ログアウト",
     "admin": "管理者パネル",
-    "notifications": "通知"
+    "notifications": "通知",
+    "gallery": "ギャラリー"
   },
   "dashboard": {
     "title": "ダッシュボード",

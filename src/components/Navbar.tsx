@@ -66,6 +66,7 @@ export default function Navbar() {
           { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
           { href: '/auto-animate',label: t('nav.anime'),     icon: '🎬' },
           { href: '/contest',     label: t('nav.contest'),   icon: '🏆' },
+          { href: '/gallery',     label: t('nav.gallery'),   icon: '🖼️' },
           { href: '/ai-consult',  label: t('nav.aiConsult'), icon: '🤖' },
           ].map(({ href, label, icon }) => (
 
@@ -154,6 +155,7 @@ export default function Navbar() {
             { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
             { href: '/auto-animate',label: t('nav.anime'),     icon: '🎬' },
             { href: '/contest',     label: t('nav.contest'),   icon: '🏆' },
+            { href: '/gallery',     label: t('nav.gallery'),   icon: '🖼️' },
             { href: '/ai-consult',  label: t('nav.aiConsult'), icon: '🤖' },
           ].map(({ href, label, icon }) => (
             <Link key={href} href={href}

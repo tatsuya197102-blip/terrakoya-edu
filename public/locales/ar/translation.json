@@ -31,7 +31,8 @@
     "profile": "الملف الشخصي",
     "logout": "تسجيل الخروج",
     "admin": "لوحة الإدارة",
-    "notifications": "الإشعارات"
+    "notifications": "الإشعارات",
+    "gallery": "المعرض"
   },
   "dashboard": {
     "title": "لوحة التحكم",

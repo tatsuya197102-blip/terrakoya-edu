@@ -31,7 +31,8 @@
     "profile": "Profile",
     "logout": "Logout",
     "admin": "Admin Panel",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "gallery": "Gallery"
   },
   "dashboard": {
     "title": "Dashboard",
