@@ -552,6 +552,7 @@ export default function Auto4MangaPage() {
           fileType: 'image/jpeg',
           comment: `4コマ漫画「${selectedStory?.title || ''}」`,
           imageBase64: base64,
+          lang,
         }),
       });
       const data = await res.json();

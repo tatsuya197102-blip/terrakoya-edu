@@ -194,7 +194,7 @@ export default function AssignmentPage() {
       const res = await fetch('/api/analyze-artwork', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId: cId, fileName, fileType, comment: userComment, imageBase64 }),
+        body: JSON.stringify({ courseId: cId, fileName, fileType, comment: userComment, imageBase64, lang }),
       });
       const data = await res.json();
       const finalText = data.feedback || 'フィードバックを生成できませんでした';
