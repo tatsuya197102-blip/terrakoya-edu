@@ -160,6 +160,23 @@ export default function AssignmentPage() {
       setSubmissions(prev => [newSub, ...prev]);
       setFile(null); setPreview(''); setComment('');
       showToast(t('assignment.submitSuccess'), 'success');
+      // 保護者通知
+      try {
+        const usnap = await getDoc(doc(db, 'users', user.uid));
+        const udata = usnap.data() || {};
+        if (udata.parentEmail && udata.notifySubmission !== false) {
+          await fetch('/api/notify-parent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'submission',
+              studentName: user.displayName || 'ユーザー',
+              parentEmail: udata.parentEmail,
+              data: { title: file.name, courseId },
+            }),
+          });
+        }
+      } catch (e) { console.error('notify error:', e); }
       await streamFeedback(docRef.id, courseId, file.name, fileType, comment, base64, user.uid);
     } catch (e) {
       console.error('Submit error:', e);

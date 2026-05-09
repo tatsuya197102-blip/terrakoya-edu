@@ -8,6 +8,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getLevelInfo, BADGES, getBadgeLabel } from '@/lib/gamification';
 import { recordLogin } from '@/lib/gamificationActions';
 import XPToast from '@/components/XPToast';
+import WeeklyChallengeCard from '@/components/WeeklyChallengeCard';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
@@ -169,6 +170,9 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* 週次チャレンジ */}
+        <WeeklyChallengeCard />
 
         {/* バッジ一覧 */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-6">
