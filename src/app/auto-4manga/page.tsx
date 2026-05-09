@@ -5,11 +5,16 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const THEMES = [
-  { id: 'school',     labelJa: '🏫 学校の日常', labelEn: '🏫 School Life', labelAr: '🏫 الحياة المدرسية', labelZh: '🏫 校园日常', labelHi: '🏫 स्कूल जीवन', labelVi: '🏫 Đời học đường', labelEs: '🏫 Vida escolar' },
-  { id: 'adventure',  labelJa: '⚔️ 冒険', labelEn: '⚔️ Adventure', labelAr: '⚔️ مغامرة', labelZh: '⚔️ 冒险', labelHi: '⚔️ साहसिक', labelVi: '⚔️ Phiêu lưu', labelEs: '⚔️ Aventura' },
-  { id: 'funny',      labelJa: '😂 おもしろ', labelEn: '😂 Comedy', labelAr: '😂 مضحك', labelZh: '😂 搞笑', labelHi: '😂 कॉमेडी', labelVi: '😂 Hài hước', labelEs: '😂 Comedia' },
-  { id: 'friendship', labelJa: '🤝 友情', labelEn: '🤝 Friendship', labelAr: '🤝 صداقة', labelZh: '🤝 友情', labelHi: '🤝 मित्रता', labelVi: '🤝 Tình bạn', labelEs: '🤝 Amistad' },
-  { id: 'free',       labelJa: '✨ 自由テーマ', labelEn: '✨ Free Theme', labelAr: '✨ موضوع حر', labelZh: '✨ 自由主题', labelHi: '✨ मुक्त विषय', labelVi: '✨ Chủ đề tự do', labelEs: '✨ Tema libre' },
+  { id: 'school',     labelJa: '🏫 学校の日常',       labelEn: '🏫 School Life',       labelAr: '🏫 الحياة المدرسية' },
+  { id: 'adventure',  labelJa: '⚔️ 冒険',             labelEn: '⚔️ Adventure',         labelAr: '⚔️ مغامرة' },
+  { id: 'funny',      labelJa: '😂 おもしろ',          labelEn: '😂 Comedy',            labelAr: '😂 مضحك' },
+  { id: 'friendship', labelJa: '🤝 友情',             labelEn: '🤝 Friendship',         labelAr: '🤝 صداقة' },
+  { id: 'egypt',      labelJa: '🏛️ エジプトの冒険',   labelEn: '🏛️ Egypt Adventure',  labelAr: '🏛️ مغامرة مصرية' },
+  { id: 'ramadan',    labelJa: '🌙 ラマダン',          labelEn: '🌙 Ramadan',           labelAr: '🌙 رمضان' },
+  { id: 'nile',       labelJa: '🌊 ナイル川の旅',     labelEn: '🌊 Nile River Journey', labelAr: '🌊 رحلة النيل' },
+  { id: 'market',     labelJa: '🛒 にぎやかなスーク', labelEn: '🛒 Bustling Souk',     labelAr: '🛒 السوق الصاخب' },
+  { id: 'japan_egypt',labelJa: '🇯🇵🇪🇬 日本とエジプト', labelEn: '🇯🇵🇪🇬 Japan & Egypt', labelAr: '🇯🇵🇪🇬 اليابان ومصر' },
+  { id: 'free',       labelJa: '✨ 自由テーマ',        labelEn: '✨ Free Theme',         labelAr: '✨ موضوع حر' },
 ];
 
 interface Story {
@@ -370,6 +375,106 @@ export default function Auto4MangaPage() {
           { panel: 2, scene: 'お互い気まずい', dialogue: '...' },
           { panel: 3, scene: '雨が降ってきて友達が傘がない', dialogue: 'あっ...' },
           { panel: 4, scene: `${name}が傘を差し出す`, dialogue: `${name}：...一緒に帰ろ / 友達：うん！` },
+        ]},
+      ],
+      egypt: [
+        { title: `${name}のピラミッド探検`, panels: [
+          { panel: 1, scene: `${name}がピラミッドの前に立つ`, dialogue: 'わあ！本物のピラミッドだ！' },
+          { panel: 2, scene: '入口から中に入ると迷路のよう', dialogue: 'どっちに行けばいいの？' },
+          { panel: 3, scene: 'ミイラのような影が現れる', dialogue: `${name}：ぎゃー！ / 影：ただの観光ガイドだよ` },
+          { panel: 4, scene: '観光ガイドのおじさんだった', dialogue: 'ようこそエジプトへ！案内しますよ！' },
+        ]},
+        { title: `${name}とスフィンクス`, panels: [
+          { panel: 1, scene: 'スフィンクスを見て感動する', dialogue: 'こんなに大きいの！' },
+          { panel: 2, scene: 'スフィンクスに話しかけてみる', dialogue: `${name}：ねえ、何年ここにいるの？` },
+          { panel: 3, scene: 'スフィンクスがしゃべり出す', dialogue: 'スフィンクス：4500年くらいかな' },
+          { panel: 4, scene: 'みんなで記念撮影', dialogue: `${name}：また来るね！ / スフィンクス：待ってるよ！` },
+        ]},
+        { title: `${name}のファラオ体験`, panels: [
+          { panel: 1, scene: '博物館でファラオの衣装を発見', dialogue: '着てみたい！' },
+          { panel: 2, scene: 'ファラオの格好をしてみたが重くて大変', dialogue: 'こんなに重かったの！？' },
+          { panel: 3, scene: '観光客に写真を求められる', dialogue: `一緒に撮って！ / わたしも！` },
+          { panel: 4, scene: '人気者になって大満足', dialogue: `${name}：ファラオ最高！またやりたい！` },
+        ]},
+      ],
+      ramadan: [
+        { title: `${name}のイフタール`, panels: [
+          { panel: 1, scene: '夕方、イフタールの準備をする家族', dialogue: 'もうすぐ日が沈む！' },
+          { panel: 2, scene: 'アザーンが鳴り響く', dialogue: 'アッラーフ・アクバル！' },
+          { panel: 3, scene: `みんなでイフタール、${name}は大喜び`, dialogue: 'やっと食べられる！いただきます！' },
+          { panel: 4, scene: '家族みんなで食卓を囲む', dialogue: 'ラマダンって温かいんだね！' },
+        ]},
+        { title: `${name}のランタン`, panels: [
+          { panel: 1, scene: 'ラマダンのランタン（ファヌース）を持つ', dialogue: 'きれい！町中がランタンだ！' },
+          { panel: 2, scene: '子供たちが歌いながら歩く', dialogue: 'ワッハウィー！みんなで歌おう！' },
+          { panel: 3, scene: 'お菓子をもらってうれしい', dialogue: 'カナーフェ！大好き！' },
+          { panel: 4, scene: '星空の下でランタンを高く掲げる', dialogue: 'ラマダン・カリーム！' },
+        ]},
+        { title: `${name}の断食チャレンジ`, panels: [
+          { panel: 1, scene: '夜明け前に起きてスフールを食べる', dialogue: 'まだ眠いけど起きなきゃ！' },
+          { panel: 2, scene: '家族みんなで朝食', dialogue: 'お腹いっぱい食べよう！' },
+          { panel: 3, scene: '昼間は元気に過ごす', dialogue: 'お腹すいたけど平気！' },
+          { panel: 4, scene: '夕方まで頑張った', dialogue: `${name}：今日もやりきった！ラマダン・カリーム！` },
+        ]},
+      ],
+      nile: [
+        { title: `${name}のナイル川クルーズ`, panels: [
+          { panel: 1, scene: 'ナイル川のボートに乗り込む', dialogue: 'ナイル川って広〜い！' },
+          { panel: 2, scene: 'カバが顔を出してびっくり', dialogue: `${name}：うわ！ / カバ：やあ！` },
+          { panel: 3, scene: '川沿いの遺跡が見えてくる', dialogue: '昔の人たちってすごい！' },
+          { panel: 4, scene: '夕日がナイルを染める', dialogue: '世界一きれいな夕日だ！' },
+        ]},
+        { title: `${name}とナイルの魚釣り`, panels: [
+          { panel: 1, scene: 'ナイル川で釣りをしている', dialogue: 'かかれ〜！' },
+          { panel: 2, scene: '大きな魚がかかった！', dialogue: 'きた！重い！' },
+          { panel: 3, scene: '引っ張り合いをしている', dialogue: `${name}：負けないぞ！ / 魚：負けないぞ！` },
+          { panel: 4, scene: '結局魚を逃がしてしまった', dialogue: 'また来るね！（魚に向かって）' },
+        ]},
+        { title: `${name}とナイルの恵み`, panels: [
+          { panel: 1, scene: '農家のおじさんに会う', dialogue: 'ナイルの水で野菜を育ててるんだよ' },
+          { panel: 2, scene: '畑を見て驚く', dialogue: `${name}：こんなに育つの！？` },
+          { panel: 3, scene: '収穫を手伝う', dialogue: 'わあ！野菜が抜けた！' },
+          { panel: 4, scene: 'とれたて野菜でごはんを食べる', dialogue: 'ナイルの恵み、おいしい！' },
+        ]},
+      ],
+      market: [
+        { title: `${name}のカイロ市場`, panels: [
+          { panel: 1, scene: 'ハン・ハリーリ市場に入る', dialogue: 'すごい！いろんなものが売ってる！' },
+          { panel: 2, scene: '香辛料の匂いにクラクラ', dialogue: `${name}：くしゅん！スパイスが！` },
+          { panel: 3, scene: '値切り交渉に挑戦', dialogue: `${name}：もう少し安くして！ / 売り手：じゃあこの値段で！` },
+          { panel: 4, scene: 'お土産をたくさん買えた', dialogue: 'お土産GET！楽しかった！' },
+        ]},
+        { title: `${name}とコシャリ`, panels: [
+          { panel: 1, scene: 'コシャリのお店の前で足が止まる', dialogue: 'なんだこのいい匂い！' },
+          { panel: 2, scene: 'コシャリを注文してみる', dialogue: `${name}：これ全部乗せで！` },
+          { panel: 3, scene: '一口食べて感動する', dialogue: '旨い！これが本場のコシャリか！' },
+          { panel: 4, scene: 'おかわりを頼んでしまう', dialogue: `売り手：また来てね！ / ${name}：絶対来ます！` },
+        ]},
+        { title: `${name}の迷子`, panels: [
+          { panel: 1, scene: '市場で道に迷う', dialogue: `${name}：あれ？どこだろう...` },
+          { panel: 2, scene: '地元の子供に助けを求める', dialogue: 'ねえ、出口どっち？' },
+          { panel: 3, scene: '子供が案内してくれる', dialogue: 'ついてきて！ / ありがとう！' },
+          { panel: 4, scene: '友達になってお茶を飲む', dialogue: 'また遊ぼう！マルハバ！' },
+        ]},
+      ],
+      japan_egypt: [
+        { title: `${name}の日本×エジプト食文化`, panels: [
+          { panel: 1, scene: 'エジプト人の友達が日本食を初体験', dialogue: '寿司？食べていい？' },
+          { panel: 2, scene: 'わさびで大変なことに', dialogue: `友達：うわ！辛い！ / ${name}：ごめん！` },
+          { panel: 3, scene: '今度は日本人がコシャリを初体験', dialogue: `${name}：これ全部混ぜるの！？` },
+          { panel: 4, scene: 'お互いの食文化を認め合う', dialogue: '世界ってすごい！また交換しよう！' },
+        ]},
+        { title: `ピラミッドと富士山`, panels: [
+          { panel: 1, scene: 'エジプト人と日本人の友達が話す', dialogue: `友達：ピラミッドって登れるの？ / ${name}：無理だよ！` },
+          { panel: 2, scene: '富士山とピラミッドを描いて見せ合う', dialogue: '富士山は白い！ピラミッドは三角！' },
+          { panel: 3, scene: 'どっちが大きいか調べる', dialogue: 'ピラミッドは138m、富士山は3776m！' },
+          { panel: 4, scene: 'お互いの国を尊敬し合う', dialogue: 'どっちも世界遺産！すごいね！' },
+        ]},
+        { title: `マンガとアラブ漫画`, panels: [
+          { panel: 1, scene: 'お互いに漫画を見せ合う', dialogue: `友達：アラビア語は右から読むんだよ！` },
+          { panel: 2, scene: '日本語の漫画を逆から読んで混乱', dialogue: `${name}：えっ！逆！？` },
+          { panel: 3, scene: '一緒に漫画を描く', dialogue: 'じゃあコラボしよう！' },
+          { panel: 4, scene: '日本語×アラビア語のコラボ漫画完成', dialogue: '世界一ユニークな漫画の誕生！' },
         ]},
       ],
       free: [
@@ -760,7 +865,7 @@ export default function Auto4MangaPage() {
             <div className="grid grid-cols-2 gap-3">
               {THEMES.map(th => (
                 <button key={th.id} onClick={() => setTheme(th.id)} className={`p-4 rounded-xl text-left transition ${theme === th.id ? 'bg-blue-600 text-white border-2 border-blue-400' : 'bg-slate-800 text-gray-300 hover:bg-slate-700 border-2 border-transparent'}`}>
-                  {({'ar':(th as any).labelAr,'en':(th as any).labelEn,'zh':(th as any).labelZh,'hi':(th as any).labelHi,'vi':(th as any).labelVi,'es':(th as any).labelEs} as Record<string,string>)[lang] || (th as any).labelJa}
+                  {(lang === 'ar' ? (th as any).labelAr : lang === 'en' ? (th as any).labelEn : (th as any).labelJa)}
                 </button>
               ))}
             </div>
