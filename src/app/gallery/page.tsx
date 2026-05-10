@@ -157,6 +157,35 @@ export default function GalleryPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6">
+      {/* 投稿方法の案内 */}
+        <div className="bg-blue-900/30 border border-blue-700/40 rounded-2xl p-5 mb-6">
+          <h2 className="font-bold text-blue-300 mb-3 flex items-center gap-2">
+            💡 {lang === 'ar' ? 'كيف تنشر عملك؟' : lang === 'en' ? 'How to post your artwork?' : 'ギャラリーに投稿するには？'}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            {[
+              { step: '1', icon: '📚', text: lang === 'ar' ? 'افتح صفحة المهمة في الدورة' : lang === 'en' ? 'Open the assignment page in a course' : 'コースの課題ページを開く' },
+              { step: '2', icon: '🖼️', text: lang === 'ar' ? 'ارفع صورة عملك' : lang === 'en' ? 'Upload a photo of your artwork' : '作品の写真をアップロードする' },
+              { step: '3', icon: '🌍', text: lang === 'ar' ? 'شغّل "نشر في المعرض"' : lang === 'en' ? 'Turn on "Publish to Gallery"' : '「ギャラリーに公開する」をONにする' },
+            ].map(s => (
+              <div key={s.step} className="flex items-start gap-3 bg-black/20 rounded-xl p-3">
+                <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold flex-shrink-0">{s.step}</div>
+                <p className="text-sm text-gray-300 leading-snug">{s.icon} {s.text}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <a href="/courses"
+              className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition">
+              📚 {lang === 'ar' ? 'اذهب إلى الدورات' : lang === 'en' ? 'Go to Courses' : 'コースへ行く'}
+            </a>
+            <a href="/auto-4manga"
+              className="bg-purple-600 hover:bg-purple-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition">
+              📖 {lang === 'ar' ? '4 لوحات مانغا' : lang === 'en' ? '4-Koma Manga' : '4コマ漫画を作る'}
+            </a>
+          </div>
+        </div>
+
         {/* ソート */}
         <div className="flex gap-2 mb-6">
           {(['newest', 'popular'] as const).map(s => (

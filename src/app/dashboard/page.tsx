@@ -61,39 +61,52 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (!user) { router.push('/login'); return; }
-      const ref = doc(db, 'users', user.uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        const data = snap.data();
-        setUserName(data.displayName || user.displayName || 'ユーザー');
-        setEnrolledCourses(data.enrolledCourses || []);
-        const pm: Record<string, number> = {};
-        for (const cid of (data.enrolledCourses || [])) {
-          const completed = data.completedLessons?.[cid] || [];
-          const total = COURSES[cid]?.lessons || 1;
-          pm[cid] = Math.round((completed.length / total) * 100);
-        }
-        setProgressMap(pm);
-        const dates = data.activityDates || [];
-        const today = new Date().toISOString().split('T')[0];
-        if (!dates.includes(today)) dates.push(today);
-        setActivityDates(dates);
-        setXp(data.xp || 0);
-        setBadges(data.badges || []);
-      }
-      // ログイン記録・XP付与
+      if (!user) { setLoading(false); router.push('/login'); return; }
       try {
-        const result = await recordLogin(user.uid);
-        if (result.xpGained > 0 || result.newBadges.length > 0) {
-          setToastXP(result.xpGained);
-          setToastBadges(result.newBadges);
-          setShowToast(true);
-          // XP表示を更新
-          const snap2 = await getDoc(doc(db, 'users', user.uid));
-          if (snap2.exists()) setXp(snap2.data().xp || 0);
+        const ref = doc(db, 'users', user.uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data = snap.data();
+          setUserName(data.displayName || user.displayName || 'ユーザー');
+          setEnrolledCourses(data.enrolledCourses || []);
+          const pm: Record<string, number> = {};
+          for (const cid of (data.enrolledCourses || [])) {
+            const completed = data.completedLessons?.[cid] || [];
+            const total = COURSES[cid]?.lessons || 1;
+            pm[cid] = Math.round((completed.length / total) * 100);
+          }
+          setProgressMap(pm);
+          const dates = data.activityDates || [];
+          const today = new Date().toISOString().split('T')[0];
+          if (!dates.includes(today)) dates.push(today);
+          setActivityDates(dates);
+          setXp(data.xp || 0);
+          setBadges(data.badges || []);
+        } else {
+          // ユーザードキュメントがない場合は作成
+          const { setDoc } = await import('firebase/firestore');
+          await setDoc(ref, {
+            displayName: user.displayName || 'ユーザー',
+            email: user.email,
+            xp: 0, badges: [], enrolledCourses: [],
+            createdAt: new Date().toISOString(),
+          });
+          setUserName(user.displayName || 'ユーザー');
         }
-      } catch (e) { console.error(e); }
+        // ログイン記録・XP付与
+        try {
+          const result = await recordLogin(user.uid);
+          if (result.xpGained > 0 || result.newBadges.length > 0) {
+            setToastXP(result.xpGained);
+            setToastBadges(result.newBadges);
+            setShowToast(true);
+            const snap2 = await getDoc(doc(db, 'users', user.uid));
+            if (snap2.exists()) setXp(snap2.data().xp || 0);
+          }
+        } catch (e) { console.error('recordLogin error:', e); }
+      } catch (e) {
+        console.error('dashboard load error:', e);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
