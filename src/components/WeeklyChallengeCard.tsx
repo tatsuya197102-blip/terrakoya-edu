@@ -23,11 +23,34 @@ export default function WeeklyChallengeCard() {
       const d = Math.floor(diff / 86400000);
       const h = Math.floor((diff % 86400000) / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
-      setTimeLeft(
-        lang === 'ar' ? `${d}د ${h}س ${m}د` :
-        lang === 'en' ? `${d}d ${h}h ${m}m` :
-        `残り${d}日${h}時間${m}分`
-      );
+
+      // アラビア語はフル単語＋単複対応で表示
+      // 「يوم」(日)、「ساعة」(時)、「دقيقة」(分) を文法に従って使い分ける
+      const arabicUnit = (count: number, one: string, two: string, plural: string, single: string) => {
+        if (count === 0) return single;
+        if (count === 1) return one;
+        if (count === 2) return two;
+        if (count >= 3 && count <= 10) return plural;
+        return single; // 11以上は単数形に戻る（アラビア語文法）
+      };
+
+      let formatted: string;
+      if (lang === 'ar') {
+        const dayUnit = arabicUnit(d, 'يوم', 'يومان', 'أيام', 'يوم');
+        const hourUnit = arabicUnit(h, 'ساعة', 'ساعتان', 'ساعات', 'ساعة');
+        const minuteUnit = arabicUnit(m, 'دقيقة', 'دقيقتان', 'دقائق', 'دقيقة');
+        formatted = `${d} ${dayUnit} ${h} ${hourUnit} ${m} ${minuteUnit}`;
+      } else if (lang === 'en') {
+        // 英語も単複対応
+        const dayUnit = d === 1 ? 'day' : 'days';
+        const hourUnit = h === 1 ? 'hr' : 'hrs';
+        const minuteUnit = m === 1 ? 'min' : 'mins';
+        formatted = `${d} ${dayUnit} ${h} ${hourUnit} ${m} ${minuteUnit}`;
+      } else {
+        formatted = `残り${d}日${h}時間${m}分`;
+      }
+
+      setTimeLeft(formatted);
     };
     update();
     const t = setInterval(update, 60000);
