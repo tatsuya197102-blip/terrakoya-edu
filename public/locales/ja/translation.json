@@ -4,26 +4,40 @@
     "welcome": "ようこそ",
     "loading": "読み込み中...",
     "error": "エラーが発生しました",
-    "language": "言語"
+    "language": "言語",
+    "back": "戻る",
+    "next": "次へ",
+    "previous": "前へ",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "submit": "送信",
+    "confirm": "確認",
+    "delete": "削除",
+    "edit": "編集",
+    "all": "すべて",
+    "search": "検索",
+    "filter": "フィルター",
+    "reset": "リセット",
+    "viewAll": "すべて見る",
+    "loadingPreparation": "準備中"
   },
   "navigation": {
     "home": "ホーム",
     "courses": "コース",
+    "lessons": "レッスン",
     "dashboard": "ダッシュボード",
     "profile": "プロフィール",
-    "logout": "ログアウト"
-  },
-  "courses": {
-    "title": "利用可能なコース",
-    "description": "あなたのスキルを磨くためのコース一覧",
-    "enroll": "登録する",
-    "enrolled": "登録済み"
-  },
-  "dashboard": {
-    "title": "ダッシュボード",
-    "myProgress": "進捗状況",
-    "recentActivity": "最近のアクティビティ",
-    "completedCourses": "完了したコース"
+    "logout": "ログアウト",
+    "fourPanelManga": "4コマ",
+    "animation": "アニメ",
+    "assignments": "課題",
+    "contest": "コンテスト",
+    "portfolio": "作品集",
+    "aiConsult": "AI相談",
+    "notifications": "通知",
+    "showcase": "ショーケース",
+    "teacher": "教師",
+    "adminPanel": "管理者パネル"
   },
   "auth": {
     "login": "ログイン",
@@ -31,10 +45,117 @@
     "email": "メールアドレス",
     "password": "パスワード",
     "forgotPassword": "パスワードを忘れた？",
-    "signUp": "サインアップ"
+    "signUp": "サインアップ",
+    "loginWithGoogle": "Googleでログイン"
   },
   "home": {
     "title": "TERRAKOYA へようこそ",
-    "subtitle": "多言語対応のオンライン教育プラットフォーム"
+    "subtitle": "多言語対応のオンライン教育プラットフォーム",
+    "getStarted": "はじめる",
+    "exploreNow": "今すぐ見る"
+  },
+  "dashboard": {
+    "title": "ダッシュボード",
+    "welcomeUser": "ようこそ、{{name}}さん！ 👋",
+    "todaysMessage": "今日も学習を続けましょう 🎯",
+    "stats": {
+      "progress": "進捗状況",
+      "enrolledCourses": "登録コース数",
+      "completedCourses": "完了したコース",
+      "streakDays": "連続学習日数",
+      "streakValue_one": "{{count}}日",
+      "streakValue_other": "{{count}}日"
+    },
+    "calendar": {
+      "title": "学習カレンダー",
+      "subtitle": "（過去30日）",
+      "notStudied": "未学習",
+      "studied": "学習済み"
+    },
+    "streak": {
+      "title": "学習ストリーク",
+      "daysInARow": "日連続学習中！",
+      "weekAchievement": "🏆 1週間達成！すごい！",
+      "monthAchievement": "🌟 30日達成！圧倒的！",
+      "startToday": "今日から始めよう！",
+      "hint": "レッスンを完了すると学習日として記録されます"
+    },
+    "enrolled": {
+      "title": "学習中のコース",
+      "empty": "まだコースに登録していません",
+      "findCourses": "コースを探す",
+      "continue": "続きを学ぶ →",
+      "review": "復習する"
+    },
+    "quickActions": {
+      "courseList": "コース一覧",
+      "fourPanel": "4コマ漫画",
+      "animation": "アニメーション",
+      "notifications": "通知",
+      "profile": "プロフィール",
+      "certificate": "修了証"
+    }
+  },
+  "courses": {
+    "title": "コース一覧",
+    "description": "あなたのスキルを磨くためのコース一覧",
+    "enroll": "登録する",
+    "enrolled": "登録済み",
+    "viewCourse": "コースを見る",
+    "searchPlaceholder": "コース・タグを検索...",
+    "allLevels": "すべてのレベル",
+    "allTags": "すべてのタグ",
+    "notFound": "コースが見つかりませんでした",
+    "resetFilter": "フィルターをリセット",
+    "count_one": "{{count}}件のコース",
+    "count_other": "{{count}}件のコース",
+    "searchResultFor": "「{{query}}」の検索結果",
+    "lessonsCount_one": "{{count}}レッスン",
+    "lessonsCount_other": "{{count}}レッスン",
+    "categories": {
+      "all": "すべて",
+      "manga": "漫画",
+      "illustration": "イラスト",
+      "story": "ストーリー",
+      "animation": "アニメ"
+    },
+    "levels": {
+      "all": "すべてのレベル",
+      "beginner": "初級",
+      "intermediate": "中級",
+      "advanced": "上級"
+    },
+    "sorts": {
+      "popular": "人気順",
+      "rating": "評価順",
+      "newest": "新着順"
+    }
+  },
+  "lessons": {
+    "pageHeading": "マンガの教科書 - レッスン動画",
+    "pageSubtitle": "YouTube動画でステップバイステップで学ぼう",
+    "totalCount": "全{{count}}レッスン",
+    "lessonNumber": "レッスン {{num}}",
+    "duration_minutes": "{{count}}分",
+    "pages": "{{range}} ページ",
+    "videoComingSoon": "動画準備中",
+    "videoPreparation": "動画準備中",
+    "backToList": "← レッスン一覧に戻る",
+    "lessonContent": "レッスン内容",
+    "submitAssignment": "📤 この課題を提出する",
+    "nextLesson": "次のレッスン →",
+    "complete": "レッスン完了",
+    "completed": "完了",
+    "previousLesson": "前のレッスン",
+    "viewCourse": "コースを見る",
+    "categories": {
+      "all": "すべて",
+      "character": "キャラクター",
+      "technique": "表現技法",
+      "background": "背景・構図",
+      "story": "ストーリー",
+      "animation": "アニメーション",
+      "digital": "デジタル"
+    }
   }
 }

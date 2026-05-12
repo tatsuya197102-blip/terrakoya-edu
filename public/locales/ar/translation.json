@@ -1,34 +1,43 @@
 {
   "common": {
     "appName": "تيراكويا - منصة التعلم",
-    "welcome": "أهلا وسهلا",
-    "loading": "جاري التحميل...",
+    "welcome": "أهلاً وسهلاً",
+    "loading": "جارٍ التحميل...",
     "error": "حدث خطأ",
-    "language": "اللغة"
+    "language": "اللغة",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "submit": "إرسال",
+    "confirm": "تأكيد",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "all": "الكل",
+    "search": "بحث",
+    "filter": "تصفية",
+    "reset": "إعادة تعيين",
+    "viewAll": "عرض الكل",
+    "loadingPreparation": "قريباً"
   },
   "navigation": {
     "home": "الصفحة الرئيسية",
     "courses": "الدورات",
+    "lessons": "الدروس",
     "dashboard": "لوحة التحكم",
     "profile": "الملف الشخصي",
-    "logout": "تسجيل الخروج"
-  },
-  "courses": {
-    "title": "الدورات التعليمية",
-    "description": "اكتشف مجموعة واسعة من دورات الرسم والمانجا والرسوم المتحركة",
-    "enroll": "التسجيل الآن",
-    "enrolled": "مسجل",
-    "search": "ابحث عن دورة...",
-    "filter": "تصفية",
-    "allCourses": "جميع الدورات"
-  },
-  "dashboard": {
-    "title": "لوحة التحكم",
-    "myProgress": "تقدمي",
-    "recentActivity": "النشاط الأخير",
-    "completedCourses": "الدورات المكتملة",
-    "streakDays": "أيام الاستمرار",
-    "enrolledCourses": "الدورات المسجلة"
+    "logout": "تسجيل الخروج",
+    "fourPanelManga": "مانجا ٤ لوحات",
+    "animation": "رسوم متحركة",
+    "assignments": "الواجبات",
+    "contest": "المسابقة",
+    "portfolio": "معرض أعمالي",
+    "aiConsult": "استشارة الذكاء الاصطناعي",
+    "notifications": "الإشعارات",
+    "showcase": "العرض",
+    "teacher": "المعلم",
+    "adminPanel": "لوحة المسؤول"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -37,7 +46,7 @@
     "password": "كلمة المرور",
     "forgotPassword": "هل نسيت كلمة المرور؟",
     "signUp": "إنشاء حساب جديد",
-    "loginWithGoogle": "تسجيل الدخول باستخدام Google"
+    "loginWithGoogle": "تسجيل الدخول باستخدام جوجل"
   },
   "home": {
     "title": "منصة تعليمية للفنانين",
@@ -45,11 +54,124 @@
     "getStarted": "ابدأ الآن",
     "exploreNow": "استكشف الآن"
   },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "welcomeUser": "أهلاً، {{name}}! 👋",
+    "todaysMessage": "هيا نواصل التعلم اليوم 🎯",
+    "stats": {
+      "progress": "التقدم",
+      "enrolledCourses": "الدورات المسجلة",
+      "completedCourses": "الدورات المكتملة",
+      "streakDays": "أيام الاستمرار",
+      "streakValue_zero": "لا أيام",
+      "streakValue_one": "يوم واحد",
+      "streakValue_two": "يومان",
+      "streakValue_few": "{{count}} أيام",
+      "streakValue_many": "{{count}} يوماً",
+      "streakValue_other": "{{count}} يوم"
+    },
+    "calendar": {
+      "title": "تقويم التعلم",
+      "subtitle": "(آخر ٣٠ يوماً)",
+      "notStudied": "لم تتم الدراسة",
+      "studied": "تمت الدراسة"
+    },
+    "streak": {
+      "title": "سلسلة التعلم",
+      "daysInARow": "أيام متتالية من التعلم!",
+      "weekAchievement": "🏆 أسبوع كامل! رائع!",
+      "monthAchievement": "🌟 ٣٠ يوماً! إنجاز مذهل!",
+      "startToday": "ابدأ من اليوم!",
+      "hint": "أكمل درساً لتسجيل يوم تعلم"
+    },
+    "enrolled": {
+      "title": "الدورات قيد التعلم",
+      "empty": "لم تسجل في أي دورة بعد",
+      "findCourses": "ابحث عن دورات",
+      "continue": "متابعة ←",
+      "review": "مراجعة"
+    },
+    "quickActions": {
+      "courseList": "قائمة الدورات",
+      "fourPanel": "مانجا ٤ لوحات",
+      "animation": "رسوم متحركة",
+      "notifications": "الإشعارات",
+      "profile": "الملف الشخصي",
+      "certificate": "الشهادة"
+    }
+  },
+  "courses": {
+    "title": "قائمة الدورات",
+    "description": "اكتشف مجموعة واسعة من دورات الرسم والمانجا والرسوم المتحركة",
+    "enroll": "التسجيل الآن",
+    "enrolled": "مسجل",
+    "viewCourse": "عرض الدورة",
+    "searchPlaceholder": "ابحث عن دورة أو وسم...",
+    "allLevels": "كل المستويات",
+    "allTags": "كل الوسوم",
+    "notFound": "لم يتم العثور على دورات",
+    "resetFilter": "إعادة تعيين التصفية",
+    "count_zero": "لا دورات",
+    "count_one": "دورة واحدة",
+    "count_two": "دورتان",
+    "count_few": "{{count}} دورات",
+    "count_many": "{{count}} دورة",
+    "count_other": "{{count}} دورة",
+    "searchResultFor": "نتائج البحث عن «{{query}}»",
+    "lessonsCount_zero": "لا دروس",
+    "lessonsCount_one": "درس واحد",
+    "lessonsCount_two": "درسان",
+    "lessonsCount_few": "{{count}} دروس",
+    "lessonsCount_many": "{{count}} درساً",
+    "lessonsCount_other": "{{count}} درس",
+    "categories": {
+      "all": "الكل",
+      "manga": "المانجا",
+      "illustration": "الرسم التوضيحي",
+      "story": "القصة",
+      "animation": "الرسوم المتحركة"
+    },
+    "levels": {
+      "all": "كل المستويات",
+      "beginner": "مبتدئ",
+      "intermediate": "متوسط",
+      "advanced": "متقدم"
+    },
+    "sorts": {
+      "popular": "الأكثر شعبية",
+      "rating": "الأعلى تقييماً",
+      "newest": "الأحدث"
+    }
+  },
   "lessons": {
+    "pageHeading": "دروس المانجا",
+    "pageSubtitle": "تعلم رسم المانجا خطوة بخطوة",
+    "totalCount_one": "درس واحد",
+    "totalCount_two": "درسان",
+    "totalCount_few": "{{count}} دروس",
+    "totalCount_many": "{{count}} درساً",
+    "totalCount_other": "{{count}} درس",
+    "lessonNumber": "الدرس {{num}}",
+    "duration_minutes": "{{count}} دقيقة",
+    "pages": "ص {{range}}",
+    "videoComingSoon": "الفيديو قيد الإعداد",
+    "videoPreparation": "الفيديو قيد الإعداد",
+    "backToList": "← العودة لقائمة الدروس",
+    "lessonContent": "وصف الدرس",
+    "submitAssignment": "📤 تقديم الواجب",
+    "nextLesson": "الدرس التالي ←",
     "complete": "إكمال الدرس",
     "completed": "مكتمل",
-    "nextLesson": "الدرس التالي",
     "previousLesson": "الدرس السابق",
-    "viewCourse": "عرض الدورة"
+    "viewCourse": "عرض الدورة",
+    "categories": {
+      "all": "الكل",
+      "character": "الشخصيات",
+      "technique": "التقنيات",
+      "background": "الخلفية والتكوين",
+      "story": "القصة",
+      "animation": "الرسوم المتحركة",
+      "digital": "الرقمية"
+    }
   }
 }

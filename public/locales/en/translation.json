@@ -4,26 +4,40 @@
     "welcome": "Welcome",
     "loading": "Loading...",
     "error": "An error occurred",
-    "language": "Language"
+    "language": "Language",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "all": "All",
+    "search": "Search",
+    "filter": "Filter",
+    "reset": "Reset",
+    "viewAll": "View all",
+    "loadingPreparation": "Coming soon"
   },
   "navigation": {
     "home": "Home",
     "courses": "Courses",
+    "lessons": "Lessons",
     "dashboard": "Dashboard",
     "profile": "Profile",
-    "logout": "Logout"
-  },
-  "courses": {
-    "title": "Available Courses",
-    "description": "Browse our selection of courses to enhance your skills",
-    "enroll": "Enroll Now",
-    "enrolled": "Enrolled"
-  },
-  "dashboard": {
-    "title": "Dashboard",
-    "myProgress": "My Progress",
-    "recentActivity": "Recent Activity",
-    "completedCourses": "Completed Courses"
+    "logout": "Logout",
+    "fourPanelManga": "4-Panel",
+    "animation": "Animation",
+    "assignments": "Assignments",
+    "contest": "Contest",
+    "portfolio": "Portfolio",
+    "aiConsult": "AI Consult",
+    "notifications": "Notifications",
+    "showcase": "Showcase",
+    "teacher": "Teacher",
+    "adminPanel": "Admin Panel"
   },
   "auth": {
     "login": "Login",
@@ -31,10 +45,117 @@
     "email": "Email Address",
     "password": "Password",
     "forgotPassword": "Forgot Password?",
-    "signUp": "Sign Up"
+    "signUp": "Sign Up",
+    "loginWithGoogle": "Sign in with Google"
   },
   "home": {
     "title": "Welcome to TERRAKOYA",
-    "subtitle": "A multilingual online education platform"
+    "subtitle": "A multilingual online education platform",
+    "getStarted": "Get Started",
+    "exploreNow": "Explore Now"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcomeUser": "Welcome, {{name}}! 👋",
+    "todaysMessage": "Keep learning today 🎯",
+    "stats": {
+      "progress": "Progress",
+      "enrolledCourses": "Enrolled Courses",
+      "completedCourses": "Completed Courses",
+      "streakDays": "Learning Streak",
+      "streakValue_one": "{{count}} day",
+      "streakValue_other": "{{count}} days"
+    },
+    "calendar": {
+      "title": "Learning Calendar",
+      "subtitle": "(Last 30 days)",
+      "notStudied": "Not studied",
+      "studied": "Studied"
+    },
+    "streak": {
+      "title": "Learning Streak",
+      "daysInARow": "days in a row!",
+      "weekAchievement": "🏆 One week reached! Amazing!",
+      "monthAchievement": "🌟 30 days reached! Incredible!",
+      "startToday": "Start today!",
+      "hint": "Complete a lesson to record a learning day"
+    },
+    "enrolled": {
+      "title": "Courses in Progress",
+      "empty": "You haven't enrolled in any courses yet",
+      "findCourses": "Find Courses",
+      "continue": "Continue →",
+      "review": "Review"
+    },
+    "quickActions": {
+      "courseList": "Course List",
+      "fourPanel": "4-Panel Manga",
+      "animation": "Animation",
+      "notifications": "Notifications",
+      "profile": "Profile",
+      "certificate": "Certificate"
+    }
+  },
+  "courses": {
+    "title": "Available Courses",
+    "description": "Browse our selection of courses to enhance your skills",
+    "enroll": "Enroll Now",
+    "enrolled": "Enrolled",
+    "viewCourse": "View Course",
+    "searchPlaceholder": "Search courses or tags...",
+    "allLevels": "All levels",
+    "allTags": "All tags",
+    "notFound": "No courses found",
+    "resetFilter": "Reset filters",
+    "count_one": "{{count}} course",
+    "count_other": "{{count}} courses",
+    "searchResultFor": "Results for \"{{query}}\"",
+    "lessonsCount_one": "{{count}} lesson",
+    "lessonsCount_other": "{{count}} lessons",
+    "categories": {
+      "all": "All",
+      "manga": "Manga",
+      "illustration": "Illustration",
+      "story": "Story",
+      "animation": "Animation"
+    },
+    "levels": {
+      "all": "All levels",
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "sorts": {
+      "popular": "Most Popular",
+      "rating": "Highest Rated",
+      "newest": "Newest"
+    }
+  },
+  "lessons": {
+    "pageHeading": "Manga Textbook - Lesson Videos",
+    "pageSubtitle": "Learn step by step with YouTube videos",
+    "totalCount": "{{count}} lessons total",
+    "lessonNumber": "Lesson {{num}}",
+    "duration_minutes": "{{count}} min",
+    "pages": "P. {{range}}",
+    "videoComingSoon": "Video coming soon",
+    "videoPreparation": "Video coming soon",
+    "backToList": "← Back to lesson list",
+    "lessonContent": "Lesson Content",
+    "submitAssignment": "📤 Submit this assignment",
+    "nextLesson": "Next lesson →",
+    "complete": "Complete Lesson",
+    "completed": "Completed",
+    "previousLesson": "Previous lesson",
+    "viewCourse": "View Course",
+    "categories": {
+      "all": "All",
+      "character": "Character",
+      "technique": "Technique",
+      "background": "Background & Composition",
+      "story": "Story",
+      "animation": "Animation",
+      "digital": "Digital"
+    }
   }
 }
