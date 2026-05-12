@@ -5,11 +5,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const THEMES = [
-  { id: 'school', labelJa: '🏫 学校の日常', labelAr: '🏫 الحياة المدرسية' },
-  { id: 'adventure', labelJa: '⚔️ 冒険', labelAr: '⚔️ مغامرة' },
-  { id: 'funny', labelJa: '😂 おもしろ', labelAr: '😂 مضحك' },
-  { id: 'friendship', labelJa: '🤝 友情', labelAr: '🤝 صداقة' },
-  { id: 'free', labelJa: '✨ 自由テーマ', labelAr: '✨ موضوع حر' },
+  { id: 'school', labelJa: '🏫 学校の日常', labelEn: '🏫 School Life', labelAr: '🏫 الحياة المدرسية' },
+  { id: 'adventure', labelJa: '⚔️ 冒険', labelEn: '⚔️ Adventure', labelAr: '⚔️ مغامرة' },
+  { id: 'funny', labelJa: '😂 おもしろ', labelEn: '😂 Funny', labelAr: '😂 طرائف' },
+  { id: 'friendship', labelJa: '🤝 友情', labelEn: '🤝 Friendship', labelAr: '🤝 صداقة' },
+  { id: 'free', labelJa: '✨ 自由テーマ', labelEn: '✨ Free Theme', labelAr: '✨ موضوع حر' },
 ];
 
 interface Story {
@@ -20,32 +20,119 @@ interface Story {
 export default function Auto4MangaPage() {
   const { i18n } = useTranslation();
   const lang = i18n.language;
+  const isRtl = lang === 'ar';
   const [characterName, setCharacterName] = useState('');
   const [theme, setTheme] = useState('');
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
 
-  const t = {
-    title: lang === 'ar' ? 'صانع المانجا ذات 4 لوحات' : '自動4コマ漫画メーカー',
-    sub: lang === 'ar' ? 'أنشئ قصة مانجا أصلية مع الذكاء الاصطناعي' : 'AIがオリジナルストーリーを提案します',
-    charName: lang === 'ar' ? 'اسم الشخصية' : 'キャラクターの名前',
-    charPlaceholder: lang === 'ar' ? 'مثال: سارة، يوسف' : '例: タロウ、サクラ',
-    selectTheme: lang === 'ar' ? 'اختر الموضوع' : 'テーマを選ぼう',
-    generate: lang === 'ar' ? 'إنشاء القصة' : '🎲 ストーリーを生成！',
-    generating: lang === 'ar' ? 'جاري الإنشاء...' : '生成中...',
-    panel: lang === 'ar' ? 'اللوحة' : 'コマ',
-    scene: lang === 'ar' ? 'المشهد' : '場面',
-    dialogue: lang === 'ar' ? 'الحوار' : 'セリフ',
-    useThis: lang === 'ar' ? 'استخدم هذه القصة' : 'このストーリーで描く！',
-    draw: lang === 'ar' ? 'ارسم المانجا' : '4コマ漫画を描こう！',
-    back: lang === 'ar' ? 'العودة' : '← 戻る',
-    ki: lang === 'ar' ? 'البداية' : '起',
-    sho: lang === 'ar' ? 'التطور' : '承',
-    ten: lang === 'ar' ? 'التحول' : '転',
-    ketsu: lang === 'ar' ? 'النهاية' : '結',
-    download: lang === 'ar' ? 'تحميل القالب' : '📄 テンプレートをダウンロード',
-    tips: lang === 'ar' ? 'نصائح' : 'ワンポイントアドバイス',
+  // 言語別の文言（直訳ではなく自然な子供向けの呼びかけ口調）
+  const labels: Record<string, Record<string, string>> = {
+    ja: {
+      title: '✨ 自動4コマ漫画メーカー',
+      sub: 'AIがオリジナルストーリーを提案します',
+      charName: 'キャラクターの名前',
+      charPlaceholder: '例: タロウ、サクラ',
+      selectTheme: 'テーマを選ぼう',
+      generate: '🎲 ストーリーを生成！',
+      generating: '生成中...',
+      panel: 'コマ',
+      scene: '場面',
+      dialogue: 'セリフ',
+      useThis: 'このストーリーで描く！',
+      draw: '4コマ漫画を描こう！',
+      back: '← 戻る',
+      ki: '起',
+      sho: '承',
+      ten: '転',
+      ketsu: '結',
+      download: '📄 テンプレートをダウンロード',
+      tips: 'ワンポイントアドバイス',
+      drawHere: 'ここに描こう！',
+      submit: '📤 完成したら提出する',
+      storiesHeading: '🎲 3つのストーリー案',
+      tip1: '・キャラクターの表情をしっかり描こう',
+      tip2: '・セリフは吹き出しの中に書こう',
+      tip3: '・背景も簡単でいいから描いてみよう',
+      tip4: '・4コマ目のオチが大事！',
+    },
+    en: {
+      title: '✨ 4-Panel Manga Maker',
+      sub: 'AI will suggest fun original stories for you!',
+      charName: 'Character Name',
+      charPlaceholder: 'e.g., Taro, Sakura',
+      selectTheme: 'Pick a Theme',
+      generate: '🎲 Make My Story!',
+      generating: 'Creating...',
+      panel: 'Panel',
+      scene: 'Scene',
+      dialogue: 'Dialogue',
+      useThis: 'I love this story!',
+      draw: "Let's Draw the Manga!",
+      back: '← Back',
+      ki: 'Start',
+      sho: 'Develop',
+      ten: 'Twist',
+      ketsu: 'End',
+      download: '📄 Get Blank Template',
+      tips: 'Smart Tips',
+      drawHere: 'Draw here!',
+      submit: '📤 Submit my work!',
+      storiesHeading: '🎲 3 Story Ideas!',
+      tip1: '・Show clear facial expressions',
+      tip2: '・Put dialogue inside speech bubbles',
+      tip3: '・Simple backgrounds are fine — give them a try',
+      tip4: '・The punchline in panel 4 is the most important!',
+    },
+    ar: {
+      // 「マンガを作ろう！」と呼びかける形に
+      title: '✨ اصنع مانجا من ٤ لوحات!',
+      // 「AIが楽しい物語を提案してくれるよ！」と親しみやすく
+      sub: 'الذكاء الاصطناعي يقترح عليك قصصاً ممتعة!',
+      // 「キャラクターに名前をつけよう」
+      charName: 'سمِّ شخصيتك',
+      // エジプト人の子供にも自然な名前例
+      charPlaceholder: 'مثال: سارة، يوسف، حسن',
+      // 「テーマを選ぼう」
+      selectTheme: 'اختر موضوعك',
+      // 「私の物語を作って！」サイコロ絵文字でワクワク感
+      generate: '🎲 ولّد قصتي!',
+      generating: 'جارٍ الإنشاء...',
+      panel: 'اللوحة',
+      scene: 'المشهد',
+      dialogue: 'الحوار',
+      // 「このストーリーが好き！」感情的な共感を表現
+      useThis: 'أحب هذه القصة!',
+      // 「さあ、マンガを描こう！」誘いかけの口調
+      draw: 'هيا نرسم المانجا!',
+      back: '← العودة',
+      // 起承転結を子供にもわかる言葉で
+      ki: 'البداية',
+      sho: 'التطور',
+      ten: 'التحول',
+      ketsu: 'النهاية',
+      download: '📄 حمّل القالب الفارغ',
+      // 「賢いアイデア」=子供にも親しみやすい
+      tips: '💡 أفكار ذكية',
+      drawHere: '✏️ ارسم هنا!',
+      // 「私の作品を送る！」所有感を持たせる
+      submit: '📤 أرسل عملي!',
+      // 「3つの物語アイデア！」
+      storiesHeading: '🎲 ٣ أفكار للقصص!',
+      tip1: '・ارسم تعابير وجه واضحة',
+      tip2: '・اكتب الحوار داخل فقاعات الكلام',
+      tip3: '・الخلفية البسيطة كافية، جربها',
+      tip4: '・آخر لوحة هي الأهم لأنها المفاجأة!',
+    },
+  };
+
+  const t = labels[lang] || labels.ja;
+
+  const getThemeLabel = (th: typeof THEMES[number]) => {
+    if (lang === 'ar') return th.labelAr;
+    if (lang === 'en') return th.labelEn;
+    return th.labelJa;
   };
 
   const panelLabels = [t.ki, t.sho, t.ten, t.ketsu];
@@ -221,7 +308,7 @@ export default function Auto4MangaPage() {
 
   if (selectedStory) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white p-8" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen bg-slate-950 text-white p-8" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="max-w-3xl mx-auto">
           <button onClick={() => setSelectedStory(null)} className="text-blue-400 hover:underline mb-6 block">{t.back}</button>
           <h1 className="text-3xl font-bold mb-2">{t.draw}</h1>
@@ -237,7 +324,7 @@ export default function Auto4MangaPage() {
                 <p className="text-gray-300 mb-2">🎬 {t.scene}: {panel.scene}</p>
                 <p className="text-white font-medium">💬 {t.dialogue}: 「{panel.dialogue}」</p>
                 <div className="mt-4 border-2 border-dashed border-slate-700 rounded-xl h-32 flex items-center justify-center text-gray-500">
-                  {lang === 'ar' ? 'ارسم هنا!' : 'ここに描こう！'}
+                  {t.drawHere}
                 </div>
               </div>
             ))}
@@ -246,19 +333,19 @@ export default function Auto4MangaPage() {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8">
             <h3 className="text-lg font-bold mb-3">💡 {t.tips}</h3>
             <ul className="text-gray-300 text-sm space-y-2">
-              <li>・キャラクターの表情をしっかり描こう</li>
-              <li>・セリフは吹き出しの中に書こう</li>
-              <li>・背景も簡単でいいから描いてみよう</li>
-              <li>・4コマ目のオチが大事！</li>
+              <li>{t.tip1}</li>
+              <li>{t.tip2}</li>
+              <li>{t.tip3}</li>
+              <li>{t.tip4}</li>
             </ul>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
             <button onClick={downloadTemplate} className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-xl font-bold transition flex-1">
               {t.download}
             </button>
             <a href="/submissions" className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition flex-1 text-center">
-              📤 {lang === 'ar' ? 'تقديم العمل' : '完成したら提出する'}
+              {t.submit}
             </a>
           </div>
         </div>
@@ -267,7 +354,7 @@ export default function Auto4MangaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-slate-950 text-white" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="bg-gradient-to-r from-orange-900 via-red-900 to-pink-900 py-16 px-8">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-orange-300 text-sm tracking-widest mb-4">TERRAKOYA 4-KOMA MAKER</p>
@@ -287,8 +374,8 @@ export default function Auto4MangaPage() {
             <label className="block text-sm text-gray-400 mb-2">{t.selectTheme}</label>
             <div className="grid grid-cols-2 gap-3">
               {THEMES.map(th => (
-                <button key={th.id} onClick={() => setTheme(th.id)} className={`p-4 rounded-xl text-left transition ${theme === th.id ? 'bg-blue-600 text-white border-2 border-blue-400' : 'bg-slate-800 text-gray-300 hover:bg-slate-700 border-2 border-transparent'}`}>
-                  {lang === 'ar' ? th.labelAr : th.labelJa}
+                <button key={th.id} onClick={() => setTheme(th.id)} className={`p-4 rounded-xl text-start transition ${theme === th.id ? 'bg-blue-600 text-white border-2 border-blue-400' : 'bg-slate-800 text-gray-300 hover:bg-slate-700 border-2 border-transparent'}`}>
+                  {getThemeLabel(th)}
                 </button>
               ))}
             </div>
@@ -302,14 +389,14 @@ export default function Auto4MangaPage() {
         {stories.length > 0 && (
           <div className="mt-10 space-y-6">
             <h2 className="text-2xl font-bold text-center mb-6">
-              {lang === 'ar' ? '٣ قصص مقترحة' : '🎲 3つのストーリー案'}
+              {t.storiesHeading}
             </h2>
             {stories.map((story, i) => (
               <div key={i} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-blue-500 transition">
                 <h3 className="text-xl font-bold mb-4">{story.title}</h3>
                 <div className="space-y-2 mb-4">
                   {story.panels.map((panel, j) => (
-                    <div key={j} className="flex gap-3 text-sm">
+                    <div key={j} className="flex gap-3 text-sm flex-wrap">
                       <span className="bg-slate-800 text-blue-400 px-2 py-0.5 rounded font-bold">{panelLabels[j]}</span>
                       <span className="text-gray-300">{panel.scene}</span>
                       <span className="text-gray-500">「{panel.dialogue}」</span>
