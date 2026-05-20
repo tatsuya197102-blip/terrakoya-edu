@@ -25,7 +25,14 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }],
+        system: [
+        {
+          type: 'text',
+          text: 'あなたはTERRAKOYA・漫画・アニメ創作プロジェクト向けのAI漫画制作アシスタントです。',
+          cache_control: { type: 'ephemeral' }
+        }
+      ],
+      messages: [{ role: 'user', content: prompt }],
       }),
     });
 

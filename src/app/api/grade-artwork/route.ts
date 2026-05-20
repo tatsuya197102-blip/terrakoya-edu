@@ -7,7 +7,7 @@ const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY || process.env.NEXT_PUBLIC_CLA
 const RUBRICS: Record<string, { criteria: { name: string; description: string }[] }> = {
   'manga-basics': {
     criteria: [
-      { name: 'コマ割り',     description: 'コマの大きさ・配置・読み順が適切か' },
+      { name: 'コマ割り', cache_control: { type: 'ephemeral' } }],     description: 'コマの大きさ・配置・読み順が適切か' },
       { name: 'キャラクター', description: 'キャラクターの形・バランス・個性があるか' },
       { name: '表情・感情',   description: '表情が豊かで感情が伝わるか' },
       { name: '線の質',       description: '線が安定していて意図的に描かれているか' },
@@ -117,7 +117,7 @@ ${rubricText}
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1000,
-        system: 'あなたはTERRAKOYA（漫画・アニメ教育プラットフォーム）のAI採点官です。エジプト・中東の小中学生の作品を採点します。必ずJSONのみで回答し、前後に説明文を入れないでください。',
+        system: [{ type: 'text', text: 'あなたはTERRAKOYA（漫画・アニメ教育プラットフォーム）のAI採点官です。エジプト・中東の小中学生の作品を採点します。必ずJSONのみで回答し、前後に説明文を入れないでください。',
         messages: [{ role: 'user', content: userContent }],
       }),
     });
