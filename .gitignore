@@ -41,3 +41,10 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Sensitive files - DO NOT COMMIT
+TERRAKOYA_AI_API_Analysis.txt
+replace_claude_key.py
+replace_edu_claude_key.py
+debug-*.txt
+debug-*.json
