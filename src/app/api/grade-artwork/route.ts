@@ -115,7 +115,7 @@ ${rubricText}
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1000,
         system: 'あなたはTERRAKOYA（漫画・アニメ教育プラットフォーム）のAI採点官です。エジプト・中東の小中学生の作品を採点します。必ずJSONのみで回答し、前後に説明文を入れないでください。',
         messages: [{ role: 'user', content: userContent }],
