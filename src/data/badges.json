@@ -1,0 +1,19 @@
+{
+  "badges": [
+    {
+      "id": "first-draw",
+      "name": "初めて描いた",
+      "icon": "🎨"
+    },
+    {
+      "id": "10-submissions",
+      "name": "10作品投稿",
+      "icon": "🌟"
+    },
+    {
+      "id": "gallery-featured",
+      "name": "ギャラリー注目",
+      "icon": "⭐"
+    }
+  ]
+}

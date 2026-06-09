@@ -16,7 +16,6 @@ export const saveUserProfile = async (user: User) => {
   if (!userSnap.exists()) {
     await setDoc(userRef, {
       uid: user.uid,
-      role: null,
       email: user.email,
       displayName: user.displayName || '',
       photoURL: user.photoURL || '',

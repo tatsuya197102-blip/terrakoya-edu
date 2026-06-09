@@ -1,0 +1,29 @@
+{
+  "levels": [
+    {
+      "level": 1,
+      "xpRequired": 0,
+      "title": "駆け出しクリエイター"
+    },
+    {
+      "level": 2,
+      "xpRequired": 100,
+      "title": "成長中"
+    },
+    {
+      "level": 3,
+      "xpRequired": 300,
+      "title": "実力者"
+    },
+    {
+      "level": 4,
+      "xpRequired": 600,
+      "title": "ベテラン"
+    },
+    {
+      "level": 5,
+      "xpRequired": 1000,
+      "title": "マスター"
+    }
+  ]
+}

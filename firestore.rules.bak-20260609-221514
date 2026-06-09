@@ -10,21 +10,17 @@ service cloud.firestore {
       // 作成時: role は null (自己昇格防止)
       allow create: if request.auth != null
                     && request.auth.uid == userId
-                    && request.resource.data.get('role', null) == null;
+                    && request.resource.data.role == null;
 
       // 更新時: role 変更なし OR student/other 自己昇格 OR 招待コード経由
       allow update: if request.auth != null
                     && request.auth.uid == userId
                     && (
-                      // 1) role 変更なし (lastLoginAt 等の通常更新)
-                      request.resource.data.get('role', null) == resource.data.get('role', null)
-                      // 2) student/other への自己昇格 (現状 role 未設定)
-                      || (request.resource.data.get('role', null) in ['student', 'other']
-                          && resource.data.get('role', null) == null)
-                      // 3) teacher/parent への招待コード経由
-                      || (request.resource.data.get('role', null) in ['teacher', 'parent']
-                          && request.resource.data.get('inviteCodeUsed', '') is string
-                          && request.resource.data.get('inviteCodeUsed', '') != '')
+                      request.resource.data.role == resource.data.role
+                      || (request.resource.data.role in ['student', 'other']
+                          && resource.data.role == null)
+                      || (request.resource.data.role in ['teacher', 'parent']
+                          && request.resource.data.inviteCodeUsed is string)
                     );
 
       // 削除禁止 (admin SDK のみ)
