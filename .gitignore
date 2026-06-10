@@ -48,3 +48,9 @@ replace_claude_key.py
 replace_edu_claude_key.py
 debug-*.txt
 debug-*.json
+
+# Development artifacts
+*.bak-*
+fix-*.py
+patch-*.py
+service-account.json
