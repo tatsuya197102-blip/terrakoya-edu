@@ -14,11 +14,15 @@ const ADMIN_EMAIL = 'tatsuya197102@gmail.com';
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [user, setUser] = useState<{ displayName: string; email: string; photoURL: string | null } | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // ペイントだけロケール未登録でも翻訳表示（言語に応じて切替）
+  const lng = (i18n.language || 'ja').split('-')[0];
+  const paintLabel = ({ ja: 'ペイント', en: 'Paint', ar: 'الرسم' } as Record<string, string>)[lng] || 'Paint';
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
@@ -49,14 +53,14 @@ export default function Navbar() {
 
   return (
     <nav className="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
+      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
         {/* ロゴ */}
         <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg shrink-0">
           <span className="text-white tracking-wide">TERRAKOYA</span>
         </Link>
 
-        {/* 中央ナビ（幅が足りなければ横スクロール） */}
-        <div className="hidden md:flex items-center gap-0.5 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+        {/* 中央ナビ（詰めて表示、入りきらない時だけ横スクロール） */}
+        <div className="hidden md:flex items-center gap-0 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
 
 {[
           { href: '/dashboard',   label: t('nav.home'),      icon: '🏠' },
@@ -65,14 +69,14 @@ export default function Navbar() {
           { href: '/live',        label: t('nav.live'),      icon: '📡' },
           { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
           { href: '/auto-animate',label: t('nav.anime'),     icon: '🎬' },
-          { href: '/paint',       label: t('nav.paint', 'ペイント'), icon: '🎨' },
+          { href: '/paint',       label: paintLabel,         icon: '🎨' },
           { href: '/contest',     label: t('nav.contest'),   icon: '🏆' },
           { href: '/gallery',     label: t('nav.gallery'),   icon: '🖼️' },
           { href: '/ai-consult',  label: t('nav.aiConsult'), icon: '🤖' },
           ].map(({ href, label, icon }) => (
 
             <Link key={href} href={href}
-              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                 isActive(href) ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
               }`}>
               <span>{icon}</span><span>{label}</span>
@@ -155,7 +159,7 @@ export default function Navbar() {
             { href: '/live',        label: t('nav.live'),      icon: '📡' },
             { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
             { href: '/auto-animate',label: t('nav.anime'),     icon: '🎬' },
-            { href: '/paint',       label: t('nav.paint', 'ペイント'), icon: '🎨' },
+            { href: '/paint',       label: paintLabel,         icon: '🎨' },
             { href: '/contest',     label: t('nav.contest'),   icon: '🏆' },
             { href: '/gallery',     label: t('nav.gallery'),   icon: '🖼️' },
             { href: '/ai-consult',  label: t('nav.aiConsult'), icon: '🤖' },

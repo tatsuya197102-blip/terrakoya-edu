@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import {
   collection, getDocs, query, where, orderBy, doc,
-  updateDoc, arrayUnion, arrayRemove, getDoc, limit
+  updateDoc, arrayUnion, arrayRemove, getDoc, limit, deleteDoc
 } from 'firebase/firestore';
 import { useTranslation } from 'react-i18next';
 
@@ -38,6 +38,8 @@ const SHARE_LABELS: Record<string, Record<string, string>> = {
   myWork:    { ja: '自分の作品', en: 'My Work', ar: 'عملي' },
   grade:     { ja: '点', en: 'pts', ar: 'نقطة' },
   by:        { ja: 'by', en: 'by', ar: 'بواسطة' },
+  del:       { ja: '削除', en: 'Delete', ar: 'حذف' },
+  delConfirm:{ ja: 'この作品を削除しますか？', en: 'Delete this artwork?', ar: 'هل تريد حذف هذا العمل؟' },
 };
 
 function L(key: string, lang: string) {
@@ -54,6 +56,7 @@ export default function GalleryPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showShare, setShowShare] = useState<string | null>(null);
   const [likeLoading, setLikeLoading] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(user => {
@@ -108,6 +111,17 @@ export default function GalleryPage() {
       ));
     } catch (err) { console.error(err); }
     setLikeLoading(null);
+  };
+
+  const handleDelete = async (workId: string) => {
+    if (deleteLoading) return;
+    if (!window.confirm(L('delConfirm', lang))) return;
+    setDeleteLoading(workId);
+    try {
+      await deleteDoc(doc(db, 'submissions', workId));
+      setWorks(prev => prev.filter(w => w.id !== workId));
+    } catch (err) { console.error(err); }
+    setDeleteLoading(null);
   };
 
   const handleCopyLink = (workId: string) => {
@@ -182,6 +196,10 @@ export default function GalleryPage() {
             <a href="/auto-4manga"
               className="bg-purple-600 hover:bg-purple-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition">
               📖 {lang === 'ar' ? '4 لوحات مانغا' : lang === 'en' ? '4-Koma Manga' : '4コマ漫画を作る'}
+            </a>
+            <a href="/paint"
+              className="bg-pink-600 hover:bg-pink-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition">
+              🎨 {lang === 'ar' ? 'الرسم' : lang === 'en' ? 'Paint' : 'ペイントで描く'}
             </a>
           </div>
         </div>
@@ -280,6 +298,18 @@ export default function GalleryPage() {
                           </div>
                         )}
                       </div>
+
+                      {/* 削除（自分の作品のみ） */}
+                      {isOwn && (
+                        <button onClick={() => handleDelete(work.id)}
+                          disabled={deleteLoading === work.id}
+                          title={L('del', lang)}
+                          className="bg-gray-800 hover:bg-red-900/50 hover:text-red-400 px-2 py-1 rounded-lg text-xs text-gray-400 transition disabled:opacity-50">
+                          {deleteLoading === work.id ? (
+                            <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block" />
+                          ) : '🗑️'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
