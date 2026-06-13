@@ -49,14 +49,14 @@ export default function Navbar() {
 
   return (
     <nav className="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
         {/* ロゴ */}
-        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg">
+        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg shrink-0">
           <span className="text-white tracking-wide">TERRAKOYA</span>
         </Link>
 
-        {/* 中央ナビ */}
-        <div className="hidden md:flex items-center gap-0.5 overflow-hidden">
+        {/* 中央ナビ（幅が足りなければ横スクロール） */}
+        <div className="hidden md:flex items-center gap-0.5 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
 
 {[
           { href: '/dashboard',   label: t('nav.home'),      icon: '🏠' },
@@ -65,13 +65,14 @@ export default function Navbar() {
           { href: '/live',        label: t('nav.live'),      icon: '📡' },
           { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
           { href: '/auto-animate',label: t('nav.anime'),     icon: '🎬' },
+          { href: '/paint',       label: t('nav.paint', 'ペイント'), icon: '🎨' },
           { href: '/contest',     label: t('nav.contest'),   icon: '🏆' },
           { href: '/gallery',     label: t('nav.gallery'),   icon: '🖼️' },
           { href: '/ai-consult',  label: t('nav.aiConsult'), icon: '🤖' },
           ].map(({ href, label, icon }) => (
 
             <Link key={href} href={href}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                 isActive(href) ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
               }`}>
               <span>{icon}</span><span>{label}</span>
@@ -79,8 +80,8 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* 右側 */}
-        <div className="flex items-center gap-2">
+        {/* 右側（縮まない・折り返さない） */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* 言語切替 */}
           <LanguageSwitcher />
           {/* 通知ベル */}
@@ -101,11 +102,11 @@ export default function Navbar() {
                 {user.photoURL ? (
                   <img src={user.photoURL} className="w-6 h-6 rounded-full" alt="avatar" />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold shrink-0">
                     {user.displayName[0]}
                   </div>
                 )}
-                <span className="text-sm text-gray-300 hidden md:block">{user.displayName}</span>
+                <span className="text-sm text-gray-300 hidden md:block whitespace-nowrap">{user.displayName}</span>
                 <span className="text-gray-500 text-xs">{menuOpen ? '▲' : '▼'}</span>
               </button>
 
@@ -154,6 +155,7 @@ export default function Navbar() {
             { href: '/live',        label: t('nav.live'),      icon: '📡' },
             { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
             { href: '/auto-animate',label: t('nav.anime'),     icon: '🎬' },
+            { href: '/paint',       label: t('nav.paint', 'ペイント'), icon: '🎨' },
             { href: '/contest',     label: t('nav.contest'),   icon: '🏆' },
             { href: '/gallery',     label: t('nav.gallery'),   icon: '🖼️' },
             { href: '/ai-consult',  label: t('nav.aiConsult'), icon: '🤖' },
