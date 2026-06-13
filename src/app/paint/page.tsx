@@ -2,21 +2,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps */
 
 /*
- * 寺子屋ペイント (TERRAKOYA Paint) - Phase 1 / 投稿配線版
+ * 寺子屋ペイント (TERRAKOYA Paint) - Phase 1 / Storage不使用・フリーズ対策版
  * 配置先: src/app/paint/page.tsx
  *
- * ■ 投稿: PNGをStorageにアップ → submissions に1件作成(isPublic:true)。
- *   既存ギャラリー(/gallery)に並び、いいね(❤️)も既存実装で自動で効きます。
- * ■ 投稿が権限エラーで失敗する場合は firestore.rules / storage.rules の
- *   submissions 作成・アップロード許可を確認（その時はルールを見せてください）。
- * ■ ナビは ClientWrapper が出すので、このページはナビを描画しません。
- * ■ 言語トグルは暫定（i18n連動は後で）。UTF-8のまま保存。
+ * ■ 投稿: Storageを使わず、画像を縮小JPEG化して submissions ドキュメントに直接保存。
+ *   既存ギャラリー(/gallery)は <img src> 表示なのでそのまま映る。いいねも既存実装で有効。
+ *   Firestoreの1ドキュメント上限(1MB)に収まるよう縮小＋画質を自動調整。
+ * ■ 20秒のタイムアウトを入れているので「投稿中…」で固まらない（失敗時はエラー表示）。
+ * ■ ナビは ClientWrapper が出すので、このページはナビを描画しない。
+ * ■ UTF-8のまま保存。
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { auth, db, storage } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type Lang = "ja" | "en" | "ar";
 type Tool = "pen" | "pencil" | "air" | "eraser" | "fill";
@@ -28,7 +27,7 @@ const C = {
 };
 
 const T: Record<Lang, Record<string, string>> = {
-  ja: { title: "ペイント", trial: "試作 v0.5",
+  ja: { title: "ペイント", trial: "試作 v0.6",
     pen: "ペン", pencil: "鉛筆", air: "エアブラシ", eraser: "消しゴム", fill: "塗りつぶし",
     undo: "戻す", redo: "やり直し", brush: "ブラシ", size: "太さ", opacity: "濃さ",
     stab: "手ブレ補正", color: "カラー", layers: "レイヤー", add: "＋追加", del: "削除",
@@ -37,8 +36,9 @@ const T: Record<Lang, Record<string, string>> = {
     pubHeading: "🖼️ ギャラリーに投稿", titleLabel: "タイトル", titlePh: "作品のなまえ",
     confirm: "公開して投稿", cancel: "キャンセル", publishing: "投稿中…",
     loginNeeded: "投稿するにはログインが必要です", published: "ギャラリーに投稿しました！",
-    pubFail: "投稿に失敗しました", untitled: "むだいの作品", viewGallery: "ギャラリーを見る" },
-  en: { title: "Paint", trial: "preview v0.5",
+    pubFail: "投稿に失敗しました", timeout: "通信がタイムアウトしました（権限/接続を確認）",
+    untitled: "むだいの作品", viewGallery: "ギャラリーを見る" },
+  en: { title: "Paint", trial: "preview v0.6",
     pen: "Pen", pencil: "Pencil", air: "Airbrush", eraser: "Eraser", fill: "Fill",
     undo: "Undo", redo: "Redo", brush: "Brush", size: "Size", opacity: "Opacity",
     stab: "Stabilizer", color: "Color", layers: "Layers", add: "+ Add", del: "Delete",
@@ -47,8 +47,9 @@ const T: Record<Lang, Record<string, string>> = {
     pubHeading: "🖼️ Post to Gallery", titleLabel: "Title", titlePh: "Name your artwork",
     confirm: "Publish", cancel: "Cancel", publishing: "Posting…",
     loginNeeded: "Please log in to post", published: "Posted to the gallery!",
-    pubFail: "Posting failed", untitled: "Untitled", viewGallery: "View gallery" },
-  ar: { title: "الرسم", trial: "إصدار تجريبي 0.5",
+    pubFail: "Posting failed", timeout: "Request timed out (check rules/connection)",
+    untitled: "Untitled", viewGallery: "View gallery" },
+  ar: { title: "الرسم", trial: "إصدار تجريبي 0.6",
     pen: "قلم", pencil: "رصاص", air: "رذاذ", eraser: "ممحاة", fill: "تعبئة",
     undo: "تراجع", redo: "إعادة", brush: "فرشاة", size: "الحجم", opacity: "الكثافة",
     stab: "مثبّت الخط", color: "اللون", layers: "الطبقات", add: "+ إضافة", del: "حذف",
@@ -57,7 +58,8 @@ const T: Record<Lang, Record<string, string>> = {
     pubHeading: "🖼️ النشر في المعرض", titleLabel: "العنوان", titlePh: "سمِّ عملك",
     confirm: "نشر", cancel: "إلغاء", publishing: "جارٍ النشر…",
     loginNeeded: "يرجى تسجيل الدخول للنشر", published: "تم النشر في المعرض!",
-    pubFail: "فشل النشر", untitled: "بدون عنوان", viewGallery: "عرض المعرض" },
+    pubFail: "فشل النشر", timeout: "انتهت مهلة الاتصال (تحقق من الصلاحيات/الاتصال)",
+    untitled: "بدون عنوان", viewGallery: "عرض المعرض" },
 };
 
 const W = 900, H = 1200, UNDO_LIMIT = 10;
@@ -65,6 +67,21 @@ const PALETTE = ["#1a1a1a", "#ffffff", "#e53935", "#fb8c00", "#fdd835", "#43a047
 
 interface Layer { id: number; name: string; canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; visible: boolean; opacity: number; }
 interface PanelLayer { id: number; name: string; visible: boolean; opacity: number; }
+
+// 縮小してJPEGのdataURL化（Firestore 1MB制限に収める）
+function toDataUrl(src: HTMLCanvasElement): string {
+  const maxSide = 1000;
+  const scale = Math.min(1, maxSide / Math.max(src.width, src.height));
+  const w = Math.round(src.width * scale), h = Math.round(src.height * scale);
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(src, 0, 0, w, h);
+  let q = 0.85;
+  let url = c.toDataURL("image/jpeg", q);
+  while (url.length > 900000 && q > 0.4) { q -= 0.15; url = c.toDataURL("image/jpeg", q); }
+  return url;
+}
 
 export default function PaintPage() {
   const [lang, setLang] = useState<Lang>("ja");
@@ -82,7 +99,6 @@ export default function PaintPage() {
   const [msg, setMsg] = useState("");
   const [availH, setAvailH] = useState<number | null>(null);
 
-  // 投稿
   const [showPublish, setShowPublish] = useState(false);
   const [title, setTitle] = useState("");
   const [publishing, setPublishing] = useState(false);
@@ -265,13 +281,13 @@ export default function PaintPage() {
     out.toBlob((b: Blob | null) => { if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "terrakoya-paint.png"; a.click(); });
   };
 
+  const showToast = (m: string) => { setMsg(m); setTimeout(() => setMsg(""), 5000); };
+
   const openPublish = () => {
     if (!auth?.currentUser) { showToast(t.loginNeeded); return; }
     setPosted(false);
     setShowPublish(true);
   };
-
-  const showToast = (m: string) => { setMsg(m); setTimeout(() => setMsg(""), 4000); };
 
   const doPublish = async () => {
     const user = auth?.currentUser;
@@ -279,14 +295,10 @@ export default function PaintPage() {
     setPublishing(true);
     try {
       const out = eng.current.api.flatten() as HTMLCanvasElement;
-      const blob: Blob = await new Promise((res, rej) => out.toBlob((b: Blob | null) => b ? res(b) : rej(new Error("blob failed")), "image/png"));
-      const path = `submissions/${user.uid}/${Date.now()}.png`;
-      const sRef = storageRef(storage, path);
-      await uploadBytes(sRef, blob, { contentType: "image/png" });
-      const url = await getDownloadURL(sRef);
-      await addDoc(collection(db, "submissions"), {
+      const imageUrl = toDataUrl(out);
+      const write = addDoc(collection(db, "submissions"), {
         title: title.trim() || t.untitled,
-        imageUrl: url,
+        imageUrl,
         studentId: user.uid,
         studentName: user.displayName || "名無し",
         isPublic: true,
@@ -294,15 +306,20 @@ export default function PaintPage() {
         source: "paint",
         createdAt: serverTimestamp(),
       });
+      await Promise.race([
+        write,
+        new Promise((_, rej) => setTimeout(() => rej(new Error(t.timeout)), 20000)),
+      ]);
       setPosted(true);
       setShowPublish(false);
       setTitle("");
       showToast(t.published);
     } catch (err: any) {
       console.error(err);
-      showToast(`${t.pubFail}: ${err?.message || ""}`);
+      showToast(`${t.pubFail}: ${err?.code || err?.message || ""}`);
+    } finally {
+      setPublishing(false);
     }
-    setPublishing(false);
   };
 
   const tools: { k: Tool; icon: string }[] = [
@@ -314,7 +331,6 @@ export default function PaintPage() {
     <div ref={rootRef} dir={rtl ? "rtl" : "ltr"}
       style={{ height: availH ? `${availH}px` : "calc(100dvh - 56px)", boxSizing: "border-box", padding: 12, color: C.text, fontFamily: "-apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif" }}>
       <div style={{ height: "100%", display: "flex", flexDirection: "column", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
-        {/* ペイント専用ツールバー */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
           <span style={{ fontWeight: 800, fontSize: 14 }}>🎨 <span style={{ color: C.blue }}>{t.title}</span></span>
           <span style={{ color: C.muted, fontSize: 11 }}>{t.trial}</span>
@@ -378,7 +394,6 @@ export default function PaintPage() {
           </div>
         </main>
 
-        {/* 投稿モーダル */}
         {showPublish && (
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
             <div style={{ width: 340, maxWidth: "90%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 18 }}>
