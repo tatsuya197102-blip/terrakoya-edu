@@ -420,38 +420,6 @@ export default function PaintPage() {
     };
   }, []);
 
-  const flattenTransparentDataUrl = (): string => {
-    const e = eng.current;
-    const full = document.createElement("canvas"); full.width = W; full.height = H;
-    const fo = full.getContext("2d")!;
-    e.layers.forEach((L: Layer) => { if (L.visible) { fo.globalAlpha = L.opacity; fo.drawImage(L.canvas, 0, 0); } });
-    const maxSide = 800; const scale = Math.min(1, maxSide / Math.max(W, H));
-    const w = Math.round(W * scale), h = Math.round(H * scale);
-    const c = document.createElement("canvas"); c.width = w; c.height = h;
-    c.getContext("2d")!.drawImage(full, 0, 0, w, h);
-    return c.toDataURL("image/png");
-  };
-
-  const sendToAnimate = () => {
-    try {
-      const url = flattenTransparentDataUrl();
-      sessionStorage.setItem("terrakoya_paint_to_animate", url);
-      window.location.assign("/auto-animate");
-    } catch (err: any) {
-      showToast(`${t.pubFail}: ${err?.message || ""}`);
-    }
-  };
-
-  const sendTo4koma = () => {
-    try {
-      const url = toDataUrl(eng.current.api.flatten());
-      localStorage.setItem("terrakoya_paint_to_4koma", url);
-      window.location.assign("/auto-4manga");
-    } catch (err: any) {
-      showToast(`${t.pubFail}: ${err?.message || ""}`);
-    }
-  };
-
   const openReplay = () => {
     if (!eng.current.frames || eng.current.frames.length < 2) { showToast(t.noFrames); return; }
     setReplaying(false);
@@ -588,8 +556,6 @@ export default function PaintPage() {
           <button style={btn} onClick={() => setZoom((z) => Math.min(3, z + 0.2))}>＋</button>
           <button style={btn} title={t.timelapse} onClick={openReplay}>▶</button>
           <button style={btn} onClick={() => eng.current.api.clearActive()}>{t.clear}</button>
-          <button style={btn} onClick={sendToAnimate}>🎬 {t.sendAnimate}</button>
-          <button style={btn} onClick={sendTo4koma}>📖 {t.send4koma}</button>
           <button style={btn} onClick={openPublish}>📤 {t.publish}</button>
           <button style={btnPrimary} onClick={exportPng}>⬇ {t.save}</button>
         </div>
