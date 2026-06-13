@@ -2,21 +2,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps */
 
 /*
- * 寺子屋ペイント (TERRAKOYA Paint) - Phase 1 / ClientWrapper継承版
+ * 寺子屋ペイント (TERRAKOYA Paint) - Phase 1 / 投稿配線版
  * 配置先: src/app/paint/page.tsx
  *
- * ■ ナビについて
- *   ルートの layout.tsx → <ClientWrapper> が全ページを包むため、上部ナビは自動で継承されます。
- *   よってこのページ自身はナビを描画しません（二重防止）。ペイント領域はナビ下の余白を自動計測して埋めます。
- *   「🎨 ペイント」メニュー項目は ClientWrapper 側のナビに追加が必要です（このページからは追加できません）。
- *   → client-wrapper.tsx とナビ本体を見せてもらえれば、メニュー追加も含めて仕上げます。
- *
- * ■ 言語: 暫定で右上にトグルを置いています。ClientWrapper の i18n を見せてもらい次第そちらへ連動。
- * ■ 投稿/いいね/スタンプ/定型コメント: 既存ギャラリー(Showcase)と認証を見せてもらってから配線。
- * ■ UTF-8のまま保存（PowerShellで貼り直さない）。
+ * ■ 投稿: PNGをStorageにアップ → submissions に1件作成(isPublic:true)。
+ *   既存ギャラリー(/gallery)に並び、いいね(❤️)も既存実装で自動で効きます。
+ * ■ 投稿が権限エラーで失敗する場合は firestore.rules / storage.rules の
+ *   submissions 作成・アップロード許可を確認（その時はルールを見せてください）。
+ * ■ ナビは ClientWrapper が出すので、このページはナビを描画しません。
+ * ■ 言語トグルは暫定（i18n連動は後で）。UTF-8のまま保存。
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { auth, db, storage } from "@/lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type Lang = "ja" | "en" | "ar";
 type Tool = "pen" | "pencil" | "air" | "eraser" | "fill";
@@ -28,27 +28,36 @@ const C = {
 };
 
 const T: Record<Lang, Record<string, string>> = {
-  ja: { title: "ペイント", trial: "試作 v0.4",
+  ja: { title: "ペイント", trial: "試作 v0.5",
     pen: "ペン", pencil: "鉛筆", air: "エアブラシ", eraser: "消しゴム", fill: "塗りつぶし",
     undo: "戻す", redo: "やり直し", brush: "ブラシ", size: "太さ", opacity: "濃さ",
     stab: "手ブレ補正", color: "カラー", layers: "レイヤー", add: "＋追加", del: "削除",
     clear: "クリア", save: "PNG保存", publish: "投稿", layerOpacity: "不透明度", layer: "レイヤー",
     note: "ペン/鉛筆/エアブラシ・レイヤー・筆圧・手ブレ補正。スタイラスのペンでも描けます。",
-    publishSoon: "投稿は既存ギャラリー（Showcase）に配線予定です。今はPNG保存をお使いください。" },
-  en: { title: "Paint", trial: "preview v0.4",
+    pubHeading: "🖼️ ギャラリーに投稿", titleLabel: "タイトル", titlePh: "作品のなまえ",
+    confirm: "公開して投稿", cancel: "キャンセル", publishing: "投稿中…",
+    loginNeeded: "投稿するにはログインが必要です", published: "ギャラリーに投稿しました！",
+    pubFail: "投稿に失敗しました", untitled: "むだいの作品", viewGallery: "ギャラリーを見る" },
+  en: { title: "Paint", trial: "preview v0.5",
     pen: "Pen", pencil: "Pencil", air: "Airbrush", eraser: "Eraser", fill: "Fill",
     undo: "Undo", redo: "Redo", brush: "Brush", size: "Size", opacity: "Opacity",
     stab: "Stabilizer", color: "Color", layers: "Layers", add: "+ Add", del: "Delete",
     clear: "Clear", save: "Save PNG", publish: "Post", layerOpacity: "Opacity", layer: "Layer",
     note: "Pen / Pencil / Airbrush, layers, pen pressure and stabilizer. Works with a stylus.",
-    publishSoon: "Posting will be wired to the existing gallery (next step). Use Save PNG for now." },
-  ar: { title: "الرسم", trial: "إصدار تجريبي 0.4",
+    pubHeading: "🖼️ Post to Gallery", titleLabel: "Title", titlePh: "Name your artwork",
+    confirm: "Publish", cancel: "Cancel", publishing: "Posting…",
+    loginNeeded: "Please log in to post", published: "Posted to the gallery!",
+    pubFail: "Posting failed", untitled: "Untitled", viewGallery: "View gallery" },
+  ar: { title: "الرسم", trial: "إصدار تجريبي 0.5",
     pen: "قلم", pencil: "رصاص", air: "رذاذ", eraser: "ممحاة", fill: "تعبئة",
     undo: "تراجع", redo: "إعادة", brush: "فرشاة", size: "الحجم", opacity: "الكثافة",
     stab: "مثبّت الخط", color: "اللون", layers: "الطبقات", add: "+ إضافة", del: "حذف",
     clear: "مسح", save: "حفظ PNG", publish: "نشر", layerOpacity: "الشفافية", layer: "طبقة",
     note: "قلم / رصاص / رذاذ، طبقات، ضغط القلم ومثبّت الخط. يعمل مع القلم الرقمي.",
-    publishSoon: "سيتم ربط النشر بالمعرض الحالي (الخطوة التالية). استخدم حفظ PNG الآن." },
+    pubHeading: "🖼️ النشر في المعرض", titleLabel: "العنوان", titlePh: "سمِّ عملك",
+    confirm: "نشر", cancel: "إلغاء", publishing: "جارٍ النشر…",
+    loginNeeded: "يرجى تسجيل الدخول للنشر", published: "تم النشر في المعرض!",
+    pubFail: "فشل النشر", untitled: "بدون عنوان", viewGallery: "عرض المعرض" },
 };
 
 const W = 900, H = 1200, UNDO_LIMIT = 10;
@@ -73,6 +82,12 @@ export default function PaintPage() {
   const [msg, setMsg] = useState("");
   const [availH, setAvailH] = useState<number | null>(null);
 
+  // 投稿
+  const [showPublish, setShowPublish] = useState(false);
+  const [title, setTitle] = useState("");
+  const [publishing, setPublishing] = useState(false);
+  const [posted, setPosted] = useState(false);
+
   const rootRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const eng = useRef<any>({ layers: [] as Layer[], activeIndex: 0, seq: 0, drawing: false });
@@ -80,7 +95,6 @@ export default function PaintPage() {
 
   useEffect(() => { set.current = { tool, color, size, opacity: opacity / 100, stab: stab / 100 }; }, [tool, color, size, opacity, stab]);
 
-  // ナビ下の余白を自動計測（ナビ高さをベタ書きしない）
   useEffect(() => {
     const measure = () => {
       const el = rootRef.current; if (!el) return;
@@ -120,7 +134,6 @@ export default function PaintPage() {
     const ctx = c.getContext("2d")!;
     const id = ++eng.current.seq;
     return { id, name: `${T[lang].layer} ${id}`, canvas: c, ctx, visible: true, opacity: 1 };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
   useEffect(() => {
@@ -245,16 +258,51 @@ export default function PaintPage() {
       overlay.removeEventListener("pointercancel", onUp);
       overlay.removeEventListener("pointerleave", onUp);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const exportPng = () => {
     const out = eng.current.api.flatten() as HTMLCanvasElement;
-    out.toBlob((b) => { if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "terrakoya-paint.png"; a.click(); });
+    out.toBlob((b: Blob | null) => { if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "terrakoya-paint.png"; a.click(); });
   };
-  const publishToShowcase = async () => {
-    // TODO: 既存のShowcase投稿関数に配線。
-    setMsg(t.publishSoon); setTimeout(() => setMsg(""), 4000);
+
+  const openPublish = () => {
+    if (!auth?.currentUser) { showToast(t.loginNeeded); return; }
+    setPosted(false);
+    setShowPublish(true);
+  };
+
+  const showToast = (m: string) => { setMsg(m); setTimeout(() => setMsg(""), 4000); };
+
+  const doPublish = async () => {
+    const user = auth?.currentUser;
+    if (!user) { showToast(t.loginNeeded); setShowPublish(false); return; }
+    setPublishing(true);
+    try {
+      const out = eng.current.api.flatten() as HTMLCanvasElement;
+      const blob: Blob = await new Promise((res, rej) => out.toBlob((b: Blob | null) => b ? res(b) : rej(new Error("blob failed")), "image/png"));
+      const path = `submissions/${user.uid}/${Date.now()}.png`;
+      const sRef = storageRef(storage, path);
+      await uploadBytes(sRef, blob, { contentType: "image/png" });
+      const url = await getDownloadURL(sRef);
+      await addDoc(collection(db, "submissions"), {
+        title: title.trim() || t.untitled,
+        imageUrl: url,
+        studentId: user.uid,
+        studentName: user.displayName || "名無し",
+        isPublic: true,
+        likes: [],
+        source: "paint",
+        createdAt: serverTimestamp(),
+      });
+      setPosted(true);
+      setShowPublish(false);
+      setTitle("");
+      showToast(t.published);
+    } catch (err: any) {
+      console.error(err);
+      showToast(`${t.pubFail}: ${err?.message || ""}`);
+    }
+    setPublishing(false);
   };
 
   const tools: { k: Tool; icon: string }[] = [
@@ -265,7 +313,7 @@ export default function PaintPage() {
   return (
     <div ref={rootRef} dir={rtl ? "rtl" : "ltr"}
       style={{ height: availH ? `${availH}px` : "calc(100dvh - 56px)", boxSizing: "border-box", padding: 12, color: C.text, fontFamily: "-apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif" }}>
-      <div style={{ height: "100%", display: "flex", flexDirection: "column", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden" }}>
+      <div style={{ height: "100%", display: "flex", flexDirection: "column", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
         {/* ペイント専用ツールバー */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
           <span style={{ fontWeight: 800, fontSize: 14 }}>🎨 <span style={{ color: C.blue }}>{t.title}</span></span>
@@ -277,7 +325,7 @@ export default function PaintPage() {
           <button style={btn} onClick={() => setZoom((z) => Math.max(0.3, z - 0.2))}>－</button>
           <button style={btn} onClick={() => setZoom((z) => Math.min(3, z + 0.2))}>＋</button>
           <button style={btn} onClick={() => eng.current.api.clearActive()}>{t.clear}</button>
-          <button style={btn} onClick={publishToShowcase}>📤 {t.publish}</button>
+          <button style={btn} onClick={openPublish}>📤 {t.publish}</button>
           <button style={btnPrimary} onClick={exportPng}>⬇ {t.save}</button>
         </div>
 
@@ -291,7 +339,7 @@ export default function PaintPage() {
 
           <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "auto", background: C.bg, position: "relative" }}>
             <div ref={stageRef} style={{ position: "relative", width: W, height: H, background: "#fff", transform: `scale(${zoom})`, transformOrigin: "center center", borderRadius: 4, boxShadow: "0 12px 48px rgba(0,0,0,.5)" }} />
-            {msg && <div style={{ position: "absolute", bottom: 18, background: C.blue, color: "#fff", padding: "10px 16px", borderRadius: 12, fontSize: 13, maxWidth: "80%", textAlign: "center", boxShadow: "0 6px 20px rgba(0,0,0,.4)" }}>{msg}</div>}
+            {msg && <div style={{ position: "absolute", bottom: 18, background: C.blue, color: "#fff", padding: "10px 16px", borderRadius: 12, fontSize: 13, maxWidth: "80%", textAlign: "center", boxShadow: "0 6px 20px rgba(0,0,0,.4)" }}>{msg}{posted && <a href="/gallery" style={{ color: "#fff", textDecoration: "underline", marginInlineStart: 8 }}>{t.viewGallery}</a>}</div>}
           </div>
 
           <div style={{ flex: "0 0 240px", background: C.panel, borderInlineStart: `1px solid ${C.border}`, overflow: "auto", padding: 12 }}>
@@ -329,6 +377,22 @@ export default function PaintPage() {
             </div>
           </div>
         </main>
+
+        {/* 投稿モーダル */}
+        {showPublish && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+            <div style={{ width: 340, maxWidth: "90%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 18 }}>
+              <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 800 }}>{t.pubHeading}</h3>
+              <label style={{ fontSize: 12, color: C.muted }}>{t.titleLabel}</label>
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.titlePh} maxLength={40}
+                style={{ width: "100%", boxSizing: "border-box", marginTop: 6, marginBottom: 16, padding: "10px 12px", borderRadius: 10, border: `1px solid ${C.border}`, background: C.card2, color: C.text, fontSize: 14 }} />
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setShowPublish(false)} disabled={publishing} style={{ ...btn, flex: 1 }}>{t.cancel}</button>
+                <button onClick={doPublish} disabled={publishing} style={{ ...btnPrimary, flex: 1 }}>{publishing ? t.publishing : t.confirm}</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
