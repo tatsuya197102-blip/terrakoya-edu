@@ -36,7 +36,8 @@ const T: Record<Lang, Record<string, string>> = {
     untitled: "むだいの作品", viewGallery: "ギャラリーを見る", themeLabel: "今週のお題",
     nurie: "ぬりえ", nurieConfirm: "今の絵は消えます。このぬりえを読みこみますか？",
     colorLayer: "色ぬり", outlineLayer: "下絵", sendAnimate: "アニメにする",
-    timelapse: "タイムラプス", close: "とじる", noFrames: "先に絵を描いてね" },
+    timelapse: "タイムラプス", close: "とじる", noFrames: "先に絵を描いてね",
+    saveGif: "GIF保存", savingGif: "作成中…" },
   en: { title: "Paint", trial: "preview v0.9",
     pen: "Pen", pencil: "Pencil", air: "Airbrush", eraser: "Eraser", fill: "Fill",
     undo: "Undo", redo: "Redo", brush: "Brush", size: "Size", opacity: "Opacity",
@@ -49,7 +50,8 @@ const T: Record<Lang, Record<string, string>> = {
     untitled: "Untitled", viewGallery: "View gallery", themeLabel: "This week's theme",
     nurie: "Coloring", nurieConfirm: "Your current drawing will be cleared. Load this template?",
     colorLayer: "Color", outlineLayer: "Outline", sendAnimate: "Animate",
-    timelapse: "Timelapse", close: "Close", noFrames: "Draw something first" },
+    timelapse: "Timelapse", close: "Close", noFrames: "Draw something first",
+    saveGif: "Save GIF", savingGif: "Creating…" },
   ar: { title: "الرسم", trial: "إصدار تجريبي 0.9",
     pen: "قلم", pencil: "رصاص", air: "رذاذ", eraser: "ممحاة", fill: "تعبئة",
     undo: "تراجع", redo: "إعادة", brush: "فرشاة", size: "الحجم", opacity: "الكثافة",
@@ -62,7 +64,8 @@ const T: Record<Lang, Record<string, string>> = {
     untitled: "بدون عنوان", viewGallery: "عرض المعرض", themeLabel: "موضوع الأسبوع",
     nurie: "تلوين", nurieConfirm: "سيتم مسح رسمك الحالي. هل تريد تحميل هذا القالب؟",
     colorLayer: "تلوين", outlineLayer: "الخطوط", sendAnimate: "حرّكها",
-    timelapse: "تسريع", close: "إغلاق", noFrames: "ارسم شيئاً أولاً" },
+    timelapse: "تسريع", close: "إغلاق", noFrames: "ارسم شيئاً أولاً",
+    saveGif: "حفظ GIF", savingGif: "جارٍ الإنشاء…" },
 };
 
 const W = 900, H = 1200, UNDO_LIMIT = 10;
@@ -191,6 +194,7 @@ export default function PaintPage() {
   const [availH, setAvailH] = useState<number | null>(null);
   const [theme, setTheme] = useState<Theme | null>(null);
   const [replaying, setReplaying] = useState(false);
+  const [savingGif, setSavingGif] = useState(false);
 
   const [showPublish, setShowPublish] = useState(false);
   const [title, setTitle] = useState("");
@@ -444,6 +448,49 @@ export default function PaintPage() {
     setTimeout(() => setReplaying(true), 30);
   };
 
+  const saveGif = async () => {
+    const frames: string[] = eng.current.frames || [];
+    if (frames.length < 2) { showToast(t.noFrames); return; }
+    setSavingGif(true);
+    try {
+      const { GIFEncoder, quantize, applyPalette } = await import("gifenc");
+      const gw = 270, gh = 360;
+      const cv = document.createElement("canvas"); cv.width = gw; cv.height = gh;
+      const ctx = cv.getContext("2d")!;
+      // フレームが多すぎる場合は最大150に間引き
+      let list = frames;
+      if (list.length > 150) {
+        const step = list.length / 150;
+        const picked: string[] = [];
+        for (let i = 0; i < 150; i++) picked.push(list[Math.floor(i * step)]);
+        picked.push(list[list.length - 1]);
+        list = picked;
+      }
+      const enc = GIFEncoder();
+      for (const src of list) {
+        const img = await new Promise<HTMLImageElement>((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, gw, gh);
+        ctx.drawImage(img, 0, 0, gw, gh);
+        const { data } = ctx.getImageData(0, 0, gw, gh);
+        const palette = quantize(data, 256);
+        const index = applyPalette(data, palette);
+        enc.writeFrame(index, gw, gh, { palette, delay: 80 });
+      }
+      enc.finish();
+      const blob = new Blob([enc.bytes()], { type: "image/gif" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "terrakoya-timelapse.gif";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch (err: any) {
+      console.error(err);
+      showToast(`${t.pubFail}: ${err?.message || ""}`);
+    } finally {
+      setSavingGif(false);
+    }
+  };
+
   useEffect(() => {
     if (!replaying) return;
     const frames: string[] = eng.current.frames || [];
@@ -611,7 +658,8 @@ export default function PaintPage() {
             <canvas ref={replayRef} width={360} height={480} style={{ background: "#fff", borderRadius: 8, height: "62%", width: "auto", boxShadow: "0 12px 48px rgba(0,0,0,.6)" }} />
             <div style={{ display: "flex", gap: 8 }}>
               <button style={btn} onClick={openReplay}>↻</button>
-              <button style={btnPrimary} onClick={() => setReplaying(false)}>{t.close}</button>
+              <button style={btnPrimary} onClick={saveGif} disabled={savingGif}>{savingGif ? t.savingGif : `💾 ${t.saveGif}`}</button>
+              <button style={btn} onClick={() => setReplaying(false)}>{t.close}</button>
             </div>
           </div>
         )}
