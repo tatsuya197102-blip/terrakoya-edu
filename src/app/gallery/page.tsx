@@ -10,6 +10,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 interface Comment { uid: string; name: string; phraseId: string; }
+interface ThemeSnap { ja?: string; en?: string; ar?: string; }
 interface GalleryWork {
   id: string;
   title: string;
@@ -19,12 +20,14 @@ interface GalleryWork {
   likes: string[];
   reactions?: Record<string, string[]>;
   comments?: Comment[];
+  theme?: ThemeSnap | null;
   courseId?: string;
   lessonId?: string;
   createdAt?: any;
   aiFeedback?: string;
   grade?: number;
 }
+interface Theme { ja?: string; en?: string; ar?: string; active?: boolean; }
 
 // 応援スタンプ（絵文字キー）
 const STAMPS = ['👏', '✨', '🎨', '😊', '🔥'];
@@ -61,6 +64,7 @@ const SHARE_LABELS: Record<string, Record<string, string>> = {
   del:       { ja: '削除', en: 'Delete', ar: 'حذف' },
   delConfirm:{ ja: 'この作品を削除しますか？', en: 'Delete this artwork?', ar: 'هل تريد حذف هذا العمل؟' },
   cheer:     { ja: '応援コメント', en: 'Cheer', ar: 'تشجيع' },
+  themeLabel:{ ja: '今週のお題', en: "This week's theme", ar: 'موضوع الأسبوع' },
 };
 
 function L(key: string, lang: string) {
@@ -79,6 +83,7 @@ export default function GalleryPage() {
   const [showComment, setShowComment] = useState<string | null>(null);
   const [likeLoading, setLikeLoading] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [theme, setTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(user => {
@@ -89,7 +94,15 @@ export default function GalleryPage() {
 
   useEffect(() => {
     loadGallery();
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, 'config', 'theme'));
+        if (snap.exists()) setTheme(snap.data() as Theme);
+      } catch (e) { console.error(e); }
+    })();
   }, []);
+
+  const themeTitle = theme && theme.active ? (theme[lang as 'ja' | 'en' | 'ar'] || theme.ja || '') : '';
 
   const loadGallery = async () => {
     setLoading(true);
@@ -166,7 +179,7 @@ export default function GalleryPage() {
       setWorks(prev => prev.map(w => {
         if (w.id !== workId) return w;
         const list = w.comments || [];
-        if (list.some(c => c.uid === entry.uid && c.phraseId === entry.phraseId)) return w; // 重複防止
+        if (list.some(c => c.uid === entry.uid && c.phraseId === entry.phraseId)) return w;
         return { ...w, comments: [...list, entry] };
       }));
       setShowComment(null);
@@ -231,6 +244,22 @@ export default function GalleryPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6">
+
+        {/* 今週のお題バナー */}
+        {themeTitle && (
+          <div className="flex items-center gap-3 bg-amber-500/15 border border-amber-500/40 rounded-2xl px-5 py-4 mb-6">
+            <span className="text-2xl">🎯</span>
+            <div>
+              <p className="text-amber-400 text-xs font-bold">{L('themeLabel', lang)}</p>
+              <p className="text-white font-bold text-lg leading-tight">{themeTitle}</p>
+            </div>
+            <a href="/paint"
+              className="ml-auto bg-amber-500 hover:bg-amber-400 text-black px-4 py-2 rounded-xl text-sm font-bold transition whitespace-nowrap">
+              🎨 {lang === 'ar' ? 'ارسم الآن' : lang === 'en' ? 'Draw now' : '描いてみる'}
+            </a>
+          </div>
+        )}
+
       {/* 投稿方法の案内 */}
         <div className="bg-blue-900/30 border border-blue-700/40 rounded-2xl p-5 mb-6">
           <h2 className="font-bold text-blue-300 mb-3 flex items-center gap-2">
@@ -292,6 +321,7 @@ export default function GalleryPage() {
             {sorted.map(work => {
               const isLiked = currentUser && work.likes?.includes(currentUser.uid);
               const isOwn = currentUser?.uid === work.studentId;
+              const workTheme = work.theme ? (work.theme[lang as 'ja' | 'en' | 'ar'] || work.theme.ja || '') : '';
               return (
                 <div key={work.id} className="bg-gray-900 rounded-xl overflow-hidden border border-gray-800 hover:border-blue-500 transition-all group">
                   {/* 画像 */}
@@ -313,9 +343,16 @@ export default function GalleryPage() {
                   {/* 情報 */}
                   <div className="p-3">
                     <p className="font-bold text-sm truncate mb-0.5">{work.title}</p>
-                    <p className="text-gray-500 text-xs truncate mb-2">
+                    <p className="text-gray-500 text-xs truncate mb-1">
                       {L('by', lang)} {work.studentName}
                     </p>
+
+                    {/* お題タグ */}
+                    {workTheme && (
+                      <div className="inline-flex items-center gap-1 bg-amber-500/15 text-amber-400 text-xs px-2 py-0.5 rounded-full mb-2">
+                        🎯 {workTheme}
+                      </div>
+                    )}
 
                     {/* アクション */}
                     <div className="flex items-center gap-2">
