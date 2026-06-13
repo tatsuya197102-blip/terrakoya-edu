@@ -2,15 +2,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps */
 
 /*
- * 寺子屋ペイント (TERRAKOYA Paint) - Phase 1 / Storage不使用・フリーズ対策版
+ * 寺子屋ペイント (TERRAKOYA Paint) - Phase 1 / v0.7
  * 配置先: src/app/paint/page.tsx
  *
- * ■ 投稿: Storageを使わず、画像を縮小JPEG化して submissions ドキュメントに直接保存。
- *   既存ギャラリー(/gallery)は <img src> 表示なのでそのまま映る。いいねも既存実装で有効。
- *   Firestoreの1ドキュメント上限(1MB)に収まるよう縮小＋画質を自動調整。
- * ■ 20秒のタイムアウトを入れているので「投稿中…」で固まらない（失敗時はエラー表示）。
- * ■ ナビは ClientWrapper が出すので、このページはナビを描画しない。
- * ■ UTF-8のまま保存。
+ * ■ 修正: dev(React Strict Mode)の二重マウントでも描けるよう、
+ *   ポインターイベントを毎マウントで付け直す（生成は一度だけ、描画内容は保持）。
+ * ■ 投稿: Storage不使用。縮小JPEGを submissions に直接保存。ギャラリー表示・いいね有効。
+ * ■ ナビは ClientWrapper が出すので描画しない。UTF-8のまま保存。
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -27,7 +25,7 @@ const C = {
 };
 
 const T: Record<Lang, Record<string, string>> = {
-  ja: { title: "ペイント", trial: "試作 v0.6",
+  ja: { title: "ペイント", trial: "試作 v0.7",
     pen: "ペン", pencil: "鉛筆", air: "エアブラシ", eraser: "消しゴム", fill: "塗りつぶし",
     undo: "戻す", redo: "やり直し", brush: "ブラシ", size: "太さ", opacity: "濃さ",
     stab: "手ブレ補正", color: "カラー", layers: "レイヤー", add: "＋追加", del: "削除",
@@ -38,7 +36,7 @@ const T: Record<Lang, Record<string, string>> = {
     loginNeeded: "投稿するにはログインが必要です", published: "ギャラリーに投稿しました！",
     pubFail: "投稿に失敗しました", timeout: "通信がタイムアウトしました（権限/接続を確認）",
     untitled: "むだいの作品", viewGallery: "ギャラリーを見る" },
-  en: { title: "Paint", trial: "preview v0.6",
+  en: { title: "Paint", trial: "preview v0.7",
     pen: "Pen", pencil: "Pencil", air: "Airbrush", eraser: "Eraser", fill: "Fill",
     undo: "Undo", redo: "Redo", brush: "Brush", size: "Size", opacity: "Opacity",
     stab: "Stabilizer", color: "Color", layers: "Layers", add: "+ Add", del: "Delete",
@@ -49,7 +47,7 @@ const T: Record<Lang, Record<string, string>> = {
     loginNeeded: "Please log in to post", published: "Posted to the gallery!",
     pubFail: "Posting failed", timeout: "Request timed out (check rules/connection)",
     untitled: "Untitled", viewGallery: "View gallery" },
-  ar: { title: "الرسم", trial: "إصدار تجريبي 0.6",
+  ar: { title: "الرسم", trial: "إصدار تجريبي 0.7",
     pen: "قلم", pencil: "رصاص", air: "رذاذ", eraser: "ممحاة", fill: "تعبئة",
     undo: "تراجع", redo: "إعادة", brush: "فرشاة", size: "الحجم", opacity: "الكثافة",
     stab: "مثبّت الخط", color: "اللون", layers: "الطبقات", add: "+ إضافة", del: "حذف",
@@ -68,7 +66,6 @@ const PALETTE = ["#1a1a1a", "#ffffff", "#e53935", "#fb8c00", "#fdd835", "#43a047
 interface Layer { id: number; name: string; canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; visible: boolean; opacity: number; }
 interface PanelLayer { id: number; name: string; visible: boolean; opacity: number; }
 
-// 縮小してJPEGのdataURL化（Firestore 1MB制限に収める）
 function toDataUrl(src: HTMLCanvasElement): string {
   const maxSide = 1000;
   const scale = Math.min(1, maxSide / Math.max(src.width, src.height));
@@ -132,7 +129,7 @@ export default function PaintPage() {
 
   const rebuildStage = useCallback(() => {
     const stage = stageRef.current; const e = eng.current;
-    if (!stage) return;
+    if (!stage || !e.overlay) return;
     stage.innerHTML = "";
     e.layers.forEach((L: Layer, i: number) => {
       L.canvas.style.zIndex = String(i);
@@ -154,16 +151,21 @@ export default function PaintPage() {
 
   useEffect(() => {
     const e = eng.current;
-    if (e.initialized) return;
-    e.initialized = true;
 
-    const overlay = document.createElement("canvas");
-    overlay.width = W; overlay.height = H;
-    overlay.style.position = "absolute"; overlay.style.left = "0"; overlay.style.top = "0";
-    overlay.style.zIndex = "9999"; overlay.style.touchAction = "none";
-    e.overlay = overlay; e.octx = overlay.getContext("2d")!;
-    e.layers = [makeLayer()]; e.activeIndex = 0; e.undo = []; e.redo = [];
-    rebuildStage(); syncPanel();
+    // --- 生成は一度だけ（描画内容・レイヤー・履歴は保持） ---
+    if (!e.overlay) {
+      const ov = document.createElement("canvas");
+      ov.width = W; ov.height = H;
+      ov.style.position = "absolute"; ov.style.left = "0"; ov.style.top = "0";
+      ov.style.zIndex = "9999"; ov.style.touchAction = "none";
+      e.overlay = ov; e.octx = ov.getContext("2d")!;
+      e.layers = [makeLayer()]; e.activeIndex = 0; e.undo = []; e.redo = [];
+    }
+    const overlay: HTMLCanvasElement = e.overlay;
+
+    // --- 毎マウントで実行（DOM再アタッチ＆イベント再登録） ---
+    rebuildStage();
+    syncPanel();
 
     const pt = (ev: PointerEvent) => {
       const r = overlay.getBoundingClientRect();
@@ -180,18 +182,38 @@ export default function PaintPage() {
       const idx = (x: number, y: number) => (y * W + x) * 4;
       const s = idx(sx, sy); const tr = d[s], tg = d[s + 1], tb = d[s + 2], ta = d[s + 3];
       const col = hexToRgb(set.current.color); const tol = 40;
-      const match = (i: number) => Math.abs(d[i] - tr) <= tol && Math.abs(d[i + 1] - tg) <= tol && Math.abs(d[i + 2] - tb) <= tol && Math.abs(d[i + 3] - ta) <= tol;
-      if (match(s) && col.r === tr && col.g === tg && col.b === tb && ta === 255) return;
+      const matchPx = (i: number) => Math.abs(d[i] - tr) <= tol && Math.abs(d[i + 1] - tg) <= tol && Math.abs(d[i + 2] - tb) <= tol && Math.abs(d[i + 3] - ta) <= tol;
+      if (matchPx(s) && col.r === tr && col.g === tg && col.b === tb && ta === 255) return;
       const stack: number[][] = [[sx, sy]];
       while (stack.length) {
         const cur = stack.pop()!; const x = cur[0], y = cur[1];
         if (x < 0 || y < 0 || x >= W || y >= H) continue;
-        const i = idx(x, y); if (!match(i)) continue;
+        const i = idx(x, y); if (!matchPx(i)) continue;
         d[i] = col.r; d[i + 1] = col.g; d[i + 2] = col.b; d[i + 3] = 255;
         stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
       }
       ctx.putImageData(img, 0, 0); syncPanel();
     };
+
+    e.api = {
+      undo: () => { if (!e.undo.length) return; const sN = e.undo.pop(); const L = e.layers[sN.i]; e.redo.push({ i: sN.i, data: L.ctx.getImageData(0, 0, W, H) }); L.ctx.putImageData(sN.data, 0, 0); syncPanel(); },
+      redo: () => { if (!e.redo.length) return; const sN = e.redo.pop(); const L = e.layers[sN.i]; e.undo.push({ i: sN.i, data: L.ctx.getImageData(0, 0, W, H) }); L.ctx.putImageData(sN.data, 0, 0); syncPanel(); },
+      clearActive: () => { pushUndo(); active().ctx.clearRect(0, 0, W, H); syncPanel(); },
+      addLayer: () => { e.layers.splice(e.activeIndex + 1, 0, makeLayer()); e.activeIndex++; rebuildStage(); syncPanel(); },
+      delLayer: () => { if (e.layers.length <= 1) return; e.layers.splice(e.activeIndex, 1); e.activeIndex = Math.max(0, e.activeIndex - 1); rebuildStage(); syncPanel(); },
+      up: () => { if (e.activeIndex >= e.layers.length - 1) return; const a = e.layers; [a[e.activeIndex], a[e.activeIndex + 1]] = [a[e.activeIndex + 1], a[e.activeIndex]]; e.activeIndex++; rebuildStage(); syncPanel(); },
+      down: () => { if (e.activeIndex <= 0) return; const a = e.layers; [a[e.activeIndex], a[e.activeIndex - 1]] = [a[e.activeIndex - 1], a[e.activeIndex]]; e.activeIndex--; rebuildStage(); syncPanel(); },
+      selectLayer: (i: number) => { e.activeIndex = i; syncPanel(); },
+      toggleVisible: (i: number) => { e.layers[i].visible = !e.layers[i].visible; rebuildStage(); syncPanel(); },
+      setLayerOpacity: (v: number) => { active().opacity = v; rebuildStage(); },
+      flatten: (): HTMLCanvasElement => {
+        const out = document.createElement("canvas"); out.width = W; out.height = H;
+        const o = out.getContext("2d")!; o.fillStyle = "#fff"; o.fillRect(0, 0, W, H);
+        e.layers.forEach((L: Layer) => { if (L.visible) { o.globalAlpha = L.opacity; o.drawImage(L.canvas, 0, 0); } });
+        return out;
+      },
+    };
+
     const onDown = (ev: PointerEvent) => {
       ev.preventDefault(); overlay.setPointerCapture(ev.pointerId);
       const c = pt(ev); const s = set.current;
@@ -244,25 +266,6 @@ export default function PaintPage() {
     overlay.addEventListener("pointerup", onUp);
     overlay.addEventListener("pointercancel", onUp);
     overlay.addEventListener("pointerleave", onUp);
-
-    e.api = {
-      undo: () => { if (!e.undo.length) return; const sN = e.undo.pop(); const L = e.layers[sN.i]; e.redo.push({ i: sN.i, data: L.ctx.getImageData(0, 0, W, H) }); L.ctx.putImageData(sN.data, 0, 0); syncPanel(); },
-      redo: () => { if (!e.redo.length) return; const sN = e.redo.pop(); const L = e.layers[sN.i]; e.undo.push({ i: sN.i, data: L.ctx.getImageData(0, 0, W, H) }); L.ctx.putImageData(sN.data, 0, 0); syncPanel(); },
-      clearActive: () => { pushUndo(); active().ctx.clearRect(0, 0, W, H); syncPanel(); },
-      addLayer: () => { e.layers.splice(e.activeIndex + 1, 0, makeLayer()); e.activeIndex++; rebuildStage(); syncPanel(); },
-      delLayer: () => { if (e.layers.length <= 1) return; e.layers.splice(e.activeIndex, 1); e.activeIndex = Math.max(0, e.activeIndex - 1); rebuildStage(); syncPanel(); },
-      up: () => { if (e.activeIndex >= e.layers.length - 1) return; const a = e.layers; [a[e.activeIndex], a[e.activeIndex + 1]] = [a[e.activeIndex + 1], a[e.activeIndex]]; e.activeIndex++; rebuildStage(); syncPanel(); },
-      down: () => { if (e.activeIndex <= 0) return; const a = e.layers; [a[e.activeIndex], a[e.activeIndex - 1]] = [a[e.activeIndex - 1], a[e.activeIndex]]; e.activeIndex--; rebuildStage(); syncPanel(); },
-      selectLayer: (i: number) => { e.activeIndex = i; syncPanel(); },
-      toggleVisible: (i: number) => { e.layers[i].visible = !e.layers[i].visible; rebuildStage(); syncPanel(); },
-      setLayerOpacity: (v: number) => { active().opacity = v; rebuildStage(); },
-      flatten: (): HTMLCanvasElement => {
-        const out = document.createElement("canvas"); out.width = W; out.height = H;
-        const o = out.getContext("2d")!; o.fillStyle = "#fff"; o.fillRect(0, 0, W, H);
-        e.layers.forEach((L: Layer) => { if (L.visible) { o.globalAlpha = L.opacity; o.drawImage(L.canvas, 0, 0); } });
-        return out;
-      },
-    };
 
     const wrapH = stageRef.current?.parentElement?.clientHeight || 0;
     if (wrapH) setZoom(Math.min(1, (wrapH - 40) / H));
