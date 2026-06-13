@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { useTranslation } from 'react-i18next';
 
+interface Comment { uid: string; name: string; phraseId: string; }
 interface GalleryWork {
   id: string;
   title: string;
@@ -16,11 +17,30 @@ interface GalleryWork {
   studentId: string;
   studentName: string;
   likes: string[];
+  reactions?: Record<string, string[]>;
+  comments?: Comment[];
   courseId?: string;
   lessonId?: string;
   createdAt?: any;
   aiFeedback?: string;
   grade?: number;
+}
+
+// 応援スタンプ（絵文字キー）
+const STAMPS = ['👏', '✨', '🎨', '😊', '🔥'];
+
+// 定型応援コメント（自由記述なし）
+const PHRASES: { id: string; label: Record<string, string> }[] = [
+  { id: 'wow',      label: { ja: 'すごい！',     en: 'Amazing!',         ar: 'رائع!' } },
+  { id: 'colorful', label: { ja: '色がきれい！', en: 'Beautiful colors!', ar: 'ألوان جميلة!' } },
+  { id: 'cute',     label: { ja: 'かわいい！',   en: 'So cute!',          ar: 'لطيف جداً!' } },
+  { id: 'cool',     label: { ja: 'かっこいい！', en: 'So cool!',          ar: 'رائع جداً!' } },
+  { id: 'nice',     label: { ja: 'いいね！',     en: 'Nice!',             ar: 'جميل!' } },
+  { id: 'effort',   label: { ja: 'がんばったね！', en: 'Great effort!',    ar: 'مجهود رائع!' } },
+];
+function phraseText(id: string, lang: string) {
+  const p = PHRASES.find(x => x.id === id);
+  return p ? (p.label[lang] || p.label.en) : '';
 }
 
 const SHARE_LABELS: Record<string, Record<string, string>> = {
@@ -40,6 +60,7 @@ const SHARE_LABELS: Record<string, Record<string, string>> = {
   by:        { ja: 'by', en: 'by', ar: 'بواسطة' },
   del:       { ja: '削除', en: 'Delete', ar: 'حذف' },
   delConfirm:{ ja: 'この作品を削除しますか？', en: 'Delete this artwork?', ar: 'هل تريد حذف هذا العمل؟' },
+  cheer:     { ja: '応援コメント', en: 'Cheer', ar: 'تشجيع' },
 };
 
 function L(key: string, lang: string) {
@@ -55,6 +76,7 @@ export default function GalleryPage() {
   const [sortBy, setSortBy] = useState<'newest' | 'popular'>('newest');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showShare, setShowShare] = useState<string | null>(null);
+  const [showComment, setShowComment] = useState<string | null>(null);
   const [likeLoading, setLikeLoading] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
@@ -81,6 +103,8 @@ export default function GalleryPage() {
       const data = snap.docs.map(d => ({
         id: d.id,
         likes: [],
+        reactions: {},
+        comments: [],
         ...d.data(),
       })) as unknown as GalleryWork[];
       setWorks(data);
@@ -111,6 +135,42 @@ export default function GalleryPage() {
       ));
     } catch (err) { console.error(err); }
     setLikeLoading(null);
+  };
+
+  const handleReaction = async (workId: string, emoji: string) => {
+    if (!currentUser) return;
+    const ref = doc(db, 'submissions', workId);
+    const work = works.find(w => w.id === workId);
+    const arr = work?.reactions?.[emoji] || [];
+    const reacted = arr.includes(currentUser.uid);
+    try {
+      await updateDoc(ref, {
+        [`reactions.${emoji}`]: reacted ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid),
+      });
+      setWorks(prev => prev.map(w => {
+        if (w.id !== workId) return w;
+        const r = { ...(w.reactions || {}) };
+        const cur = r[emoji] || [];
+        r[emoji] = reacted ? cur.filter(id => id !== currentUser.uid) : [...cur, currentUser.uid];
+        return { ...w, reactions: r };
+      }));
+    } catch (err) { console.error(err); }
+  };
+
+  const handleComment = async (workId: string, phraseId: string) => {
+    if (!currentUser) return;
+    const ref = doc(db, 'submissions', workId);
+    const entry: Comment = { uid: currentUser.uid, name: currentUser.displayName || '名無し', phraseId };
+    try {
+      await updateDoc(ref, { comments: arrayUnion(entry) });
+      setWorks(prev => prev.map(w => {
+        if (w.id !== workId) return w;
+        const list = w.comments || [];
+        if (list.some(c => c.uid === entry.uid && c.phraseId === entry.phraseId)) return w; // 重複防止
+        return { ...w, comments: [...list, entry] };
+      }));
+      setShowComment(null);
+    } catch (err) { console.error(err); }
   };
 
   const handleDelete = async (workId: string) => {
@@ -309,6 +369,51 @@ export default function GalleryPage() {
                             <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block" />
                           ) : '🗑️'}
                         </button>
+                      )}
+                    </div>
+
+                    {/* 応援スタンプ */}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {STAMPS.map(s => {
+                        const arr = work.reactions?.[s] || [];
+                        const reacted = currentUser && arr.includes(currentUser.uid);
+                        return (
+                          <button key={s} onClick={() => handleReaction(work.id, s)}
+                            disabled={!currentUser}
+                            className={`px-1.5 py-0.5 rounded-lg text-xs transition disabled:opacity-50 ${
+                              reacted ? 'bg-blue-900/50 ring-1 ring-blue-500' : 'bg-gray-800 hover:bg-gray-700'
+                            }`}>
+                            {s}{arr.length > 0 && <span className="ml-0.5 text-gray-400">{arr.length}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* 応援コメント */}
+                    <div className="mt-2">
+                      <button onClick={() => setShowComment(showComment === work.id ? null : work.id)}
+                        disabled={!currentUser}
+                        className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50">
+                        💬 {L('cheer', lang)}
+                      </button>
+                      {showComment === work.id && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {PHRASES.map(p => (
+                            <button key={p.id} onClick={() => handleComment(work.id, p.id)}
+                              className="px-2 py-1 rounded-lg text-xs bg-gray-800 hover:bg-blue-900/50 text-gray-300 transition">
+                              {p.label[lang] || p.label.en}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {(work.comments || []).length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {(work.comments || []).map((c, idx) => (
+                            <p key={idx} className="text-xs text-gray-400 leading-snug">
+                              <span className="text-gray-300">{c.name}</span>: {phraseText(c.phraseId, lang)}
+                            </p>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>

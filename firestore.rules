@@ -16,12 +16,9 @@ service cloud.firestore {
       allow update: if request.auth != null
                     && request.auth.uid == userId
                     && (
-                      // 1) role 変更なし (lastLoginAt 等の通常更新)
                       request.resource.data.get('role', null) == resource.data.get('role', null)
-                      // 2) student/other への自己昇格 (現状 role 未設定)
                       || (request.resource.data.get('role', null) in ['student', 'other']
                           && resource.data.get('role', null) == null)
-                      // 3) teacher/parent への招待コード経由
                       || (request.resource.data.get('role', null) in ['teacher', 'parent']
                           && request.resource.data.get('inviteCodeUsed', '') is string
                           && request.resource.data.get('inviteCodeUsed', '') != '')
@@ -93,6 +90,25 @@ service cloud.firestore {
     match /showcase/{itemId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == resource.data.uid;
+    }
+
+    // 作品（ギャラリー）: トップレベル submissions
+    // 読み取り: 公開作品 or 自分の作品 / 作成: 本人の作品のみ
+    // 更新: 本人は編集可、他人は likes / reactions / comments のみ変更可（いいね・応援スタンプ・定型コメント）
+    // 削除: 本人のみ
+    match /submissions/{submissionId} {
+      allow read: if request.auth != null
+                  && (resource.data.get('isPublic', false) == true
+                      || resource.data.get('studentId', '') == request.auth.uid);
+      allow create: if request.auth != null
+                    && request.resource.data.get('studentId', '') == request.auth.uid;
+      allow update: if request.auth != null
+                    && (
+                      resource.data.get('studentId', '') == request.auth.uid
+                      || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'reactions', 'comments'])
+                    );
+      allow delete: if request.auth != null
+                    && resource.data.get('studentId', '') == request.auth.uid;
     }
   }
 }
