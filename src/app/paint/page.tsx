@@ -211,6 +211,7 @@ export default function PaintPage() {
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const canvasAreaRef = useRef<HTMLDivElement | null>(null);
   const replayRef = useRef<HTMLCanvasElement | null>(null);
   const eng = useRef<any>({ layers: [] as Layer[], activeIndex: 0, seq: 0, drawing: false });
   const set = useRef<any>({ tool: "pen", color: "#1a1a1a", size: 14, opacity: 1, stab: 0.4 });
@@ -245,7 +246,7 @@ export default function PaintPage() {
   // キャンバスを表示エリアに自動フィット（幅・高さ両方）。ResizeObserver でエリアのサイズ変化に追従。
   // → ドロワー開閉・回転・URLバー出入りでも常にエリア内に収まる。
   useEffect(() => {
-    const wrap = stageRef.current?.parentElement;
+    const wrap = canvasAreaRef.current;
     if (!wrap || typeof ResizeObserver === "undefined") return;
     const fit = () => {
       const w = wrap.clientWidth, h = wrap.clientHeight;
@@ -616,8 +617,10 @@ export default function PaintPage() {
           </div>
 
           {/* キャンバス（主役。flex:1 で残り全部を取る） */}
-          <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "auto", background: C.bg, position: "relative" }}>
-            <div ref={stageRef} style={{ position: "relative", width: W, height: H, background: "#fff", transform: `scale(${zoom})`, transformOrigin: "center center", borderRadius: 4, boxShadow: "0 12px 48px rgba(0,0,0,.5)" }} />
+          <div ref={canvasAreaRef} style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "auto", background: C.bg, position: "relative", padding: 8 }}>
+            <div style={{ position: "relative", width: W * zoom, height: H * zoom, flexShrink: 0, background: "#fff", borderRadius: 4, boxShadow: "0 12px 48px rgba(0,0,0,.5)" }}>
+              <div ref={stageRef} style={{ position: "absolute", top: 0, left: 0, width: W, height: H, transform: `scale(${zoom})`, transformOrigin: "top left" }} />
+            </div>
             {msg && <div style={{ position: "absolute", bottom: 18, background: C.blue, color: "#fff", padding: "10px 16px", borderRadius: 12, fontSize: 13, maxWidth: "80%", textAlign: "center", boxShadow: "0 6px 20px rgba(0,0,0,.4)" }}>{msg}{posted && <a href="/gallery" style={{ color: "#fff", textDecoration: "underline", marginInlineStart: 8 }}>{t.viewGallery}</a>}</div>}
           </div>
 
