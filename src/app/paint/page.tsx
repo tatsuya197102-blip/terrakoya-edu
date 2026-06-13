@@ -289,7 +289,7 @@ export default function PaintPage() {
             <div title={t.redo} onClick={() => eng.current.api.redo()} style={toolStyle(false)}>↪️</div>
           </div>
 
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "auto", background: C.bg, position: "relative" }}>
+          <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "auto", background: C.bg, position: "relative" }}>
             <div ref={stageRef} style={{ position: "relative", width: W, height: H, background: "#fff", transform: `scale(${zoom})`, transformOrigin: "center center", borderRadius: 4, boxShadow: "0 12px 48px rgba(0,0,0,.5)" }} />
             {msg && <div style={{ position: "absolute", bottom: 18, background: C.blue, color: "#fff", padding: "10px 16px", borderRadius: 12, fontSize: 13, maxWidth: "80%", textAlign: "center", boxShadow: "0 6px 20px rgba(0,0,0,.4)" }}>{msg}</div>}
           </div>
