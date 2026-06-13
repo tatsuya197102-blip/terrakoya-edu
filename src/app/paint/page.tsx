@@ -35,7 +35,8 @@ const T: Record<Lang, Record<string, string>> = {
     pubFail: "投稿に失敗しました", timeout: "通信がタイムアウトしました（権限/接続を確認）",
     untitled: "むだいの作品", viewGallery: "ギャラリーを見る", themeLabel: "今週のお題",
     nurie: "ぬりえ", nurieConfirm: "今の絵は消えます。このぬりえを読みこみますか？",
-    colorLayer: "色ぬり", outlineLayer: "下絵", sendAnimate: "アニメにする" },
+    colorLayer: "色ぬり", outlineLayer: "下絵", sendAnimate: "アニメにする",
+    timelapse: "タイムラプス", close: "とじる", noFrames: "先に絵を描いてね" },
   en: { title: "Paint", trial: "preview v0.9",
     pen: "Pen", pencil: "Pencil", air: "Airbrush", eraser: "Eraser", fill: "Fill",
     undo: "Undo", redo: "Redo", brush: "Brush", size: "Size", opacity: "Opacity",
@@ -47,7 +48,8 @@ const T: Record<Lang, Record<string, string>> = {
     pubFail: "Posting failed", timeout: "Request timed out (check rules/connection)",
     untitled: "Untitled", viewGallery: "View gallery", themeLabel: "This week's theme",
     nurie: "Coloring", nurieConfirm: "Your current drawing will be cleared. Load this template?",
-    colorLayer: "Color", outlineLayer: "Outline", sendAnimate: "Animate" },
+    colorLayer: "Color", outlineLayer: "Outline", sendAnimate: "Animate",
+    timelapse: "Timelapse", close: "Close", noFrames: "Draw something first" },
   ar: { title: "الرسم", trial: "إصدار تجريبي 0.9",
     pen: "قلم", pencil: "رصاص", air: "رذاذ", eraser: "ممحاة", fill: "تعبئة",
     undo: "تراجع", redo: "إعادة", brush: "فرشاة", size: "الحجم", opacity: "الكثافة",
@@ -59,7 +61,8 @@ const T: Record<Lang, Record<string, string>> = {
     pubFail: "فشل النشر", timeout: "انتهت مهلة الاتصال (تحقق من الصلاحيات/الاتصال)",
     untitled: "بدون عنوان", viewGallery: "عرض المعرض", themeLabel: "موضوع الأسبوع",
     nurie: "تلوين", nurieConfirm: "سيتم مسح رسمك الحالي. هل تريد تحميل هذا القالب؟",
-    colorLayer: "تلوين", outlineLayer: "الخطوط", sendAnimate: "حرّكها" },
+    colorLayer: "تلوين", outlineLayer: "الخطوط", sendAnimate: "حرّكها",
+    timelapse: "تسريع", close: "إغلاق", noFrames: "ارسم شيئاً أولاً" },
 };
 
 const W = 900, H = 1200, UNDO_LIMIT = 10;
@@ -187,6 +190,7 @@ export default function PaintPage() {
   const [msg, setMsg] = useState("");
   const [availH, setAvailH] = useState<number | null>(null);
   const [theme, setTheme] = useState<Theme | null>(null);
+  const [replaying, setReplaying] = useState(false);
 
   const [showPublish, setShowPublish] = useState(false);
   const [title, setTitle] = useState("");
@@ -195,6 +199,7 @@ export default function PaintPage() {
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const replayRef = useRef<HTMLCanvasElement | null>(null);
   const eng = useRef<any>({ layers: [] as Layer[], activeIndex: 0, seq: 0, drawing: false });
   const set = useRef<any>({ tool: "pen", color: "#1a1a1a", size: 14, opacity: 1, stab: 0.4 });
 
@@ -264,8 +269,9 @@ export default function PaintPage() {
     tpl.draw(o);
     e.layers = [colorLayer, outline];
     e.activeIndex = 0;
-    e.undo = []; e.redo = [];
+    e.undo = []; e.redo = []; e.frames = [];
     rebuildStage(); syncPanel();
+    eng.current.api?.recordFrame?.();
   }, [lang, makeLayer, rebuildStage, syncPanel]);
 
   useEffect(() => {
@@ -277,7 +283,7 @@ export default function PaintPage() {
       ov.style.position = "absolute"; ov.style.left = "0"; ov.style.top = "0";
       ov.style.zIndex = "9999"; ov.style.touchAction = "none";
       e.overlay = ov; e.octx = ov.getContext("2d")!;
-      e.layers = [makeLayer()]; e.activeIndex = 0; e.undo = []; e.redo = [];
+      e.layers = [makeLayer()]; e.activeIndex = 0; e.undo = []; e.redo = []; e.frames = [];
     }
     const overlay: HTMLCanvasElement = e.overlay;
 
@@ -309,13 +315,26 @@ export default function PaintPage() {
         d[i] = col.r; d[i + 1] = col.g; d[i + 2] = col.b; d[i + 3] = 255;
         stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
       }
-      ctx.putImageData(img, 0, 0); syncPanel();
+      ctx.putImageData(img, 0, 0); recordFrame(); syncPanel();
+    };
+
+    const recordFrame = () => {
+      const sc = 0.3, w = Math.round(W * sc), h = Math.round(H * sc);
+      const tmp = document.createElement("canvas"); tmp.width = w; tmp.height = h;
+      const tc = tmp.getContext("2d")!;
+      tc.fillStyle = "#fff"; tc.fillRect(0, 0, w, h);
+      e.layers.forEach((L: Layer) => { if (L.visible) { tc.globalAlpha = L.opacity; tc.drawImage(L.canvas, 0, 0, w, h); } });
+      if (!e.frames) e.frames = [];
+      e.frames.push(tmp.toDataURL("image/jpeg", 0.6));
+      if (e.frames.length > 240) e.frames.shift();
     };
 
     e.api = {
       undo: () => { if (!e.undo.length) return; const sN = e.undo.pop(); const L = e.layers[sN.i]; e.redo.push({ i: sN.i, data: L.ctx.getImageData(0, 0, W, H) }); L.ctx.putImageData(sN.data, 0, 0); syncPanel(); },
       redo: () => { if (!e.redo.length) return; const sN = e.redo.pop(); const L = e.layers[sN.i]; e.undo.push({ i: sN.i, data: L.ctx.getImageData(0, 0, W, H) }); L.ctx.putImageData(sN.data, 0, 0); syncPanel(); },
-      clearActive: () => { pushUndo(); active().ctx.clearRect(0, 0, W, H); syncPanel(); },
+      clearActive: () => { pushUndo(); active().ctx.clearRect(0, 0, W, H); recordFrame(); syncPanel(); },
+      recordFrame: () => recordFrame(),
+      resetFrames: () => { e.frames = []; },
       addLayer: () => { e.layers.splice(e.activeIndex + 1, 0, makeLayer()); e.activeIndex++; rebuildStage(); syncPanel(); },
       delLayer: () => { if (e.layers.length <= 1) return; e.layers.splice(e.activeIndex, 1); e.activeIndex = Math.max(0, e.activeIndex - 1); rebuildStage(); syncPanel(); },
       up: () => { if (e.activeIndex >= e.layers.length - 1) return; const a = e.layers; [a[e.activeIndex], a[e.activeIndex + 1]] = [a[e.activeIndex + 1], a[e.activeIndex]]; e.activeIndex++; rebuildStage(); syncPanel(); },
@@ -375,6 +394,7 @@ export default function PaintPage() {
         const ctx = active().ctx; ctx.save(); ctx.globalAlpha = s.opacity; ctx.drawImage(e.overlay, 0, 0); ctx.restore();
         (e.octx as CanvasRenderingContext2D).clearRect(0, 0, W, H);
       }
+      recordFrame();
       syncPanel();
     };
 
@@ -417,6 +437,29 @@ export default function PaintPage() {
       showToast(`${t.pubFail}: ${err?.message || ""}`);
     }
   };
+
+  const openReplay = () => {
+    if (!eng.current.frames || eng.current.frames.length < 2) { showToast(t.noFrames); return; }
+    setReplaying(false);
+    setTimeout(() => setReplaying(true), 30);
+  };
+
+  useEffect(() => {
+    if (!replaying) return;
+    const frames: string[] = eng.current.frames || [];
+    const cv = replayRef.current; if (!cv || frames.length === 0) return;
+    const ctx = cv.getContext("2d")!;
+    const imgs = frames.map((src) => { const im = new Image(); im.src = src; return im; });
+    let i = 0; let timer: any;
+    const step = () => {
+      const im = imgs[Math.min(i, imgs.length - 1)];
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+      if (im && im.complete) ctx.drawImage(im, 0, 0, cv.width, cv.height);
+      if (i < imgs.length - 1) { i++; timer = setTimeout(step, 1000 / 18); }
+    };
+    const start = setTimeout(step, 250);
+    return () => { clearTimeout(timer); clearTimeout(start); };
+  }, [replaying]);
 
   const exportPng = () => {
     const out = eng.current.api.flatten() as HTMLCanvasElement;
@@ -486,6 +529,7 @@ export default function PaintPage() {
           </select>
           <button style={btn} onClick={() => setZoom((z) => Math.max(0.3, z - 0.2))}>－</button>
           <button style={btn} onClick={() => setZoom((z) => Math.min(3, z + 0.2))}>＋</button>
+          <button style={btn} title={t.timelapse} onClick={openReplay}>▶</button>
           <button style={btn} onClick={() => eng.current.api.clearActive()}>{t.clear}</button>
           <button style={btn} onClick={sendToAnimate}>🎬 {t.sendAnimate}</button>
           <button style={btn} onClick={openPublish}>📤 {t.publish}</button>
@@ -560,6 +604,17 @@ export default function PaintPage() {
             </div>
           </div>
         </main>
+
+        {replaying && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 200, gap: 14 }}>
+            <span style={{ color: C.amber, fontWeight: 800, fontSize: 14 }}>⏱️ {t.timelapse}</span>
+            <canvas ref={replayRef} width={360} height={480} style={{ background: "#fff", borderRadius: 8, height: "62%", width: "auto", boxShadow: "0 12px 48px rgba(0,0,0,.6)" }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button style={btn} onClick={openReplay}>↻</button>
+              <button style={btnPrimary} onClick={() => setReplaying(false)}>{t.close}</button>
+            </div>
+          </div>
+        )}
 
         {showPublish && (
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
