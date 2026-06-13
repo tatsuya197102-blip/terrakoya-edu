@@ -35,7 +35,7 @@ const T: Record<Lang, Record<string, string>> = {
     pubFail: "投稿に失敗しました", timeout: "通信がタイムアウトしました（権限/接続を確認）",
     untitled: "むだいの作品", viewGallery: "ギャラリーを見る", themeLabel: "今週のお題",
     nurie: "ぬりえ", nurieConfirm: "今の絵は消えます。このぬりえを読みこみますか？",
-    colorLayer: "色ぬり", outlineLayer: "下絵" },
+    colorLayer: "色ぬり", outlineLayer: "下絵", sendAnimate: "アニメにする" },
   en: { title: "Paint", trial: "preview v0.9",
     pen: "Pen", pencil: "Pencil", air: "Airbrush", eraser: "Eraser", fill: "Fill",
     undo: "Undo", redo: "Redo", brush: "Brush", size: "Size", opacity: "Opacity",
@@ -47,7 +47,7 @@ const T: Record<Lang, Record<string, string>> = {
     pubFail: "Posting failed", timeout: "Request timed out (check rules/connection)",
     untitled: "Untitled", viewGallery: "View gallery", themeLabel: "This week's theme",
     nurie: "Coloring", nurieConfirm: "Your current drawing will be cleared. Load this template?",
-    colorLayer: "Color", outlineLayer: "Outline" },
+    colorLayer: "Color", outlineLayer: "Outline", sendAnimate: "Animate" },
   ar: { title: "الرسم", trial: "إصدار تجريبي 0.9",
     pen: "قلم", pencil: "رصاص", air: "رذاذ", eraser: "ممحاة", fill: "تعبئة",
     undo: "تراجع", redo: "إعادة", brush: "فرشاة", size: "الحجم", opacity: "الكثافة",
@@ -59,7 +59,7 @@ const T: Record<Lang, Record<string, string>> = {
     pubFail: "فشل النشر", timeout: "انتهت مهلة الاتصال (تحقق من الصلاحيات/الاتصال)",
     untitled: "بدون عنوان", viewGallery: "عرض المعرض", themeLabel: "موضوع الأسبوع",
     nurie: "تلوين", nurieConfirm: "سيتم مسح رسمك الحالي. هل تريد تحميل هذا القالب؟",
-    colorLayer: "تلوين", outlineLayer: "الخطوط" },
+    colorLayer: "تلوين", outlineLayer: "الخطوط", sendAnimate: "حرّكها" },
 };
 
 const W = 900, H = 1200, UNDO_LIMIT = 10;
@@ -396,6 +396,28 @@ export default function PaintPage() {
     };
   }, []);
 
+  const flattenTransparentDataUrl = (): string => {
+    const e = eng.current;
+    const full = document.createElement("canvas"); full.width = W; full.height = H;
+    const fo = full.getContext("2d")!;
+    e.layers.forEach((L: Layer) => { if (L.visible) { fo.globalAlpha = L.opacity; fo.drawImage(L.canvas, 0, 0); } });
+    const maxSide = 800; const scale = Math.min(1, maxSide / Math.max(W, H));
+    const w = Math.round(W * scale), h = Math.round(H * scale);
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    c.getContext("2d")!.drawImage(full, 0, 0, w, h);
+    return c.toDataURL("image/png");
+  };
+
+  const sendToAnimate = () => {
+    try {
+      const url = flattenTransparentDataUrl();
+      sessionStorage.setItem("terrakoya_paint_to_animate", url);
+      window.location.assign("/auto-animate");
+    } catch (err: any) {
+      showToast(`${t.pubFail}: ${err?.message || ""}`);
+    }
+  };
+
   const exportPng = () => {
     const out = eng.current.api.flatten() as HTMLCanvasElement;
     out.toBlob((b: Blob | null) => { if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "terrakoya-paint.png"; a.click(); });
@@ -465,6 +487,7 @@ export default function PaintPage() {
           <button style={btn} onClick={() => setZoom((z) => Math.max(0.3, z - 0.2))}>－</button>
           <button style={btn} onClick={() => setZoom((z) => Math.min(3, z + 0.2))}>＋</button>
           <button style={btn} onClick={() => eng.current.api.clearActive()}>{t.clear}</button>
+          <button style={btn} onClick={sendToAnimate}>🎬 {t.sendAnimate}</button>
           <button style={btn} onClick={openPublish}>📤 {t.publish}</button>
           <button style={btnPrimary} onClick={exportPng}>⬇ {t.save}</button>
         </div>

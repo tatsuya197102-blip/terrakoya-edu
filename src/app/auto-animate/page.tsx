@@ -165,6 +165,25 @@ export default function AutoAnimatePage() {
   const COLORS = ['#3b82f6','#ef4444','#22c55e','#f59e0b','#a855f7','#ec4899','#000000'];
   const BG_COLORS = ['#0f172a','#ffffff','#fef3c7','#ecfdf5','#f0f9ff'];
 
+  // ペイントから渡された絵を読み込む（sessionStorage経由）
+  useEffect(() => {
+    try {
+      const url = sessionStorage.getItem('terrakoya_paint_to_animate');
+      if (url) {
+        sessionStorage.removeItem('terrakoya_paint_to_animate');
+        const img = new Image();
+        img.onload = () => {
+          setUploadedImg(img);
+          setImgName(lang === 'ar' ? 'رسمتي' : lang === 'en' ? 'My drawing' : 'わたしの絵');
+          setPlaying(false);
+          frameRef.current = 0;
+          subRef.current = 0;
+        };
+        img.src = url;
+      }
+    } catch (e) { console.error(e); }
+  }, []);
+
   const draw = useCallback(() => {
     const canvas = canvasRef.current; if (!canvas) return;
     const ctx = canvas.getContext('2d'); if (!ctx) return;
