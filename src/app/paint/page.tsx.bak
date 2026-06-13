@@ -8,8 +8,6 @@
  * ■ 追加: ぬりえテンプレ（線画下絵）。テンプレ選択で「下絵」レイヤー(上)＋「色ぬり」レイヤー(下/アクティブ)を生成。
  *   線画は常に上に残るので塗っても消えない。Firestore/ルール不要・ペイント単体で完結。
  * ■ 維持: 週替わりお題バナー / dev二重マウント対応 / Storage不使用投稿 / 多言語・RTL
- * ■ 追加(レイアウト): 画面幅 < 820px のモバイルでは縦積みレイアウトに切替（キャンバス全幅 / ツール横1行 / 右パネルは下部スクロール）。
- *   ロジックは不変。isNarrow による条件付きスタイルのみ。
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -194,7 +192,6 @@ export default function PaintPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [msg, setMsg] = useState("");
   const [availH, setAvailH] = useState<number | null>(null);
-  const [isNarrow, setIsNarrow] = useState(false);
   const [theme, setTheme] = useState<Theme | null>(null);
   const [replaying, setReplaying] = useState(false);
   const [savingGif, setSavingGif] = useState(false);
@@ -228,7 +225,6 @@ export default function PaintPage() {
       const el = rootRef.current; if (!el) return;
       const top = el.getBoundingClientRect().top;
       setAvailH(Math.max(360, window.innerHeight - top));
-      setIsNarrow(window.innerWidth < 820);
     };
     measure();
     window.addEventListener("resize", measure);
@@ -236,19 +232,6 @@ export default function PaintPage() {
     const id = setTimeout(measure, 250);
     return () => { window.removeEventListener("resize", measure); window.removeEventListener("orientationchange", measure); clearTimeout(id); };
   }, []);
-
-  // レイアウト切替（縦/横）に合わせてキャンバスをエリアに収まるようズーム再フィット。
-  // 高頻度な resize には連動させず手動ズームを保持。
-  useEffect(() => {
-    const wrap = stageRef.current?.parentElement;
-    if (!wrap) return;
-    const id = setTimeout(() => {
-      if (!wrap.clientHeight || !wrap.clientWidth) return;
-      const z = Math.min(1, (wrap.clientHeight - 24) / H, (wrap.clientWidth - 24) / W);
-      if (z > 0) setZoom(z);
-    }, 80);
-    return () => clearTimeout(id);
-  }, [isNarrow]);
 
   const syncPanel = useCallback(() => {
     const e = eng.current;
@@ -425,10 +408,8 @@ export default function PaintPage() {
     overlay.addEventListener("pointercancel", onUp);
     overlay.addEventListener("pointerleave", onUp);
 
-    const wrap = stageRef.current?.parentElement;
-    if (wrap && wrap.clientHeight && wrap.clientWidth) {
-      setZoom(Math.min(1, (wrap.clientHeight - 24) / H, (wrap.clientWidth - 24) / W));
-    }
+    const wrapH = stageRef.current?.parentElement?.clientHeight || 0;
+    if (wrapH) setZoom(Math.min(1, (wrapH - 40) / H));
 
     return () => {
       overlay.removeEventListener("pointerdown", onDown);
@@ -564,7 +545,7 @@ export default function PaintPage() {
     <div ref={rootRef} dir={rtl ? "rtl" : "ltr"}
       style={{ height: availH ? `${availH}px` : "calc(100dvh - 56px)", boxSizing: "border-box", padding: 12, color: C.text, fontFamily: "-apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif" }}>
       <div style={{ height: "100%", display: "flex", flexDirection: "column", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden", position: "relative" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
           <span style={{ fontWeight: 800, fontSize: 14 }}>🎨 <span style={{ color: C.blue }}>{t.title}</span></span>
           <span style={{ color: C.muted, fontSize: 11 }}>{t.trial}</span>
           <div style={{ flex: 1 }} />
@@ -587,21 +568,8 @@ export default function PaintPage() {
           </div>
         )}
 
-        <main style={{ flex: 1, display: "flex", flexDirection: isNarrow ? "column" : "row", minHeight: 0, minWidth: 0 }}>
-          <div style={{
-            flex: "0 0 auto",
-            width: isNarrow ? "100%" : 70,
-            boxSizing: "border-box",
-            background: C.panel,
-            borderInlineEnd: isNarrow ? "none" : `1px solid ${C.border}`,
-            borderBottom: isNarrow ? `1px solid ${C.border}` : "none",
-            display: "flex",
-            flexDirection: isNarrow ? "row" : "column",
-            alignItems: "center",
-            gap: 8,
-            padding: isNarrow ? "8px 10px" : "12px 0",
-            overflowX: isNarrow ? "auto" : "visible",
-          }}>
+        <main style={{ flex: 1, display: "flex", minHeight: 0 }}>
+          <div style={{ flex: "0 0 70px", background: C.panel, borderInlineEnd: `1px solid ${C.border}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "12px 0" }}>
             {tools.map((tl) => (<div key={tl.k} title={t[tl.k]} onClick={() => setTool(tl.k)} style={toolStyle(tool === tl.k)}>{tl.icon}</div>))}
             <div style={{ flex: 1 }} />
             <div title={t.undo} onClick={() => eng.current.api.undo()} style={toolStyle(false)}>↩️</div>
@@ -613,17 +581,7 @@ export default function PaintPage() {
             {msg && <div style={{ position: "absolute", bottom: 18, background: C.blue, color: "#fff", padding: "10px 16px", borderRadius: 12, fontSize: 13, maxWidth: "80%", textAlign: "center", boxShadow: "0 6px 20px rgba(0,0,0,.4)" }}>{msg}{posted && <a href="/gallery" style={{ color: "#fff", textDecoration: "underline", marginInlineStart: 8 }}>{t.viewGallery}</a>}</div>}
           </div>
 
-          <div style={{
-            flex: "0 0 auto",
-            width: isNarrow ? "100%" : 240,
-            maxHeight: isNarrow ? "40vh" : "none",
-            boxSizing: "border-box",
-            background: C.panel,
-            borderInlineStart: isNarrow ? "none" : `1px solid ${C.border}`,
-            borderTop: isNarrow ? `1px solid ${C.border}` : "none",
-            overflow: "auto",
-            padding: 12,
-          }}>
+          <div style={{ flex: "0 0 240px", background: C.panel, borderInlineStart: `1px solid ${C.border}`, overflow: "auto", padding: 12 }}>
             {/* ぬりえ */}
             <div style={card}>
               <h4 style={h4}>🖼️ {t.nurie}</h4>
@@ -717,4 +675,4 @@ const card: React.CSSProperties = { background: C.card, border: `1px solid ${C.b
 const h4: React.CSSProperties = { margin: "0 0 8px", fontSize: 12, color: C.muted, fontWeight: 700 };
 const range: React.CSSProperties = { flex: 1, accentColor: C.blue };
 const val: React.CSSProperties = { width: 38, textAlign: "end", color: C.text };
-const toolStyle = (active: boolean): React.CSSProperties => ({ flex: "0 0 auto", width: 48, height: 48, borderRadius: 12, background: active ? C.blue : C.card2, border: `1px solid ${active ? C.blue : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", boxShadow: active ? "0 4px 12px rgba(59,130,246,.35)" : "none" });
+const toolStyle = (active: boolean): React.CSSProperties => ({ width: 48, height: 48, borderRadius: 12, background: active ? C.blue : C.card2, border: `1px solid ${active ? C.blue : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", boxShadow: active ? "0 4px 12px rgba(59,130,246,.35)" : "none" });
