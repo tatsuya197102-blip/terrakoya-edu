@@ -8,8 +8,9 @@
  * ■ 追加: ぬりえテンプレ（線画下絵）。テンプレ選択で「下絵」レイヤー(上)＋「色ぬり」レイヤー(下/アクティブ)を生成。
  *   線画は常に上に残るので塗っても消えない。Firestore/ルール不要・ペイント単体で完結。
  * ■ 維持: 週替わりお題バナー / dev二重マウント対応 / Storage不使用投稿 / 多言語・RTL
- * ■ 追加(レイアウト): 画面幅 < 820px のモバイルでは縦積みレイアウトに切替（キャンバス全幅 / ツール横1行 / 右パネルは下部スクロール）。
- *   ロジックは不変。isNarrow による条件付きスタイルのみ。
+ * ■ 追加(レイアウト v2): モバイル(幅<820px)はキャンバス主役の縦レイアウト。
+ *   ツールは上部横1行。ぬりえ/ブラシ/カラー/レイヤーは下からの開閉式ドロワー(初期は閉)。
+ *   キャンバスは ResizeObserver でエリアのサイズに自動フィット(幅・高さ両方)。ロジックは不変。
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -39,7 +40,8 @@ const T: Record<Lang, Record<string, string>> = {
     nurie: "ぬりえ", nurieConfirm: "今の絵は消えます。このぬりえを読みこみますか？",
     colorLayer: "色ぬり", outlineLayer: "下絵", sendAnimate: "アニメにする",
     timelapse: "タイムラプス", close: "とじる", noFrames: "先に絵を描いてね",
-    saveGif: "GIF保存", savingGif: "作成中…", send4koma: "4コマに送る" },
+    saveGif: "GIF保存", savingGif: "作成中…", send4koma: "4コマに送る",
+    tools: "どうぐ" },
   en: { title: "Paint", trial: "preview v0.9",
     pen: "Pen", pencil: "Pencil", air: "Airbrush", eraser: "Eraser", fill: "Fill",
     undo: "Undo", redo: "Redo", brush: "Brush", size: "Size", opacity: "Opacity",
@@ -53,7 +55,8 @@ const T: Record<Lang, Record<string, string>> = {
     nurie: "Coloring", nurieConfirm: "Your current drawing will be cleared. Load this template?",
     colorLayer: "Color", outlineLayer: "Outline", sendAnimate: "Animate",
     timelapse: "Timelapse", close: "Close", noFrames: "Draw something first",
-    saveGif: "Save GIF", savingGif: "Creating…", send4koma: "To 4-Koma" },
+    saveGif: "Save GIF", savingGif: "Creating…", send4koma: "To 4-Koma",
+    tools: "Tools" },
   ar: { title: "الرسم", trial: "إصدار تجريبي 0.9",
     pen: "قلم", pencil: "رصاص", air: "رذاذ", eraser: "ممحاة", fill: "تعبئة",
     undo: "تراجع", redo: "إعادة", brush: "فرشاة", size: "الحجم", opacity: "الكثافة",
@@ -67,7 +70,8 @@ const T: Record<Lang, Record<string, string>> = {
     nurie: "تلوين", nurieConfirm: "سيتم مسح رسمك الحالي. هل تريد تحميل هذا القالب؟",
     colorLayer: "تلوين", outlineLayer: "الخطوط", sendAnimate: "حرّكها",
     timelapse: "تسريع", close: "إغلاق", noFrames: "ارسم شيئاً أولاً",
-    saveGif: "حفظ GIF", savingGif: "جارٍ الإنشاء…", send4koma: "إلى الكوميك" },
+    saveGif: "حفظ GIF", savingGif: "جارٍ الإنشاء…", send4koma: "إلى الكوميك",
+    tools: "أدوات" },
 };
 
 const W = 900, H = 1200, UNDO_LIMIT = 10;
@@ -195,6 +199,7 @@ export default function PaintPage() {
   const [msg, setMsg] = useState("");
   const [availH, setAvailH] = useState<number | null>(null);
   const [isNarrow, setIsNarrow] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [theme, setTheme] = useState<Theme | null>(null);
   const [replaying, setReplaying] = useState(false);
   const [savingGif, setSavingGif] = useState(false);
@@ -237,18 +242,23 @@ export default function PaintPage() {
     return () => { window.removeEventListener("resize", measure); window.removeEventListener("orientationchange", measure); clearTimeout(id); };
   }, []);
 
-  // レイアウト切替（縦/横）に合わせてキャンバスをエリアに収まるようズーム再フィット。
-  // 高頻度な resize には連動させず手動ズームを保持。
+  // キャンバスを表示エリアに自動フィット（幅・高さ両方）。ResizeObserver でエリアのサイズ変化に追従。
+  // → ドロワー開閉・回転・URLバー出入りでも常にエリア内に収まる。
   useEffect(() => {
     const wrap = stageRef.current?.parentElement;
-    if (!wrap) return;
-    const id = setTimeout(() => {
-      if (!wrap.clientHeight || !wrap.clientWidth) return;
-      const z = Math.min(1, (wrap.clientHeight - 24) / H, (wrap.clientWidth - 24) / W);
-      if (z > 0) setZoom(z);
-    }, 80);
-    return () => clearTimeout(id);
-  }, [isNarrow]);
+    if (!wrap || typeof ResizeObserver === "undefined") return;
+    const fit = () => {
+      const w = wrap.clientWidth, h = wrap.clientHeight;
+      if (!w || !h) return;
+      const z = Math.min(1, (w - 16) / W, (h - 16) / H);
+      if (z > 0.02) setZoom(z);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(wrap);
+    const id = setTimeout(fit, 120);
+    return () => { ro.disconnect(); clearTimeout(id); };
+  }, []);
 
   const syncPanel = useCallback(() => {
     const e = eng.current;
@@ -293,7 +303,8 @@ export default function PaintPage() {
     e.undo = []; e.redo = []; e.frames = [];
     rebuildStage(); syncPanel();
     eng.current.api?.recordFrame?.();
-  }, [lang, makeLayer, rebuildStage, syncPanel]);
+    if (isNarrow) setPanelOpen(false); // ぬりえを選んだら閉じてキャンバスを広く
+  }, [lang, makeLayer, rebuildStage, syncPanel, isNarrow]);
 
   useEffect(() => {
     const e = eng.current;
@@ -424,11 +435,6 @@ export default function PaintPage() {
     overlay.addEventListener("pointerup", onUp);
     overlay.addEventListener("pointercancel", onUp);
     overlay.addEventListener("pointerleave", onUp);
-
-    const wrap = stageRef.current?.parentElement;
-    if (wrap && wrap.clientHeight && wrap.clientWidth) {
-      setZoom(Math.min(1, (wrap.clientHeight - 24) / H, (wrap.clientWidth - 24) / W));
-    }
 
     return () => {
       overlay.removeEventListener("pointerdown", onDown);
@@ -571,8 +577,8 @@ export default function PaintPage() {
           <select value={lang} onChange={(e) => setLang(e.target.value as Lang)} style={pill}>
             <option value="ja">JP</option><option value="en">EN</option><option value="ar">AR</option>
           </select>
-          <button style={btn} onClick={() => setZoom((z) => Math.max(0.3, z - 0.2))}>－</button>
-          <button style={btn} onClick={() => setZoom((z) => Math.min(3, z + 0.2))}>＋</button>
+          <button style={btn} onClick={() => setZoom((z) => Math.max(0.05, z - 0.15))}>－</button>
+          <button style={btn} onClick={() => setZoom((z) => Math.min(3, z + 0.15))}>＋</button>
           <button style={btn} title={t.timelapse} onClick={openReplay}>▶</button>
           <button style={btn} onClick={() => eng.current.api.clearActive()}>{t.clear}</button>
           <button style={btn} onClick={openPublish}>📤 {t.publish}</button>
@@ -588,6 +594,7 @@ export default function PaintPage() {
         )}
 
         <main style={{ flex: 1, display: "flex", flexDirection: isNarrow ? "column" : "row", minHeight: 0, minWidth: 0 }}>
+          {/* ツール（PC=左縦 / モバイル=上横1行） */}
           <div style={{
             flex: "0 0 auto",
             width: isNarrow ? "100%" : 70,
@@ -608,65 +615,80 @@ export default function PaintPage() {
             <div title={t.redo} onClick={() => eng.current.api.redo()} style={toolStyle(false)}>↪️</div>
           </div>
 
+          {/* キャンバス（主役。flex:1 で残り全部を取る） */}
           <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "auto", background: C.bg, position: "relative" }}>
             <div ref={stageRef} style={{ position: "relative", width: W, height: H, background: "#fff", transform: `scale(${zoom})`, transformOrigin: "center center", borderRadius: 4, boxShadow: "0 12px 48px rgba(0,0,0,.5)" }} />
             {msg && <div style={{ position: "absolute", bottom: 18, background: C.blue, color: "#fff", padding: "10px 16px", borderRadius: 12, fontSize: 13, maxWidth: "80%", textAlign: "center", boxShadow: "0 6px 20px rgba(0,0,0,.4)" }}>{msg}{posted && <a href="/gallery" style={{ color: "#fff", textDecoration: "underline", marginInlineStart: 8 }}>{t.viewGallery}</a>}</div>}
           </div>
 
+          {/* 設定パネル（PC=右側固定 / モバイル=下からの開閉ドロワー、初期は閉） */}
           <div style={{
             flex: "0 0 auto",
             width: isNarrow ? "100%" : 240,
-            maxHeight: isNarrow ? "40vh" : "none",
             boxSizing: "border-box",
             background: C.panel,
             borderInlineStart: isNarrow ? "none" : `1px solid ${C.border}`,
-            borderTop: isNarrow ? `1px solid ${C.border}` : "none",
-            overflow: "auto",
-            padding: 12,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
           }}>
-            {/* ぬりえ */}
-            <div style={card}>
-              <h4 style={h4}>🖼️ {t.nurie}</h4>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {TEMPLATES.map((tp) => (
-                  <button key={tp.id} onClick={() => loadTemplate(tp)}
-                    style={{ ...btn, flex: "0 0 calc(50% - 3px)", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 4px", fontSize: 12 }}>
-                    <span style={{ fontSize: 16 }}>{tp.icon}</span><span>{tp.label[lang]}</span>
-                  </button>
-                ))}
+            {isNarrow && (
+              <button onClick={() => setPanelOpen((o) => !o)}
+                style={{ ...btn, width: "100%", borderRadius: 0, border: "none", borderTop: `1px solid ${C.border}`, padding: "12px", fontWeight: 700, fontSize: 13, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                {panelOpen ? `▼ ${t.close}` : `🎨 ${t.nurie}・${t.color}・${t.brush}・${t.layers} ▲`}
+              </button>
+            )}
+            <div style={{
+              overflow: "auto",
+              padding: isNarrow && !panelOpen ? 0 : 12,
+              maxHeight: isNarrow ? (panelOpen ? "52vh" : 0) : "none",
+              flex: isNarrow ? "0 0 auto" : "1 1 auto",
+              transition: "max-height .2s ease",
+            }}>
+              {/* ぬりえ */}
+              <div style={card}>
+                <h4 style={h4}>🖼️ {t.nurie}</h4>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {TEMPLATES.map((tp) => (
+                    <button key={tp.id} onClick={() => loadTemplate(tp)}
+                      style={{ ...btn, flex: "0 0 calc(50% - 3px)", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 4px", fontSize: 12 }}>
+                      <span style={{ fontSize: 16 }}>{tp.icon}</span><span>{tp.label[lang]}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div style={card}>
-              <h4 style={h4}>🖌️ {t.brush}</h4>
-              <Row label={t.size}><input type="range" min={1} max={120} value={size} onChange={(e) => setSize(+e.target.value)} style={range} /><span style={val}>{size}</span></Row>
-              <Row label={t.opacity}><input type="range" min={5} max={100} value={opacity} onChange={(e) => setOpacity(+e.target.value)} style={range} /><span style={val}>{opacity}</span></Row>
-              <Row label={t.stab}><input type="range" min={0} max={90} value={stab} onChange={(e) => setStab(+e.target.value)} style={range} /><span style={val}>{stab}</span></Row>
-            </div>
-            <div style={card}>
-              <h4 style={h4}>🎨 {t.color}</h4>
-              <Row label=""><input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: 40, height: 32, border: `1px solid ${C.border}`, borderRadius: 8, background: "none" }} /><span style={{ color: C.text }}>{color}</span></Row>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-                {PALETTE.map((c) => <div key={c} onClick={() => setColor(c)} style={{ width: 24, height: 24, borderRadius: 7, border: "1px solid #0006", background: c, cursor: "pointer" }} />)}
+              <div style={card}>
+                <h4 style={h4}>🖌️ {t.brush}</h4>
+                <Row label={t.size}><input type="range" min={1} max={120} value={size} onChange={(e) => setSize(+e.target.value)} style={range} /><span style={val}>{size}</span></Row>
+                <Row label={t.opacity}><input type="range" min={5} max={100} value={opacity} onChange={(e) => setOpacity(+e.target.value)} style={range} /><span style={val}>{opacity}</span></Row>
+                <Row label={t.stab}><input type="range" min={0} max={90} value={stab} onChange={(e) => setStab(+e.target.value)} style={range} /><span style={val}>{stab}</span></Row>
               </div>
-            </div>
-            <div style={card}>
-              <h4 style={h4}>🗂️ {t.layers}</h4>
-              {[...panel.keys()].reverse().map((i) => {
-                const L = panel[i];
-                return (
-                  <div key={L.id} onClick={() => eng.current.api.selectLayer(i)} style={{ display: "flex", alignItems: "center", gap: 8, background: C.card2, border: `1px solid ${i === activeIndex ? C.blue : C.border}`, borderRadius: 10, padding: "7px 9px", marginBottom: 6, fontSize: 12, cursor: "pointer" }}>
-                    <span onClick={(ev) => { ev.stopPropagation(); eng.current.api.toggleVisible(i); }} style={{ cursor: "pointer" }}>{L.visible ? "👁️" : "🚫"}</span>
-                    <span style={{ flex: 1 }}>{L.name}</span>
-                  </div>
-                );
-              })}
-              <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                <button style={btnSm} onClick={() => eng.current.api.addLayer()}>{t.add}</button>
-                <button style={btnSm} onClick={() => eng.current.api.up()}>▲</button>
-                <button style={btnSm} onClick={() => eng.current.api.down()}>▼</button>
-                <button style={btnSm} onClick={() => eng.current.api.delLayer()}>{t.del}</button>
+              <div style={card}>
+                <h4 style={h4}>🎨 {t.color}</h4>
+                <Row label=""><input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: 40, height: 32, border: `1px solid ${C.border}`, borderRadius: 8, background: "none" }} /><span style={{ color: C.text }}>{color}</span></Row>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                  {PALETTE.map((c) => <div key={c} onClick={() => setColor(c)} style={{ width: 24, height: 24, borderRadius: 7, border: "1px solid #0006", background: c, cursor: "pointer" }} />)}
+                </div>
               </div>
-              <Row label={t.layerOpacity}><input type="range" min={0} max={100} defaultValue={100} onChange={(e) => eng.current.api.setLayerOpacity(+e.target.value / 100)} style={range} /></Row>
+              <div style={card}>
+                <h4 style={h4}>🗂️ {t.layers}</h4>
+                {[...panel.keys()].reverse().map((i) => {
+                  const L = panel[i];
+                  return (
+                    <div key={L.id} onClick={() => eng.current.api.selectLayer(i)} style={{ display: "flex", alignItems: "center", gap: 8, background: C.card2, border: `1px solid ${i === activeIndex ? C.blue : C.border}`, borderRadius: 10, padding: "7px 9px", marginBottom: 6, fontSize: 12, cursor: "pointer" }}>
+                      <span onClick={(ev) => { ev.stopPropagation(); eng.current.api.toggleVisible(i); }} style={{ cursor: "pointer" }}>{L.visible ? "👁️" : "🚫"}</span>
+                      <span style={{ flex: 1 }}>{L.name}</span>
+                    </div>
+                  );
+                })}
+                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                  <button style={btnSm} onClick={() => eng.current.api.addLayer()}>{t.add}</button>
+                  <button style={btnSm} onClick={() => eng.current.api.up()}>▲</button>
+                  <button style={btnSm} onClick={() => eng.current.api.down()}>▼</button>
+                  <button style={btnSm} onClick={() => eng.current.api.delLayer()}>{t.del}</button>
+                </div>
+                <Row label={t.layerOpacity}><input type="range" min={0} max={100} defaultValue={100} onChange={(e) => eng.current.api.setLayerOpacity(+e.target.value / 100)} style={range} /></Row>
+              </div>
             </div>
           </div>
         </main>
