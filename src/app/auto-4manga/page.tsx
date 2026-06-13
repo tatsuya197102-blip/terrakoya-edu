@@ -34,11 +34,11 @@ export default function Auto4MangaPage() {
   const [submitting, setSubmitting] = useState(false);
   const [paintImage, setPaintImage] = useState<string | null>(null);
 
-  // ペイントから渡された絵を受け取る（sessionStorage経由）
+  // ペイントから渡された絵を受け取る（localStorage経由・消さずに保持）
   useEffect(() => {
     try {
-      const url = sessionStorage.getItem('terrakoya_paint_to_4koma');
-      if (url) { sessionStorage.removeItem('terrakoya_paint_to_4koma'); setPaintImage(url); }
+      const url = localStorage.getItem('terrakoya_paint_to_4koma');
+      if (url) setPaintImage(url);
     } catch (e) { console.error(e); }
   }, []);
 
@@ -638,6 +638,7 @@ export default function Auto4MangaPage() {
       });
 
       setSubmitMsg(`✅__${feedback}`);
+      try { localStorage.removeItem('terrakoya_paint_to_4koma'); } catch {}
     } catch (err) {
       console.error(err);
       setSubmitMsg('❌ ' + ({'ar':'فشل الإرسال. حاول مجدداً','en':'Submission failed. Please try again','ja':'提出に失敗しました。もう一度お試しください'}[lang as string] || 'Submission failed. Please try again'));
@@ -941,7 +942,7 @@ export default function Auto4MangaPage() {
                 className="bg-green-600 hover:bg-green-700 disabled:opacity-50 px-5 py-2.5 rounded-xl font-bold text-sm transition">
                 📤 {lang === 'ar' ? 'إرسال للمعلّم AI' : lang === 'en' ? 'Submit to AI teacher' : 'AI先生に提出する'}
               </button>
-              <button onClick={() => { setPaintImage(null); setSubmitMsg(''); }}
+              <button onClick={() => { setPaintImage(null); setSubmitMsg(''); try { localStorage.removeItem('terrakoya_paint_to_4koma'); } catch {} }}
                 className="bg-slate-700 hover:bg-slate-600 px-5 py-2.5 rounded-xl text-sm transition">
                 {lang === 'ar' ? 'إغلاق' : lang === 'en' ? 'Dismiss' : '閉じる'}
               </button>

@@ -445,7 +445,7 @@ export default function PaintPage() {
   const sendTo4koma = () => {
     try {
       const url = toDataUrl(eng.current.api.flatten());
-      sessionStorage.setItem("terrakoya_paint_to_4koma", url);
+      localStorage.setItem("terrakoya_paint_to_4koma", url);
       window.location.assign("/auto-4manga");
     } catch (err: any) {
       showToast(`${t.pubFail}: ${err?.message || ""}`);
