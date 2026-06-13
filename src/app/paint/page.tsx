@@ -2,11 +2,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps */
 
 /*
- * 寺子屋ペイント (TERRAKOYA Paint) - Phase 2 / v0.8
+ * 寺子屋ペイント (TERRAKOYA Paint) - Phase 2 / v0.9
  * 配置先: src/app/paint/page.tsx
  *
- * ■ 追加: 週替わりお題バナー（config/theme を読む）＋ 投稿に theme スナップショットを記録
- * ■ 維持: dev二重マウント対応・Storage不使用投稿・多言語/RTL
+ * ■ 追加: ぬりえテンプレ（線画下絵）。テンプレ選択で「下絵」レイヤー(上)＋「色ぬり」レイヤー(下/アクティブ)を生成。
+ *   線画は常に上に残るので塗っても消えない。Firestore/ルール不要・ペイント単体で完結。
+ * ■ 維持: 週替わりお題バナー / dev二重マウント対応 / Storage不使用投稿 / 多言語・RTL
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -23,43 +24,134 @@ const C = {
 };
 
 const T: Record<Lang, Record<string, string>> = {
-  ja: { title: "ペイント", trial: "試作 v0.8",
+  ja: { title: "ペイント", trial: "試作 v0.9",
     pen: "ペン", pencil: "鉛筆", air: "エアブラシ", eraser: "消しゴム", fill: "塗りつぶし",
     undo: "戻す", redo: "やり直し", brush: "ブラシ", size: "太さ", opacity: "濃さ",
     stab: "手ブレ補正", color: "カラー", layers: "レイヤー", add: "＋追加", del: "削除",
     clear: "クリア", save: "PNG保存", publish: "投稿", layerOpacity: "不透明度", layer: "レイヤー",
-    note: "ペン/鉛筆/エアブラシ・レイヤー・筆圧・手ブレ補正。スタイラスのペンでも描けます。",
     pubHeading: "🖼️ ギャラリーに投稿", titleLabel: "タイトル", titlePh: "作品のなまえ",
     confirm: "公開して投稿", cancel: "キャンセル", publishing: "投稿中…",
     loginNeeded: "投稿するにはログインが必要です", published: "ギャラリーに投稿しました！",
     pubFail: "投稿に失敗しました", timeout: "通信がタイムアウトしました（権限/接続を確認）",
-    untitled: "むだいの作品", viewGallery: "ギャラリーを見る", themeLabel: "今週のお題" },
-  en: { title: "Paint", trial: "preview v0.8",
+    untitled: "むだいの作品", viewGallery: "ギャラリーを見る", themeLabel: "今週のお題",
+    nurie: "ぬりえ", nurieConfirm: "今の絵は消えます。このぬりえを読みこみますか？",
+    colorLayer: "色ぬり", outlineLayer: "下絵" },
+  en: { title: "Paint", trial: "preview v0.9",
     pen: "Pen", pencil: "Pencil", air: "Airbrush", eraser: "Eraser", fill: "Fill",
     undo: "Undo", redo: "Redo", brush: "Brush", size: "Size", opacity: "Opacity",
     stab: "Stabilizer", color: "Color", layers: "Layers", add: "+ Add", del: "Delete",
     clear: "Clear", save: "Save PNG", publish: "Post", layerOpacity: "Opacity", layer: "Layer",
-    note: "Pen / Pencil / Airbrush, layers, pen pressure and stabilizer. Works with a stylus.",
     pubHeading: "🖼️ Post to Gallery", titleLabel: "Title", titlePh: "Name your artwork",
     confirm: "Publish", cancel: "Cancel", publishing: "Posting…",
     loginNeeded: "Please log in to post", published: "Posted to the gallery!",
     pubFail: "Posting failed", timeout: "Request timed out (check rules/connection)",
-    untitled: "Untitled", viewGallery: "View gallery", themeLabel: "This week's theme" },
-  ar: { title: "الرسم", trial: "إصدار تجريبي 0.8",
+    untitled: "Untitled", viewGallery: "View gallery", themeLabel: "This week's theme",
+    nurie: "Coloring", nurieConfirm: "Your current drawing will be cleared. Load this template?",
+    colorLayer: "Color", outlineLayer: "Outline" },
+  ar: { title: "الرسم", trial: "إصدار تجريبي 0.9",
     pen: "قلم", pencil: "رصاص", air: "رذاذ", eraser: "ممحاة", fill: "تعبئة",
     undo: "تراجع", redo: "إعادة", brush: "فرشاة", size: "الحجم", opacity: "الكثافة",
     stab: "مثبّت الخط", color: "اللون", layers: "الطبقات", add: "+ إضافة", del: "حذف",
     clear: "مسح", save: "حفظ PNG", publish: "نشر", layerOpacity: "الشفافية", layer: "طبقة",
-    note: "قلم / رصاص / رذاذ، طبقات، ضغط القلم ومثبّت الخط. يعمل مع القلم الرقمي.",
     pubHeading: "🖼️ النشر في المعرض", titleLabel: "العنوان", titlePh: "سمِّ عملك",
     confirm: "نشر", cancel: "إلغاء", publishing: "جارٍ النشر…",
     loginNeeded: "يرجى تسجيل الدخول للنشر", published: "تم النشر في المعرض!",
     pubFail: "فشل النشر", timeout: "انتهت مهلة الاتصال (تحقق من الصلاحيات/الاتصال)",
-    untitled: "بدون عنوان", viewGallery: "عرض المعرض", themeLabel: "موضوع الأسبوع" },
+    untitled: "بدون عنوان", viewGallery: "عرض المعرض", themeLabel: "موضوع الأسبوع",
+    nurie: "تلوين", nurieConfirm: "سيتم مسح رسمك الحالي. هل تريد تحميل هذا القالب؟",
+    colorLayer: "تلوين", outlineLayer: "الخطوط" },
 };
 
 const W = 900, H = 1200, UNDO_LIMIT = 10;
 const PALETTE = ["#1a1a1a", "#ffffff", "#e53935", "#fb8c00", "#fdd835", "#43a047", "#1e88e5", "#8e24aa", "#6d4c41", "#FF6B1A"];
+
+// ぬりえテンプレ（オリジナル線画。900x1200座標に描画）
+type Tpl = { id: string; icon: string; label: Record<Lang, string>; draw: (o: CanvasRenderingContext2D) => void };
+const TEMPLATES: Tpl[] = [
+  {
+    id: "cat", icon: "🐈", label: { ja: "ねこ", en: "Cat", ar: "قطة" },
+    draw: (o) => {
+      o.beginPath(); o.ellipse(450, 820, 200, 240, 0, 0, 6.283); o.stroke();
+      o.beginPath(); o.ellipse(450, 440, 185, 160, 0, 0, 6.283); o.stroke();
+      o.beginPath(); o.moveTo(335, 340); o.lineTo(300, 185); o.lineTo(450, 300); o.stroke();
+      o.beginPath(); o.moveTo(565, 340); o.lineTo(600, 185); o.lineTo(450, 300); o.stroke();
+      o.beginPath(); o.ellipse(390, 430, 22, 30, 0, 0, 6.283); o.stroke();
+      o.beginPath(); o.ellipse(510, 430, 22, 30, 0, 0, 6.283); o.stroke();
+      o.beginPath(); o.moveTo(450, 470); o.lineTo(432, 492); o.lineTo(468, 492); o.closePath(); o.stroke();
+      o.beginPath(); o.moveTo(295, 470); o.lineTo(405, 478); o.moveTo(295, 505); o.lineTo(405, 500); o.stroke();
+      o.beginPath(); o.moveTo(605, 470); o.lineTo(495, 478); o.moveTo(605, 505); o.lineTo(495, 500); o.stroke();
+      o.beginPath(); o.moveTo(645, 940); o.quadraticCurveTo(780, 840, 700, 640); o.stroke();
+    },
+  },
+  {
+    id: "camel", icon: "🐪", label: { ja: "ラクダ", en: "Camel", ar: "جمل" },
+    draw: (o) => {
+      o.beginPath(); o.ellipse(440, 680, 240, 120, 0, 0, 6.283); o.stroke();
+      o.beginPath(); o.moveTo(290, 600); o.quadraticCurveTo(350, 430, 440, 595); o.stroke();
+      o.beginPath(); o.moveTo(440, 595); o.quadraticCurveTo(530, 430, 600, 600); o.stroke();
+      o.beginPath(); o.moveTo(640, 640); o.quadraticCurveTo(730, 540, 720, 410); o.stroke();
+      o.beginPath(); o.moveTo(690, 660); o.quadraticCurveTo(705, 560, 700, 440); o.stroke();
+      o.beginPath(); o.ellipse(725, 400, 58, 42, -0.3, 0, 6.283); o.stroke();
+      o.beginPath(); o.arc(745, 385, 8, 0, 6.283); o.stroke();
+      [320, 420, 520, 600].forEach((x) => { o.beginPath(); o.moveTo(x, 780); o.lineTo(x, 960); o.stroke(); });
+    },
+  },
+  {
+    id: "fish", icon: "🐟", label: { ja: "さかな", en: "Fish", ar: "سمكة" },
+    draw: (o) => {
+      o.beginPath(); o.ellipse(420, 600, 250, 150, 0, 0, 6.283); o.stroke();
+      o.beginPath(); o.moveTo(655, 600); o.lineTo(800, 470); o.lineTo(800, 730); o.closePath(); o.stroke();
+      o.beginPath(); o.arc(285, 560, 26, 0, 6.283); o.stroke();
+      o.beginPath(); o.moveTo(420, 455); o.quadraticCurveTo(470, 390, 540, 470); o.stroke();
+      o.beginPath(); o.moveTo(400, 745); o.quadraticCurveTo(460, 810, 540, 735); o.stroke();
+      o.beginPath(); o.moveTo(330, 495); o.quadraticCurveTo(365, 600, 330, 705); o.stroke();
+    },
+  },
+  {
+    id: "flower", icon: "🌸", label: { ja: "はな", en: "Flower", ar: "زهرة" },
+    draw: (o) => {
+      const cx = 450, cy = 440;
+      for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; o.beginPath(); o.ellipse(cx + Math.cos(a) * 150, cy + Math.sin(a) * 150, 75, 48, a, 0, 6.283); o.stroke(); }
+      o.beginPath(); o.arc(cx, cy, 80, 0, 6.283); o.stroke();
+      o.beginPath(); o.moveTo(cx, cy + 210); o.lineTo(cx, 1060); o.stroke();
+      o.beginPath(); o.ellipse(cx - 95, 820, 95, 42, -0.5, 0, 6.283); o.stroke();
+      o.beginPath(); o.ellipse(cx + 95, 940, 95, 42, 0.5, 0, 6.283); o.stroke();
+    },
+  },
+  {
+    id: "butterfly", icon: "🦋", label: { ja: "ちょう", en: "Butterfly", ar: "فراشة" },
+    draw: (o) => {
+      const cx = 450, cy = 580;
+      o.beginPath(); o.ellipse(cx, cy, 20, 170, 0, 0, 6.283); o.stroke();
+      o.beginPath(); o.moveTo(cx - 10, cy - 165); o.quadraticCurveTo(cx - 70, cy - 290, cx - 100, cy - 270);
+      o.moveTo(cx + 10, cy - 165); o.quadraticCurveTo(cx + 70, cy - 290, cx + 100, cy - 270); o.stroke();
+      o.beginPath(); o.ellipse(cx - 155, cy - 70, 145, 115, -0.3, 0, 6.283); o.stroke();
+      o.beginPath(); o.ellipse(cx + 155, cy - 70, 145, 115, 0.3, 0, 6.283); o.stroke();
+      o.beginPath(); o.ellipse(cx - 135, cy + 160, 115, 92, 0.3, 0, 6.283); o.stroke();
+      o.beginPath(); o.ellipse(cx + 135, cy + 160, 115, 92, -0.3, 0, 6.283); o.stroke();
+    },
+  },
+  {
+    id: "house", icon: "🏠", label: { ja: "いえ", en: "House", ar: "منزل" },
+    draw: (o) => {
+      o.strokeRect(280, 560, 420, 420);
+      o.beginPath(); o.moveTo(245, 560); o.lineTo(490, 350); o.lineTo(735, 560); o.closePath(); o.stroke();
+      o.strokeRect(430, 780, 130, 200);
+      o.strokeRect(320, 620, 120, 120);
+      o.beginPath(); o.moveTo(380, 620); o.lineTo(380, 740); o.moveTo(320, 680); o.lineTo(440, 680); o.stroke();
+    },
+  },
+  {
+    id: "car", icon: "🚗", label: { ja: "くるま", en: "Car", ar: "سيارة" },
+    draw: (o) => {
+      o.strokeRect(175, 650, 560, 150);
+      o.beginPath(); o.moveTo(295, 650); o.lineTo(360, 540); o.lineTo(600, 540); o.lineTo(650, 650); o.stroke();
+      o.beginPath(); o.moveTo(480, 540); o.lineTo(480, 650); o.stroke();
+      o.beginPath(); o.arc(300, 810, 62, 0, 6.283); o.stroke();
+      o.beginPath(); o.arc(615, 810, 62, 0, 6.283); o.stroke();
+    },
+  },
+];
 
 interface Layer { id: number; name: string; canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; visible: boolean; opacity: number; }
 interface PanelLayer { id: number; name: string; visible: boolean; opacity: number; }
@@ -108,7 +200,6 @@ export default function PaintPage() {
 
   useEffect(() => { set.current = { tool, color, size, opacity: opacity / 100, stab: stab / 100 }; }, [tool, color, size, opacity, stab]);
 
-  // 週替わりお題を取得
   useEffect(() => {
     (async () => {
       try {
@@ -160,6 +251,22 @@ export default function PaintPage() {
     const id = ++eng.current.seq;
     return { id, name: `${T[lang].layer} ${id}`, canvas: c, ctx, visible: true, opacity: 1 };
   }, [lang]);
+
+  // ぬりえ読み込み: [色ぬり(下/アクティブ), 下絵(上)]
+  const loadTemplate = useCallback((tpl: Tpl) => {
+    const e = eng.current;
+    if (!e.overlay) return;
+    if (!window.confirm(T[lang].nurieConfirm)) return;
+    const colorLayer = makeLayer(); colorLayer.name = T[lang].colorLayer;
+    const outline = makeLayer(); outline.name = T[lang].outlineLayer;
+    const o = outline.ctx;
+    o.strokeStyle = "#222"; o.lineWidth = 5; o.lineJoin = "round"; o.lineCap = "round";
+    tpl.draw(o);
+    e.layers = [colorLayer, outline];
+    e.activeIndex = 0;
+    e.undo = []; e.redo = [];
+    rebuildStage(); syncPanel();
+  }, [lang, makeLayer, rebuildStage, syncPanel]);
 
   useEffect(() => {
     const e = eng.current;
@@ -362,7 +469,6 @@ export default function PaintPage() {
           <button style={btnPrimary} onClick={exportPng}>⬇ {t.save}</button>
         </div>
 
-        {/* 週替わりお題バナー */}
         {themeTitle && (
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: "rgba(245,158,11,.12)", borderBottom: `1px solid ${C.border}`, flexShrink: 0, fontSize: 13 }}>
             <span style={{ fontSize: 16 }}>🎯</span>
@@ -385,6 +491,18 @@ export default function PaintPage() {
           </div>
 
           <div style={{ flex: "0 0 240px", background: C.panel, borderInlineStart: `1px solid ${C.border}`, overflow: "auto", padding: 12 }}>
+            {/* ぬりえ */}
+            <div style={card}>
+              <h4 style={h4}>🖼️ {t.nurie}</h4>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {TEMPLATES.map((tp) => (
+                  <button key={tp.id} onClick={() => loadTemplate(tp)}
+                    style={{ ...btn, flex: "0 0 calc(50% - 3px)", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 4px", fontSize: 12 }}>
+                    <span style={{ fontSize: 16 }}>{tp.icon}</span><span>{tp.label[lang]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             <div style={card}>
               <h4 style={h4}>🖌️ {t.brush}</h4>
               <Row label={t.size}><input type="range" min={1} max={120} value={size} onChange={(e) => setSize(+e.target.value)} style={range} /><span style={val}>{size}</span></Row>
