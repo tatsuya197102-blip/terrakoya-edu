@@ -37,7 +37,7 @@ const T: Record<Lang, Record<string, string>> = {
     nurie: "ぬりえ", nurieConfirm: "今の絵は消えます。このぬりえを読みこみますか？",
     colorLayer: "色ぬり", outlineLayer: "下絵", sendAnimate: "アニメにする",
     timelapse: "タイムラプス", close: "とじる", noFrames: "先に絵を描いてね",
-    saveGif: "GIF保存", savingGif: "作成中…" },
+    saveGif: "GIF保存", savingGif: "作成中…", send4koma: "4コマに送る" },
   en: { title: "Paint", trial: "preview v0.9",
     pen: "Pen", pencil: "Pencil", air: "Airbrush", eraser: "Eraser", fill: "Fill",
     undo: "Undo", redo: "Redo", brush: "Brush", size: "Size", opacity: "Opacity",
@@ -51,7 +51,7 @@ const T: Record<Lang, Record<string, string>> = {
     nurie: "Coloring", nurieConfirm: "Your current drawing will be cleared. Load this template?",
     colorLayer: "Color", outlineLayer: "Outline", sendAnimate: "Animate",
     timelapse: "Timelapse", close: "Close", noFrames: "Draw something first",
-    saveGif: "Save GIF", savingGif: "Creating…" },
+    saveGif: "Save GIF", savingGif: "Creating…", send4koma: "To 4-Koma" },
   ar: { title: "الرسم", trial: "إصدار تجريبي 0.9",
     pen: "قلم", pencil: "رصاص", air: "رذاذ", eraser: "ممحاة", fill: "تعبئة",
     undo: "تراجع", redo: "إعادة", brush: "فرشاة", size: "الحجم", opacity: "الكثافة",
@@ -65,7 +65,7 @@ const T: Record<Lang, Record<string, string>> = {
     nurie: "تلوين", nurieConfirm: "سيتم مسح رسمك الحالي. هل تريد تحميل هذا القالب؟",
     colorLayer: "تلوين", outlineLayer: "الخطوط", sendAnimate: "حرّكها",
     timelapse: "تسريع", close: "إغلاق", noFrames: "ارسم شيئاً أولاً",
-    saveGif: "حفظ GIF", savingGif: "جارٍ الإنشاء…" },
+    saveGif: "حفظ GIF", savingGif: "جارٍ الإنشاء…", send4koma: "إلى الكوميك" },
 };
 
 const W = 900, H = 1200, UNDO_LIMIT = 10;
@@ -442,6 +442,16 @@ export default function PaintPage() {
     }
   };
 
+  const sendTo4koma = () => {
+    try {
+      const url = toDataUrl(eng.current.api.flatten());
+      sessionStorage.setItem("terrakoya_paint_to_4koma", url);
+      window.location.assign("/auto-4manga");
+    } catch (err: any) {
+      showToast(`${t.pubFail}: ${err?.message || ""}`);
+    }
+  };
+
   const openReplay = () => {
     if (!eng.current.frames || eng.current.frames.length < 2) { showToast(t.noFrames); return; }
     setReplaying(false);
@@ -579,6 +589,7 @@ export default function PaintPage() {
           <button style={btn} title={t.timelapse} onClick={openReplay}>▶</button>
           <button style={btn} onClick={() => eng.current.api.clearActive()}>{t.clear}</button>
           <button style={btn} onClick={sendToAnimate}>🎬 {t.sendAnimate}</button>
+          <button style={btn} onClick={sendTo4koma}>📖 {t.send4koma}</button>
           <button style={btn} onClick={openPublish}>📤 {t.publish}</button>
           <button style={btnPrimary} onClick={exportPng}>⬇ {t.save}</button>
         </div>

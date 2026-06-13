@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const THEMES = [
@@ -32,6 +32,15 @@ export default function Auto4MangaPage() {
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [submitMsg, setSubmitMsg] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [paintImage, setPaintImage] = useState<string | null>(null);
+
+  // ペイントから渡された絵を受け取る（sessionStorage経由）
+  useEffect(() => {
+    try {
+      const url = sessionStorage.getItem('terrakoya_paint_to_4koma');
+      if (url) { sessionStorage.removeItem('terrakoya_paint_to_4koma'); setPaintImage(url); }
+    } catch (e) { console.error(e); }
+  }, []);
 
   const { useT } = { useT: null }; // dummy
   const tl = {
@@ -570,6 +579,72 @@ export default function Auto4MangaPage() {
     setSubmitting(false);
   };
 
+  const submitPaintImage = async () => {
+    if (!paintImage) return;
+    const { auth, db } = await import('@/lib/firebase');
+    const user = auth.currentUser;
+    if (!user) { setSubmitMsg({'ar':'يجب تسجيل الدخول','en':'Login required','ja':'ログインが必要です'}[lang as string] || 'Login required'); return; }
+    setSubmitting(true);
+    setSubmitMsg(tr('manga4.submitting'));
+    try {
+      const base64: string = await new Promise((res) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 800;
+          let { width, height } = img;
+          if (width > MAX || height > MAX) {
+            if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+            else { width = Math.round(width * MAX / height); height = MAX; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+          res(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
+        };
+        img.src = paintImage;
+      });
+
+      const { addDoc, updateDoc, doc, collection } = await import('firebase/firestore');
+      const docRef = await addDoc(collection(db, 'users', user.uid, 'submissions'), {
+        courseId: 'auto-4manga',
+        fileName: 'paint.jpg',
+        fileType: 'image/jpeg',
+        comment: '4コマ漫画（ペイント）',
+        imageBase64: base64,
+        submittedAt: new Date().toISOString(),
+        aiFeedback: null, feedbackStatus: 'pending',
+        gradeResult: null, gradingStatus: 'idle',
+      });
+
+      setSubmitMsg(tr('manga4.analyzing'));
+
+      const r = await fetch('/api/analyze-artwork', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId: 'auto-4manga',
+          fileName: 'paint.jpg',
+          fileType: 'image/jpeg',
+          comment: '4コマ漫画（ペイント）',
+          imageBase64: base64,
+          lang,
+        }),
+      });
+      const data = await r.json();
+      const feedback = data.feedback || ({'ar':'تعذر إنشاء التغذية الراجعة','en':'Could not generate feedback','ja':'フィードバックを生成できませんでした'}[lang as string] || 'Could not generate feedback');
+
+      await updateDoc(doc(db, 'users', user.uid, 'submissions', docRef.id), {
+        aiFeedback: feedback, feedbackStatus: 'done',
+      });
+
+      setSubmitMsg(`✅__${feedback}`);
+    } catch (err) {
+      console.error(err);
+      setSubmitMsg('❌ ' + ({'ar':'فشل الإرسال. حاول مجدداً','en':'Submission failed. Please try again','ja':'提出に失敗しました。もう一度お試しください'}[lang as string] || 'Submission failed. Please try again'));
+    }
+    setSubmitting(false);
+  };
+
   const downloadTemplate = () => {
     const canvas = document.createElement('canvas');
     // 縦型4コマ（上から下1列、右余白にキャプション）
@@ -853,6 +928,32 @@ export default function Auto4MangaPage() {
           <p className="text-gray-300 text-lg">{t.sub}</p>
         </div>
       </div>
+
+      {paintImage && (
+        <div className="max-w-2xl mx-auto px-8 pt-8">
+          <div className="bg-amber-500/15 border border-amber-500/40 rounded-2xl p-5">
+            <p className="text-amber-300 font-bold mb-3">
+              🎨 {lang === 'ar' ? 'وصلت رسمتك من الرسم!' : lang === 'en' ? 'Your drawing arrived from Paint!' : 'ペイントから絵が届きました！'}
+            </p>
+            <img src={paintImage} alt="paint" className="w-40 rounded-lg border border-slate-700 mb-3 bg-white" />
+            <div className="flex gap-3 flex-wrap">
+              <button onClick={submitPaintImage} disabled={submitting}
+                className="bg-green-600 hover:bg-green-700 disabled:opacity-50 px-5 py-2.5 rounded-xl font-bold text-sm transition">
+                📤 {lang === 'ar' ? 'إرسال للمعلّم AI' : lang === 'en' ? 'Submit to AI teacher' : 'AI先生に提出する'}
+              </button>
+              <button onClick={() => { setPaintImage(null); setSubmitMsg(''); }}
+                className="bg-slate-700 hover:bg-slate-600 px-5 py-2.5 rounded-xl text-sm transition">
+                {lang === 'ar' ? 'إغلاق' : lang === 'en' ? 'Dismiss' : '閉じる'}
+              </button>
+            </div>
+            {submitMsg && (
+              <div className="mt-3 text-sm text-gray-200 whitespace-pre-wrap bg-slate-900/60 rounded-lg p-3">
+                {submitMsg.replace('✅__', '✅ ')}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="max-w-2xl mx-auto px-8 py-12">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
