@@ -2,18 +2,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps */
 
 /*
- * 寺子屋ペイント (TERRAKOYA Paint) - Phase 1 / v0.7
+ * 寺子屋ペイント (TERRAKOYA Paint) - Phase 2 / v0.8
  * 配置先: src/app/paint/page.tsx
  *
- * ■ 修正: dev(React Strict Mode)の二重マウントでも描けるよう、
- *   ポインターイベントを毎マウントで付け直す（生成は一度だけ、描画内容は保持）。
- * ■ 投稿: Storage不使用。縮小JPEGを submissions に直接保存。ギャラリー表示・いいね有効。
- * ■ ナビは ClientWrapper が出すので描画しない。UTF-8のまま保存。
+ * ■ 追加: 週替わりお題バナー（config/theme を読む）＋ 投稿に theme スナップショットを記録
+ * ■ 維持: dev二重マウント対応・Storage不使用投稿・多言語/RTL
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { auth, db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
 
 type Lang = "ja" | "en" | "ar";
 type Tool = "pen" | "pencil" | "air" | "eraser" | "fill";
@@ -21,11 +19,11 @@ type Tool = "pen" | "pencil" | "air" | "eraser" | "fill";
 const C = {
   bg: "#070B16", panel: "#0E1628", card: "#141C30", card2: "#1B2540",
   border: "#243048", blue: "#3B82F6", blueDark: "#2563EB",
-  text: "#E7ECF5", muted: "#94A3B8",
+  text: "#E7ECF5", muted: "#94A3B8", amber: "#F59E0B",
 };
 
 const T: Record<Lang, Record<string, string>> = {
-  ja: { title: "ペイント", trial: "試作 v0.7",
+  ja: { title: "ペイント", trial: "試作 v0.8",
     pen: "ペン", pencil: "鉛筆", air: "エアブラシ", eraser: "消しゴム", fill: "塗りつぶし",
     undo: "戻す", redo: "やり直し", brush: "ブラシ", size: "太さ", opacity: "濃さ",
     stab: "手ブレ補正", color: "カラー", layers: "レイヤー", add: "＋追加", del: "削除",
@@ -35,8 +33,8 @@ const T: Record<Lang, Record<string, string>> = {
     confirm: "公開して投稿", cancel: "キャンセル", publishing: "投稿中…",
     loginNeeded: "投稿するにはログインが必要です", published: "ギャラリーに投稿しました！",
     pubFail: "投稿に失敗しました", timeout: "通信がタイムアウトしました（権限/接続を確認）",
-    untitled: "むだいの作品", viewGallery: "ギャラリーを見る" },
-  en: { title: "Paint", trial: "preview v0.7",
+    untitled: "むだいの作品", viewGallery: "ギャラリーを見る", themeLabel: "今週のお題" },
+  en: { title: "Paint", trial: "preview v0.8",
     pen: "Pen", pencil: "Pencil", air: "Airbrush", eraser: "Eraser", fill: "Fill",
     undo: "Undo", redo: "Redo", brush: "Brush", size: "Size", opacity: "Opacity",
     stab: "Stabilizer", color: "Color", layers: "Layers", add: "+ Add", del: "Delete",
@@ -46,8 +44,8 @@ const T: Record<Lang, Record<string, string>> = {
     confirm: "Publish", cancel: "Cancel", publishing: "Posting…",
     loginNeeded: "Please log in to post", published: "Posted to the gallery!",
     pubFail: "Posting failed", timeout: "Request timed out (check rules/connection)",
-    untitled: "Untitled", viewGallery: "View gallery" },
-  ar: { title: "الرسم", trial: "إصدار تجريبي 0.7",
+    untitled: "Untitled", viewGallery: "View gallery", themeLabel: "This week's theme" },
+  ar: { title: "الرسم", trial: "إصدار تجريبي 0.8",
     pen: "قلم", pencil: "رصاص", air: "رذاذ", eraser: "ممحاة", fill: "تعبئة",
     undo: "تراجع", redo: "إعادة", brush: "فرشاة", size: "الحجم", opacity: "الكثافة",
     stab: "مثبّت الخط", color: "اللون", layers: "الطبقات", add: "+ إضافة", del: "حذف",
@@ -57,7 +55,7 @@ const T: Record<Lang, Record<string, string>> = {
     confirm: "نشر", cancel: "إلغاء", publishing: "جارٍ النشر…",
     loginNeeded: "يرجى تسجيل الدخول للنشر", published: "تم النشر في المعرض!",
     pubFail: "فشل النشر", timeout: "انتهت مهلة الاتصال (تحقق من الصلاحيات/الاتصال)",
-    untitled: "بدون عنوان", viewGallery: "عرض المعرض" },
+    untitled: "بدون عنوان", viewGallery: "عرض المعرض", themeLabel: "موضوع الأسبوع" },
 };
 
 const W = 900, H = 1200, UNDO_LIMIT = 10;
@@ -65,6 +63,7 @@ const PALETTE = ["#1a1a1a", "#ffffff", "#e53935", "#fb8c00", "#fdd835", "#43a047
 
 interface Layer { id: number; name: string; canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; visible: boolean; opacity: number; }
 interface PanelLayer { id: number; name: string; visible: boolean; opacity: number; }
+interface Theme { ja?: string; en?: string; ar?: string; active?: boolean; }
 
 function toDataUrl(src: HTMLCanvasElement): string {
   const maxSide = 1000;
@@ -95,6 +94,7 @@ export default function PaintPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [msg, setMsg] = useState("");
   const [availH, setAvailH] = useState<number | null>(null);
+  const [theme, setTheme] = useState<Theme | null>(null);
 
   const [showPublish, setShowPublish] = useState(false);
   const [title, setTitle] = useState("");
@@ -107,6 +107,18 @@ export default function PaintPage() {
   const set = useRef<any>({ tool: "pen", color: "#1a1a1a", size: 14, opacity: 1, stab: 0.4 });
 
   useEffect(() => { set.current = { tool, color, size, opacity: opacity / 100, stab: stab / 100 }; }, [tool, color, size, opacity, stab]);
+
+  // 週替わりお題を取得
+  useEffect(() => {
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "config", "theme"));
+        if (snap.exists()) setTheme(snap.data() as Theme);
+      } catch (e) { console.error(e); }
+    })();
+  }, []);
+
+  const themeTitle = theme && theme.active ? (theme[lang] || theme.ja || "") : "";
 
   useEffect(() => {
     const measure = () => {
@@ -152,7 +164,6 @@ export default function PaintPage() {
   useEffect(() => {
     const e = eng.current;
 
-    // --- 生成は一度だけ（描画内容・レイヤー・履歴は保持） ---
     if (!e.overlay) {
       const ov = document.createElement("canvas");
       ov.width = W; ov.height = H;
@@ -163,7 +174,6 @@ export default function PaintPage() {
     }
     const overlay: HTMLCanvasElement = e.overlay;
 
-    // --- 毎マウントで実行（DOM再アタッチ＆イベント再登録） ---
     rebuildStage();
     syncPanel();
 
@@ -299,6 +309,9 @@ export default function PaintPage() {
     try {
       const out = eng.current.api.flatten() as HTMLCanvasElement;
       const imageUrl = toDataUrl(out);
+      const themeSnapshot = theme && theme.active
+        ? { ja: theme.ja || "", en: theme.en || "", ar: theme.ar || "" }
+        : null;
       const write = addDoc(collection(db, "submissions"), {
         title: title.trim() || t.untitled,
         imageUrl,
@@ -307,6 +320,7 @@ export default function PaintPage() {
         isPublic: true,
         likes: [],
         source: "paint",
+        theme: themeSnapshot,
         createdAt: serverTimestamp(),
       });
       await Promise.race([
@@ -347,6 +361,15 @@ export default function PaintPage() {
           <button style={btn} onClick={openPublish}>📤 {t.publish}</button>
           <button style={btnPrimary} onClick={exportPng}>⬇ {t.save}</button>
         </div>
+
+        {/* 週替わりお題バナー */}
+        {themeTitle && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: "rgba(245,158,11,.12)", borderBottom: `1px solid ${C.border}`, flexShrink: 0, fontSize: 13 }}>
+            <span style={{ fontSize: 16 }}>🎯</span>
+            <span style={{ color: C.amber, fontWeight: 700 }}>{t.themeLabel}：</span>
+            <span style={{ color: C.text, fontWeight: 700 }}>{themeTitle}</span>
+          </div>
+        )}
 
         <main style={{ flex: 1, display: "flex", minHeight: 0 }}>
           <div style={{ flex: "0 0 70px", background: C.panel, borderInlineEnd: `1px solid ${C.border}`, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "12px 0" }}>
@@ -401,6 +424,9 @@ export default function PaintPage() {
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
             <div style={{ width: 340, maxWidth: "90%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 18 }}>
               <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 800 }}>{t.pubHeading}</h3>
+              {themeTitle && (
+                <p style={{ margin: "0 0 12px", fontSize: 12, color: C.amber }}>🎯 {t.themeLabel}：{themeTitle}</p>
+              )}
               <label style={{ fontSize: 12, color: C.muted }}>{t.titleLabel}</label>
               <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.titlePh} maxLength={40}
                 style={{ width: "100%", boxSizing: "border-box", marginTop: 6, marginBottom: 16, padding: "10px 12px", borderRadius: 10, border: `1px solid ${C.border}`, background: C.card2, color: C.text, fontSize: 14 }} />
