@@ -74,7 +74,7 @@ const T: Record<Lang, Record<string, string>> = {
     tools: "أدوات" },
 };
 
-const W = 900, H = 1200, UNDO_LIMIT = 10;
+const W = 900, H = 1273, UNDO_LIMIT = 10; // H=W*297/210 ≒ A4縦比率
 const PALETTE = ["#1a1a1a", "#ffffff", "#e53935", "#fb8c00", "#fdd835", "#43a047", "#1e88e5", "#8e24aa", "#6d4c41", "#FF6B1A"];
 
 // ぬりえテンプレ（オリジナル線画。900x1200座標に描画）
@@ -251,7 +251,10 @@ export default function PaintPage() {
     const fit = () => {
       const w = wrap.clientWidth, h = wrap.clientHeight;
       if (!w || !h) return;
-      const z = Math.min(1, (w - 16) / W, (h - 16) / H);
+      const narrow = window.innerWidth < 820;
+      const z = narrow
+        ? Math.min(1, (w - 12) / W)                  // モバイル: 横幅いっぱい優先（縦は必要ならスクロール）
+        : Math.min(1, (w - 16) / W, (h - 16) / H);   // PC: 全体が収まる
       if (z > 0.02) setZoom(z);
     };
     fit();
@@ -617,7 +620,7 @@ export default function PaintPage() {
           </div>
 
           {/* キャンバス（主役。flex:1 で残り全部を取る） */}
-          <div ref={canvasAreaRef} style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "auto", background: C.bg, position: "relative", padding: 8 }}>
+          <div ref={canvasAreaRef} style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", alignItems: isNarrow ? "flex-start" : "center", justifyContent: "center", overflow: "auto", background: C.bg, position: "relative", padding: isNarrow ? 6 : 8 }}>
             <div style={{ position: "relative", width: W * zoom, height: H * zoom, flexShrink: 0, background: "#fff", borderRadius: 4, boxShadow: "0 12px 48px rgba(0,0,0,.5)" }}>
               <div ref={stageRef} style={{ position: "absolute", top: 0, left: 0, width: W, height: H, transform: `scale(${zoom})`, transformOrigin: "top left" }} />
             </div>
