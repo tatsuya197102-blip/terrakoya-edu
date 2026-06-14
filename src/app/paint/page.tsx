@@ -651,18 +651,6 @@ export default function PaintPage() {
               flex: isNarrow ? "0 0 auto" : "1 1 auto",
               transition: "max-height .2s ease",
             }}>
-              {/* ぬりえ */}
-              <div style={card}>
-                <h4 style={h4}>🖼️ {t.nurie}</h4>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {TEMPLATES.map((tp) => (
-                    <button key={tp.id} onClick={() => loadTemplate(tp)}
-                      style={{ ...btn, flex: "0 0 calc(50% - 3px)", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 4px", fontSize: 12 }}>
-                      <span style={{ fontSize: 16 }}>{tp.icon}</span><span>{tp.label[lang]}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
               <div style={card}>
                 <h4 style={h4}>🖌️ {t.brush}</h4>
                 <Row label={t.size}><input type="range" min={1} max={120} value={size} onChange={(e) => setSize(+e.target.value)} style={range} /><span style={val}>{size}</span></Row>
@@ -694,6 +682,18 @@ export default function PaintPage() {
                   <button style={btnSm} onClick={() => eng.current.api.delLayer()}>{t.del}</button>
                 </div>
                 <Row label={t.layerOpacity}><input type="range" min={0} max={100} defaultValue={100} onChange={(e) => eng.current.api.setLayerOpacity(+e.target.value / 100)} style={range} /></Row>
+              </div>
+              {/* ぬりえ（最後に配置） */}
+              <div style={card}>
+                <h4 style={h4}>🖼️ {t.nurie}</h4>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {TEMPLATES.map((tp) => (
+                    <button key={tp.id} onClick={() => loadTemplate(tp)}
+                      style={{ ...btn, flex: "0 0 calc(50% - 3px)", boxSizing: "border-box", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "8px 4px", fontSize: 12 }}>
+                      <span style={{ fontSize: 16 }}>{tp.icon}</span><span>{tp.label[lang]}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
