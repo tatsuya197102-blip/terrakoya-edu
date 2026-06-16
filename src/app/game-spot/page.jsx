@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 /**
  * まちがいさがし 20 — TERRAKOYA-edu 用プロトタイプ
@@ -207,10 +210,10 @@ const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 // ---------- 多言語（JA / EN / AR / VI） ----------
 const STR = {
-  ja: { level: "レベル", left: "ひだり", right: "みぎ", cleared: "クリア！", timeup: "じかんぎれ！", retry: "もう一度", next: "つぎへ ▶", allclear: "ぜんクリア！🏆", leftTime: "のこり", hintsN: (n) => `ヒント${n}回`, hint: "ヒント", hintCost: "(−12秒)", reset: "リセット", instr: "ちがうところを 2まいの えから さがして タップ！", band: { beg: "初級", int: "中級", adv: "上級", mas: "達人" } },
-  en: { level: "LEVEL", left: "Left", right: "Right", cleared: "Cleared!", timeup: "Time's up!", retry: "Retry", next: "Next ▶", allclear: "All cleared! 🏆", leftTime: "Time left", hintsN: (n) => `${n} hint${n > 1 ? "s" : ""}`, hint: "Hint", hintCost: "(−12s)", reset: "Reset", instr: "Find the differences between the two pictures and tap!", band: { beg: "Beginner", int: "Intermediate", adv: "Advanced", mas: "Master" } },
-  ar: { level: "المستوى", left: "يسار", right: "يمين", cleared: "أحسنت!", timeup: "انتهى الوقت!", retry: "إعادة", next: "التالي", allclear: "أكملت الكل! 🏆", leftTime: "الوقت المتبقي", hintsN: (n) => `${n} تلميح`, hint: "تلميح", hintCost: "(−12 ث)", reset: "إعادة تعيين", instr: "ابحث عن الاختلافات بين الصورتين وانقر!", band: { beg: "مبتدئ", int: "متوسط", adv: "متقدم", mas: "محترف" } },
-  vi: { level: "CẤP", left: "Trái", right: "Phải", cleared: "Hoàn thành!", timeup: "Hết giờ!", retry: "Chơi lại", next: "Tiếp ▶", allclear: "Hoàn tất! 🏆", leftTime: "Còn lại", hintsN: (n) => `${n} gợi ý`, hint: "Gợi ý", hintCost: "(−12 giây)", reset: "Đặt lại", instr: "Tìm điểm khác nhau giữa hai bức tranh và chạm!", band: { beg: "Cơ bản", int: "Trung cấp", adv: "Nâng cao", mas: "Bậc thầy" } },
+  ja: { level: "レベル", left: "ひだり", right: "みぎ", cleared: "クリア！", timeup: "じかんぎれ！", retry: "もう一度", next: "つぎへ ▶", allclear: "ぜんクリア！🏆", leftTime: "のこり", hintsN: (n) => `ヒント${n}回`, hint: "ヒント", hintCost: "(−12秒)", reset: "リセット", instr: "ちがうところを 2まいの えから さがして タップ！", best: "さいこう", band: { beg: "初級", int: "中級", adv: "上級", mas: "達人" } },
+  en: { level: "LEVEL", left: "Left", right: "Right", cleared: "Cleared!", timeup: "Time's up!", retry: "Retry", next: "Next ▶", allclear: "All cleared! 🏆", leftTime: "Time left", hintsN: (n) => `${n} hint${n > 1 ? "s" : ""}`, hint: "Hint", hintCost: "(−12s)", reset: "Reset", instr: "Find the differences between the two pictures and tap!", best: "Best", band: { beg: "Beginner", int: "Intermediate", adv: "Advanced", mas: "Master" } },
+  ar: { level: "المستوى", left: "يسار", right: "يمين", cleared: "أحسنت!", timeup: "انتهى الوقت!", retry: "إعادة", next: "التالي", allclear: "أكملت الكل! 🏆", leftTime: "الوقت المتبقي", hintsN: (n) => `${n} تلميح`, hint: "تلميح", hintCost: "(−12 ث)", reset: "إعادة تعيين", instr: "ابحث عن الاختلافات بين الصورتين وانقر!", best: "الأفضل", band: { beg: "مبتدئ", int: "متوسط", adv: "متقدم", mas: "محترف" } },
+  vi: { level: "CẤP", left: "Trái", right: "Phải", cleared: "Hoàn thành!", timeup: "Hết giờ!", retry: "Chơi lại", next: "Tiếp ▶", allclear: "Hoàn tất! 🏆", leftTime: "Còn lại", hintsN: (n) => `${n} gợi ý`, hint: "Gợi ý", hintCost: "(−12 giây)", reset: "Đặt lại", instr: "Tìm điểm khác nhau giữa hai bức tranh và chạm!", best: "Tốt nhất", band: { beg: "Cơ bản", int: "Trung cấp", adv: "Nâng cao", mas: "Bậc thầy" } },
 };
 // ヘッダーの言語切替（i18next / <html lang> / ?lang=）に自動追従。未検出時は ja。
 function detectLang() {
@@ -271,6 +274,8 @@ export default function SpotTheDifference() {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [stars, setStars] = useState(0);
   const [lang, setLang] = useState("ja");
+  const [prog, setProg] = useState({ bestLevel: 0, stars: {} });
+  const { user } = useAuth();
   const timeRef = useRef(0);
   const t = STR[lang] || STR.ja;
 
@@ -283,6 +288,22 @@ export default function SpotTheDifference() {
     const iv = setInterval(sync, 1500);
     return () => { window.removeEventListener("storage", sync); window.removeEventListener("popstate", sync); clearInterval(iv); };
   }, []);
+
+  // ログインユーザーの進捗を読み込み（未ログインはスキップ）
+  useEffect(() => {
+    if (!user?.uid) { setProg({ bestLevel: 0, stars: {} }); return; }
+    let cancel = false;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid, "games", "spotTheDifference"));
+        if (!cancel && snap.exists()) {
+          const d = snap.data();
+          setProg({ bestLevel: d.bestLevel || 0, stars: d.stars || {} });
+        }
+      } catch (e) { /* オフライン等は無視 */ }
+    })();
+    return () => { cancel = true; };
+  }, [user]);
 
   // 新しいシーンで初期化
   useEffect(() => {
@@ -322,8 +343,10 @@ export default function SpotTheDifference() {
       const nf = found.slice(); nf[best] = true; setFound(nf);
       if (nf.every(Boolean)) {
         const ratio = timeRef.current / scene.time;
-        setStars(ratio >= 0.5 && hintsUsed === 0 ? 3 : ratio >= 0.25 ? 2 : 1);
+        const s = ratio >= 0.5 && hintsUsed === 0 ? 3 : ratio >= 0.25 ? 2 : 1;
+        setStars(s);
         setStatus("won");
+        saveProgress(level, s);
       }
     } else {
       setTimeLeft((tl) => Math.max(0, tl - 4));
@@ -346,6 +369,21 @@ export default function SpotTheDifference() {
   const retry = () => setAttempt((a) => a + 1);
   const next = () => { if (level < 20) { setLevel(level + 1); setAttempt((a) => a + 1); } };
   const jump = (L) => { setLevel(L); setAttempt((a) => a + 1); };
+
+  // ベスト星数＆到達最高レベルを保存（星は下げない／到達レベルは下げない）
+  const saveProgress = async (lv, s) => {
+    const newStars = Math.max(prog.stars?.[lv] || 0, s);
+    const newBest = Math.max(prog.bestLevel || 0, lv);
+    setProg((p) => ({ bestLevel: Math.max(p.bestLevel || 0, lv), stars: { ...p.stars, [lv]: Math.max(p.stars?.[lv] || 0, s) } }));
+    if (!user?.uid) return;
+    try {
+      await setDoc(
+        doc(db, "users", user.uid, "games", "spotTheDifference"),
+        { bestLevel: newBest, stars: { [lv]: newStars }, updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+    } catch (e) { /* 保存失敗してもプレイは継続 */ }
+  };
 
   return (
     <div dir={lang === "ar" ? "rtl" : "ltr"} style={{ fontFamily: '"Hiragino Maru Gothic ProN","Yu Gothic UI","Zen Maru Gothic","Noto Sans Arabic",system-ui,sans-serif', background: "#F3EFE6", borderRadius: 24, padding: 16, maxWidth: 780, margin: "0 auto" }}>
@@ -429,15 +467,23 @@ export default function SpotTheDifference() {
       {/* レベルレール */}
       <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "12px 2px 2px", marginTop: 6 }}>
         {Array.from({ length: 20 }).map((_, i) => {
-          const L = i + 1; const bb = BAND(L); const on = L === level;
+          const L = i + 1; const bb = BAND(L); const on = L === level; const earned = prog.stars?.[L] || 0;
           return (
-            <button key={L} className="std-lv" onClick={() => jump(L)}
-              style={{ background: on ? bb.c : "#fff", color: on ? "#fff" : bb.c, border: `2px solid ${bb.c}`, flex: "0 0 auto" }}>
-              {L}
-            </button>
+            <div key={L} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flex: "0 0 auto" }}>
+              <button className="std-lv" onClick={() => jump(L)}
+                style={{ background: on ? bb.c : "#fff", color: on ? "#fff" : bb.c, border: `2px solid ${bb.c}` }}>
+                {L}
+              </button>
+              <div style={{ fontSize: 8, lineHeight: 1, height: 9, letterSpacing: -1 }}>{earned > 0 ? "⭐".repeat(earned) : ""}</div>
+            </div>
           );
         })}
       </div>
+      {user && prog.bestLevel > 0 && (
+        <div style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: "#9C8B7A", marginTop: 8 }}>
+          {t.best}: {t.level} {prog.bestLevel} ・ ⭐{Object.values(prog.stars).reduce((a, b) => a + (b || 0), 0)}
+        </div>
+      )}
       <div style={{ textAlign: "center", color: "#A99A88", fontSize: 11, fontWeight: 700, marginTop: 6 }}>
         {t.instr}
       </div>
