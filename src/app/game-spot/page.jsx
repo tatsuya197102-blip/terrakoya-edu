@@ -256,14 +256,18 @@ export default function SpotTheDifference() {
     setStatus("playing"); setWrongs([]); setHint(null); setHintsUsed(0); setStars(0);
   }, [scene]);
 
-  // カウントダウン
+  // カウントダウン（0になった瞬間だけ「じかんぎれ」にする）
   useEffect(() => {
     if (status !== "playing") return;
-    const id = setInterval(() => setTimeLeft((tl) => { const n = Math.max(0, tl - 1); timeRef.current = n; return n; }), 1000);
+    const id = setInterval(() => {
+      setTimeLeft((tl) => {
+        if (tl <= 1) { clearInterval(id); timeRef.current = 0; setStatus("lost"); return 0; }
+        timeRef.current = tl - 1;
+        return tl - 1;
+      });
+    }, 1000);
     return () => clearInterval(id);
   }, [status, scene]);
-
-  useEffect(() => { if (status === "playing" && timeLeft <= 0 && scene.time > 0) setStatus("lost"); }, [timeLeft, status, scene]);
 
   const foundCount = found.filter(Boolean).length;
   const b = band(level);
