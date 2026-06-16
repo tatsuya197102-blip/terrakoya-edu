@@ -202,8 +202,31 @@ const Sprite = ({ it }) => (
   </g>
 );
 
-const band = (L) => (L <= 3 ? { n: "初級", c: "#1FB07A" } : L <= 9 ? { n: "中級", c: "#FF9F1A" } : L <= 15 ? { n: "上級", c: "#FF6B1A" } : { n: "達人", c: "#E23B5A" });
+const BAND = (L) => (L <= 3 ? { k: "beg", c: "#1FB07A" } : L <= 9 ? { k: "int", c: "#FF9F1A" } : L <= 15 ? { k: "adv", c: "#FF6B1A" } : { k: "mas", c: "#E23B5A" });
 const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+// ---------- 多言語（JA / EN / AR / VI） ----------
+const STR = {
+  ja: { level: "レベル", left: "ひだり", right: "みぎ", cleared: "クリア！", timeup: "じかんぎれ！", retry: "もう一度", next: "つぎへ ▶", allclear: "ぜんクリア！🏆", leftTime: "のこり", hintsN: (n) => `ヒント${n}回`, hint: "ヒント", hintCost: "(−12秒)", reset: "リセット", instr: "ちがうところを 2まいの えから さがして タップ！", band: { beg: "初級", int: "中級", adv: "上級", mas: "達人" } },
+  en: { level: "LEVEL", left: "Left", right: "Right", cleared: "Cleared!", timeup: "Time's up!", retry: "Retry", next: "Next ▶", allclear: "All cleared! 🏆", leftTime: "Time left", hintsN: (n) => `${n} hint${n > 1 ? "s" : ""}`, hint: "Hint", hintCost: "(−12s)", reset: "Reset", instr: "Find the differences between the two pictures and tap!", band: { beg: "Beginner", int: "Intermediate", adv: "Advanced", mas: "Master" } },
+  ar: { level: "المستوى", left: "يسار", right: "يمين", cleared: "أحسنت!", timeup: "انتهى الوقت!", retry: "إعادة", next: "التالي", allclear: "أكملت الكل! 🏆", leftTime: "الوقت المتبقي", hintsN: (n) => `${n} تلميح`, hint: "تلميح", hintCost: "(−12 ث)", reset: "إعادة تعيين", instr: "ابحث عن الاختلافات بين الصورتين وانقر!", band: { beg: "مبتدئ", int: "متوسط", adv: "متقدم", mas: "محترف" } },
+  vi: { level: "CẤP", left: "Trái", right: "Phải", cleared: "Hoàn thành!", timeup: "Hết giờ!", retry: "Chơi lại", next: "Tiếp ▶", allclear: "Hoàn tất! 🏆", leftTime: "Còn lại", hintsN: (n) => `${n} gợi ý`, hint: "Gợi ý", hintCost: "(−12 giây)", reset: "Đặt lại", instr: "Tìm điểm khác nhau giữa hai bức tranh và chạm!", band: { beg: "Cơ bản", int: "Trung cấp", adv: "Nâng cao", mas: "Bậc thầy" } },
+};
+// ヘッダーの言語切替（i18next / <html lang> / ?lang=）に自動追従。未検出時は ja。
+function detectLang() {
+  if (typeof window === "undefined") return "ja";
+  const ok = ["ja", "en", "ar", "vi"];
+  try {
+    const u = new URLSearchParams(window.location.search).get("lang");
+    if (u && ok.includes(u.slice(0, 2).toLowerCase())) return u.slice(0, 2).toLowerCase();
+    for (const key of ["i18nextLng", "lang", "language", "locale"]) {
+      const v = localStorage.getItem(key);
+      if (v && ok.includes(v.slice(0, 2).toLowerCase())) return v.slice(0, 2).toLowerCase();
+    }
+  } catch (e) { /* noop */ }
+  const h = (document.documentElement.lang || "").slice(0, 2).toLowerCase();
+  return ok.includes(h) ? h : "ja";
+}
 
 function Panel({ items, diffs, found, wrongs, hint, side, onTap, label }) {
   return (
@@ -247,7 +270,19 @@ export default function SpotTheDifference() {
   const [hint, setHint] = useState(null);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [stars, setStars] = useState(0);
+  const [lang, setLang] = useState("ja");
   const timeRef = useRef(0);
+  const t = STR[lang] || STR.ja;
+
+  // ヘッダーの言語切替に追従（同タブ反映のため軽くポーリング）
+  useEffect(() => {
+    const sync = () => setLang(detectLang());
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("popstate", sync);
+    const iv = setInterval(sync, 1500);
+    return () => { window.removeEventListener("storage", sync); window.removeEventListener("popstate", sync); clearInterval(iv); };
+  }, []);
 
   // 新しいシーンで初期化
   useEffect(() => {
@@ -270,7 +305,7 @@ export default function SpotTheDifference() {
   }, [status, scene]);
 
   const foundCount = found.filter(Boolean).length;
-  const b = band(level);
+  const b = BAND(level);
 
   const onTap = (e, side) => {
     if (status !== "playing") return;
@@ -313,7 +348,7 @@ export default function SpotTheDifference() {
   const jump = (L) => { setLevel(L); setAttempt((a) => a + 1); };
 
   return (
-    <div style={{ fontFamily: '"Hiragino Maru Gothic ProN","Yu Gothic UI","Zen Maru Gothic",system-ui,sans-serif', background: "#F3EFE6", borderRadius: 24, padding: 16, maxWidth: 780, margin: "0 auto" }}>
+    <div dir={lang === "ar" ? "rtl" : "ltr"} style={{ fontFamily: '"Hiragino Maru Gothic ProN","Yu Gothic UI","Zen Maru Gothic","Noto Sans Arabic",system-ui,sans-serif', background: "#F3EFE6", borderRadius: 24, padding: 16, maxWidth: 780, margin: "0 auto" }}>
       <style>{`
         @keyframes stdPop{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.18)}100%{transform:scale(1);opacity:1}}
         @keyframes stdPulse{0%,100%{opacity:.35}50%{opacity:1}}
@@ -329,8 +364,8 @@ export default function SpotTheDifference() {
       {/* ヘッダー */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ background: b.c, color: "#fff", fontWeight: 900, fontSize: 13, padding: "4px 12px", borderRadius: 999 }}>{b.n}</span>
-          <span style={{ fontWeight: 900, fontSize: 20, color: "#3A2E26" }}>LEVEL {level}</span>
+          <span style={{ background: b.c, color: "#fff", fontWeight: 900, fontSize: 13, padding: "4px 12px", borderRadius: 999 }}>{t.band[b.k]}</span>
+          <span style={{ fontWeight: 900, fontSize: 20, color: "#3A2E26" }}>{t.level} {level}</span>
         </div>
         <div style={{ flex: 1 }} />
         {/* 差分カウンター */}
@@ -349,8 +384,8 @@ export default function SpotTheDifference() {
       {/* パネル */}
       <div style={{ position: "relative" }}>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <Panel items={scene.base} diffs={scene.diffs} found={found} wrongs={wrongs} hint={hint} side="L" onTap={onTap} label="ひだり" />
-          <Panel items={scene.rightItems} diffs={scene.diffs} found={found} wrongs={wrongs} hint={hint} side="R" onTap={onTap} label="みぎ" />
+          <Panel items={scene.base} diffs={scene.diffs} found={found} wrongs={wrongs} hint={hint} side="L" onTap={onTap} label={t.left} />
+          <Panel items={scene.rightItems} diffs={scene.diffs} found={found} wrongs={wrongs} hint={hint} side="R" onTap={onTap} label={t.right} />
         </div>
 
         {/* 結果オーバーレイ */}
@@ -362,20 +397,20 @@ export default function SpotTheDifference() {
                   <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 6 }}>
                     {[0, 1, 2].map((i) => <span key={i} style={{ fontSize: 46, filter: i < stars ? "none" : "grayscale(1)", opacity: i < stars ? 1 : .25 }}>⭐</span>)}
                   </div>
-                  <div style={{ fontWeight: 900, fontSize: 24, color: "#3A2E26" }}>クリア！</div>
-                  <div style={{ color: "#6B5C4D", fontWeight: 700, fontSize: 14, margin: "4px 0 16px" }}>のこり {fmt(timeLeft)}{hintsUsed ? ` ・ ヒント${hintsUsed}回` : ""}</div>
+                  <div style={{ fontWeight: 900, fontSize: 24, color: "#3A2E26" }}>{t.cleared}</div>
+                  <div style={{ color: "#6B5C4D", fontWeight: 700, fontSize: 14, margin: "4px 0 16px" }}>{t.leftTime} {fmt(timeLeft)}{hintsUsed ? ` ・ ${t.hintsN(hintsUsed)}` : ""}</div>
                   <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-                    <button className="std-btn" style={{ background: "#FFEFE0", color: "#C8693A" }} onClick={retry}>もう一度</button>
+                    <button className="std-btn" style={{ background: "#FFEFE0", color: "#C8693A" }} onClick={retry}>{t.retry}</button>
                     {level < 20
-                      ? <button className="std-btn" style={{ background: "#FF6B1A", color: "#fff", boxShadow: "0 4px 0 #D4540E" }} onClick={next}>つぎへ ▶</button>
-                      : <span style={{ alignSelf: "center", fontWeight: 900, color: "#E23B5A" }}>全クリア！🏆</span>}
+                      ? <button className="std-btn" style={{ background: "#FF6B1A", color: "#fff", boxShadow: "0 4px 0 #D4540E" }} onClick={next}>{t.next}</button>
+                      : <span style={{ alignSelf: "center", fontWeight: 900, color: "#E23B5A" }}>{t.allclear}</span>}
                   </div>
                 </>
               ) : (
                 <>
                   <div style={{ fontSize: 44 }}>⏰</div>
-                  <div style={{ fontWeight: 900, fontSize: 22, color: "#3A2E26", margin: "2px 0 14px" }}>じかんぎれ！</div>
-                  <button className="std-btn" style={{ background: "#FF6B1A", color: "#fff", boxShadow: "0 4px 0 #D4540E" }} onClick={retry}>もう一度</button>
+                  <div style={{ fontWeight: 900, fontSize: 22, color: "#3A2E26", margin: "2px 0 14px" }}>{t.timeup}</div>
+                  <button className="std-btn" style={{ background: "#FF6B1A", color: "#fff", boxShadow: "0 4px 0 #D4540E" }} onClick={retry}>{t.retry}</button>
                 </>
               )}
             </div>
@@ -386,15 +421,15 @@ export default function SpotTheDifference() {
       {/* コントロール */}
       <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 14 }}>
         <button className="std-btn" style={{ background: "#FFF1C9", color: "#9A7B12", opacity: status === "playing" ? 1 : .5 }} onClick={useHint} disabled={status !== "playing"}>
-          💡 ヒント <span style={{ fontSize: 12 }}>(−12秒)</span>
+          💡 {t.hint} <span style={{ fontSize: 12 }}>{t.hintCost}</span>
         </button>
-        <button className="std-btn" style={{ background: "#EDE6D8", color: "#6B5C4D" }} onClick={retry}>↻ リセット</button>
+        <button className="std-btn" style={{ background: "#EDE6D8", color: "#6B5C4D" }} onClick={retry}>↻ {t.reset}</button>
       </div>
 
       {/* レベルレール */}
       <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "12px 2px 2px", marginTop: 6 }}>
         {Array.from({ length: 20 }).map((_, i) => {
-          const L = i + 1; const bb = band(L); const on = L === level;
+          const L = i + 1; const bb = BAND(L); const on = L === level;
           return (
             <button key={L} className="std-lv" onClick={() => jump(L)}
               style={{ background: on ? bb.c : "#fff", color: on ? "#fff" : bb.c, border: `2px solid ${bb.c}`, flex: "0 0 auto" }}>
@@ -404,7 +439,7 @@ export default function SpotTheDifference() {
         })}
       </div>
       <div style={{ textAlign: "center", color: "#A99A88", fontSize: 11, fontWeight: 700, marginTop: 6 }}>
-        ちがうところを 2まいの えから さがして タップ！
+        {t.instr}
       </div>
     </div>
   );
