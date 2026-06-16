@@ -19,9 +19,9 @@ const mulberry32 = (a) => () => {
 };
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const ASYM = new Set(["leaf", "fish", "moon", "arrow"]);
-const PAIR = { circle: "hexagon", hexagon: "circle", square: "diamond", diamond: "square", heart: "drop", drop: "heart" };
-const SPRITES = ["circle", "square", "triangle", "diamond", "star", "heart", "hexagon", "drop", "flower", "leaf", "fish", "moon", "balloon", "arrow"];
+const ASYM = new Set(["speechbubble", "sweat", "musicnote", "flame", "bolt"]);
+const PAIR = { star: "sparkle", sparkle: "star", chibiface: "nekomimi", nekomimi: "chibiface", heart: "drop", drop: "heart" };
+const SPRITES = ["chibiface", "nekomimi", "star", "sparkle", "heart", "speechbubble", "sweat", "musicnote", "flame", "onigiri", "drop", "ribbon", "bolt"];
 const DIFFS = [3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 9, 9, 10];
 
 function lvlParams(level) {
@@ -93,27 +93,106 @@ function makeLevel(level, attempt) {
 const fill = (h) => `hsl(${(((h % 360) + 360) % 360)}, 72%, 57%)`;
 function shape(type, f) {
   switch (type) {
-    case "circle": return <circle r={42} fill={f} />;
-    case "square": return <rect x={-40} y={-40} width={80} height={80} rx={9} fill={f} />;
-    case "triangle": return <path d="M0,-46 L42,40 L-42,40 Z" fill={f} />;
-    case "diamond": return <path d="M0,-46 L40,0 L0,46 L-40,0 Z" fill={f} />;
-    case "star": return <path d="M0,-46 L13,-15 L45,-14 L19,7 L29,40 L0,20 L-29,40 L-19,7 L-45,-14 L-13,-15 Z" fill={f} />;
-    case "heart": return <path d="M0,-22 C-8,-44 -46,-40 -46,-10 C-46,16 0,44 0,44 C0,44 46,16 46,-10 C46,-40 8,-44 0,-22 Z" fill={f} />;
-    case "hexagon": return <path d="M0,-46 L40,-23 L40,23 L0,46 L-40,23 L-40,-23 Z" fill={f} />;
-    case "drop": return <path d="M0,-46 C22,-12 36,6 36,20 A36,36 0 1 1 -36,20 C-36,6 -22,-12 0,-46 Z" fill={f} />;
-    case "leaf": return <path d="M-38,38 C-38,-20 0,-46 40,-44 C42,-4 16,38 -38,38 Z" fill={f} />;
-    case "fish": return <path d="M-44,0 C-30,-26 18,-26 34,0 C18,26 -30,26 -44,0 Z M34,0 L48,-16 L48,16 Z" fill={f} />;
-    case "balloon": return <path d="M0,-44 C24,-44 28,-12 6,28 L0,40 L-6,28 C-28,-12 -24,-44 0,-44 Z" fill={f} />;
-    case "arrow": return <path d="M-44,-12 L18,-12 L18,-30 L46,0 L18,30 L18,12 L-44,12 Z" fill={f} />;
-    case "moon": return <path d="M2,-42 A42,42 0 1 1 2,42 A34,34 0 1 0 2,-42 Z" fill={f} fillRule="evenodd" />;
-    case "flower": return (
+    // 顔系（漫画キャラ風）
+    case "chibiface": return (
       <g>
-        {[[0, -30], [28, -9], [17, 24], [-17, 24], [-28, -9]].map((p, i) => (
-          <circle key={i} cx={p[0]} cy={p[1]} r={17} fill={f} />
-        ))}
-        <circle r={13} fill="#FFF3D6" />
+        <circle cx={0} cy={4} r={38} fill="#FCE0C2" />
+        <path d="M-39,6 C-39,-40 39,-40 39,6 C39,-14 25,-22 0,-22 C-25,-22 -39,-14 -39,6 Z" fill={f} />
+        <ellipse cx={-14} cy={8} rx={7.5} ry={10.5} fill="#3A2E2E" />
+        <ellipse cx={14} cy={8} rx={7.5} ry={10.5} fill="#3A2E2E" />
+        <circle cx={-11} cy={4} r={2.4} fill="#fff" />
+        <circle cx={17} cy={4} r={2.4} fill="#fff" />
+        <circle cx={-23} cy={20} r={5.5} fill="#FF9DB0" opacity={0.7} />
+        <circle cx={23} cy={20} r={5.5} fill="#FF9DB0" opacity={0.7} />
+        <path d="M-6,24 Q0,30 6,24" stroke="#B5746A" strokeWidth={2.5} fill="none" strokeLinecap="round" />
       </g>
     );
+    case "nekomimi": return (
+      <g>
+        <path d="M-34,-12 L-46,-44 L-12,-26 Z" fill={f} />
+        <path d="M34,-12 L46,-44 L12,-26 Z" fill={f} />
+        <circle cx={0} cy={6} r={36} fill={f} />
+        <ellipse cx={-13} cy={2} rx={5.5} ry={8.5} fill="#2A2A2A" />
+        <ellipse cx={13} cy={2} rx={5.5} ry={8.5} fill="#2A2A2A" />
+        <path d="M-4,14 L4,14 L0,20 Z" fill="#FF8FA0" />
+        <g stroke="#3A3A3A" strokeWidth={2} strokeLinecap="round">
+          <line x1={-12} y1={18} x2={-34} y2={14} />
+          <line x1={-12} y1={22} x2={-34} y2={24} />
+          <line x1={12} y1={18} x2={34} y2={14} />
+          <line x1={12} y1={22} x2={34} y2={24} />
+        </g>
+      </g>
+    );
+    // エフェクト・記号系
+    case "star": return (
+      <g>
+        <path d="M0,-46 L13,-15 L45,-14 L19,7 L29,40 L0,20 L-29,40 L-19,7 L-45,-14 L-13,-15 Z" fill={f} />
+        <path d="M-7,-22 L1,-9 L-13,-11 Z" fill="#fff" opacity={0.55} />
+      </g>
+    );
+    case "sparkle": return (
+      <g>
+        <path d="M0,-46 C4,-14 14,-4 46,0 C14,4 4,14 0,46 C-4,14 -14,4 -46,0 C-14,-4 -4,-14 0,-46 Z" fill={f} />
+        <circle cx={30} cy={-28} r={5} fill={f} />
+        <circle cx={-30} cy={26} r={3.5} fill={f} />
+      </g>
+    );
+    case "heart": return (
+      <g>
+        <path d="M0,-22 C-8,-44 -46,-40 -46,-10 C-46,16 0,44 0,44 C0,44 46,16 46,-10 C46,-40 8,-44 0,-22 Z" fill={f} />
+        <ellipse cx={-18} cy={-14} rx={7} ry={10} fill="#fff" opacity={0.5} transform="rotate(-25 -18 -14)" />
+      </g>
+    );
+    case "speechbubble": return (
+      <g>
+        <rect x={-44} y={-36} width={88} height={56} rx={16} fill={f} stroke="#3A2E26" strokeWidth={3} />
+        <path d="M-20,16 L-34,42 L0,18 Z" fill={f} stroke="#3A2E26" strokeWidth={3} strokeLinejoin="round" />
+        <g fill="#3A2E26"><circle cx={-14} cy={-8} r={3.5} /><circle cx={0} cy={-8} r={3.5} /><circle cx={14} cy={-8} r={3.5} /></g>
+      </g>
+    );
+    case "sweat": return (
+      <g>
+        <path d="M8,-42 C26,-10 32,8 25,23 A27,27 0 1 1 -17,8 C-12,-8 -2,-24 8,-42 Z" fill={f} />
+        <ellipse cx={-2} cy={14} rx={5} ry={8} fill="#fff" opacity={0.45} />
+      </g>
+    );
+    case "musicnote": return (
+      <g>
+        <rect x={20} y={-44} width={7} height={52} rx={3} fill={f} />
+        <path d="M27,-44 C27,-44 48,-40 48,-22 C48,-22 36,-30 27,-26 Z" fill={f} />
+        <ellipse cx={8} cy={18} rx={18} ry={13} fill={f} transform="rotate(-20 8 18)" />
+      </g>
+    );
+    case "flame": return (
+      <g>
+        <path d="M0,-46 C18,-22 30,-10 30,10 A30,32 0 1 1 -30,10 C-30,-6 -14,-14 -6,-30 C-2,-22 2,-20 6,-26 C8,-34 4,-40 0,-46 Z" fill={f} />
+        <path d="M0,4 C8,-8 12,-2 12,8 A12,13 0 1 1 -12,8 C-12,0 -6,-2 0,4 Z" fill="#FFE08A" opacity={0.8} />
+      </g>
+    );
+    case "onigiri": return (
+      <g>
+        <path d="M0,-42 C12,-42 18,-34 40,32 C42,40 36,44 28,44 L-28,44 C-36,44 -42,40 -40,32 C-18,-34 -12,-42 0,-42 Z" fill={f} />
+        <rect x={-20} y={20} width={40} height={22} rx={4} fill="#3A4A3A" />
+        <circle cx={-10} cy={6} r={3} fill="#3A2E2E" /><circle cx={10} cy={6} r={3} fill="#3A2E2E" />
+        <path d="M-5,14 Q0,18 5,14" stroke="#3A2E2E" strokeWidth={2} fill="none" strokeLinecap="round" />
+      </g>
+    );
+    case "drop": return (
+      <g>
+        <path d="M0,-46 C22,-12 36,6 36,20 A36,36 0 1 1 -36,20 C-36,6 -22,-12 0,-46 Z" fill={f} />
+        <ellipse cx={-12} cy={20} rx={6} ry={10} fill="#fff" opacity={0.5} />
+      </g>
+    );
+    case "ribbon": return (
+      <g>
+        <path d="M-6,-4 L-44,-26 L-40,18 Z" fill={f} />
+        <path d="M6,-4 L44,-26 L40,18 Z" fill={f} />
+        <path d="M-8,4 L-22,42 L0,28 Z" fill={f} opacity={0.92} />
+        <path d="M8,4 L22,42 L0,28 Z" fill={f} opacity={0.92} />
+        <circle r={9} fill={f} />
+      </g>
+    );
+    case "bolt": return <path d="M10,-46 L-22,8 L-2,8 L-10,46 L26,-12 L4,-12 Z" fill={f} />;
     default: return <circle r={42} fill={f} />;
   }
 }
