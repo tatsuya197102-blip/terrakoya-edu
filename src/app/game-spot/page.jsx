@@ -210,10 +210,10 @@ const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 // ---------- 多言語（JA / EN / AR / VI） ----------
 const STR = {
-  ja: { level: "レベル", left: "ひだり", right: "みぎ", cleared: "クリア！", timeup: "じかんぎれ！", retry: "もう一度", next: "つぎへ ▶", allclear: "ぜんクリア！🏆", leftTime: "のこり", hintsN: (n) => `ヒント${n}回`, hint: "ヒント", hintCost: "(−12秒)", reset: "リセット", instr: "ちがうところを 2まいの えから さがして タップ！", best: "さいこう", band: { beg: "初級", int: "中級", adv: "上級", mas: "達人" } },
-  en: { level: "LEVEL", left: "Left", right: "Right", cleared: "Cleared!", timeup: "Time's up!", retry: "Retry", next: "Next ▶", allclear: "All cleared! 🏆", leftTime: "Time left", hintsN: (n) => `${n} hint${n > 1 ? "s" : ""}`, hint: "Hint", hintCost: "(−12s)", reset: "Reset", instr: "Find the differences between the two pictures and tap!", best: "Best", band: { beg: "Beginner", int: "Intermediate", adv: "Advanced", mas: "Master" } },
-  ar: { level: "المستوى", left: "يسار", right: "يمين", cleared: "أحسنت!", timeup: "انتهى الوقت!", retry: "إعادة", next: "التالي", allclear: "أكملت الكل! 🏆", leftTime: "الوقت المتبقي", hintsN: (n) => `${n} تلميح`, hint: "تلميح", hintCost: "(−12 ث)", reset: "إعادة تعيين", instr: "ابحث عن الاختلافات بين الصورتين وانقر!", best: "الأفضل", band: { beg: "مبتدئ", int: "متوسط", adv: "متقدم", mas: "محترف" } },
-  vi: { level: "CẤP", left: "Trái", right: "Phải", cleared: "Hoàn thành!", timeup: "Hết giờ!", retry: "Chơi lại", next: "Tiếp ▶", allclear: "Hoàn tất! 🏆", leftTime: "Còn lại", hintsN: (n) => `${n} gợi ý`, hint: "Gợi ý", hintCost: "(−12 giây)", reset: "Đặt lại", instr: "Tìm điểm khác nhau giữa hai bức tranh và chạm!", best: "Tốt nhất", band: { beg: "Cơ bản", int: "Trung cấp", adv: "Nâng cao", mas: "Bậc thầy" } },
+  ja: { level: "レベル", left: "ひだり", right: "みぎ", cleared: "クリア！", timeup: "じかんぎれ！", retry: "もう一度", next: "つぎへ ▶", allclear: "ぜんクリア！🏆", leftTime: "のこり", hintsN: (n) => `ヒント${n}回`, hint: "ヒント", hintCost: "(−12秒)", reset: "リセット", instr: "ちがうところを 2まいの えから さがして タップ！", modeLevels: "レベル", modeDaily: "デイリー", daily: "きょうのお題", dailyDone: "きょうはクリアずみ", toLevels: "レベルへ", best: "さいこう", band: { beg: "初級", int: "中級", adv: "上級", mas: "達人" } },
+  en: { level: "LEVEL", left: "Left", right: "Right", cleared: "Cleared!", timeup: "Time's up!", retry: "Retry", next: "Next ▶", allclear: "All cleared! 🏆", leftTime: "Time left", hintsN: (n) => `${n} hint${n > 1 ? "s" : ""}`, hint: "Hint", hintCost: "(−12s)", reset: "Reset", instr: "Find the differences between the two pictures and tap!", modeLevels: "Levels", modeDaily: "Daily", daily: "Today's puzzle", dailyDone: "Done today!", toLevels: "Levels", best: "Best", band: { beg: "Beginner", int: "Intermediate", adv: "Advanced", mas: "Master" } },
+  ar: { level: "المستوى", left: "يسار", right: "يمين", cleared: "أحسنت!", timeup: "انتهى الوقت!", retry: "إعادة", next: "التالي", allclear: "أكملت الكل! 🏆", leftTime: "الوقت المتبقي", hintsN: (n) => `${n} تلميح`, hint: "تلميح", hintCost: "(−12 ث)", reset: "إعادة تعيين", instr: "ابحث عن الاختلافات بين الصورتين وانقر!", modeLevels: "المستويات", modeDaily: "اليومي", daily: "تحدي اليوم", dailyDone: "أُكمل اليوم!", toLevels: "المستويات", best: "الأفضل", band: { beg: "مبتدئ", int: "متوسط", adv: "متقدم", mas: "محترف" } },
+  vi: { level: "CẤP", left: "Trái", right: "Phải", cleared: "Hoàn thành!", timeup: "Hết giờ!", retry: "Chơi lại", next: "Tiếp ▶", allclear: "Hoàn tất! 🏆", leftTime: "Còn lại", hintsN: (n) => `${n} gợi ý`, hint: "Gợi ý", hintCost: "(−12 giây)", reset: "Đặt lại", instr: "Tìm điểm khác nhau giữa hai bức tranh và chạm!", modeLevels: "Cấp độ", modeDaily: "Hằng ngày", daily: "Thử thách hôm nay", dailyDone: "Đã xong hôm nay!", toLevels: "Cấp độ", best: "Tốt nhất", band: { beg: "Cơ bản", int: "Trung cấp", adv: "Nâng cao", mas: "Bậc thầy" } },
 };
 // ヘッダーの言語切替（i18next / <html lang> / ?lang=）に自動追従。未検出時は ja。
 function detectLang() {
@@ -229,6 +229,16 @@ function detectLang() {
   } catch (e) { /* noop */ }
   const h = (document.documentElement.lang || "").slice(0, 2).toLowerCase();
   return ok.includes(h) ? h : "ja";
+}
+
+// デイリー：UTC日付をシードに、全員同じ盤面・難易度を生成
+function dateKeyUTC(d = new Date()) {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
+function dailyConfig() {
+  const key = dateKeyUTC();
+  const n = parseInt(key.replace(/-/g, ""), 10);
+  return { key, lvl: 6 + (n % 7), attempt: 50000 + (n % 90000) }; // 難易度6〜12、盤面は日替わり
 }
 
 function Panel({ items, diffs, found, wrongs, hint, side, onTap, label }) {
@@ -262,9 +272,15 @@ function Panel({ items, diffs, found, wrongs, hint, side, onTap, label }) {
 }
 
 export default function SpotTheDifference() {
+  const [mode, setMode] = useState("levels"); // levels | daily
   const [level, setLevel] = useState(1);
   const [attempt, setAttempt] = useState(0);
-  const scene = useMemo(() => makeLevel(level, attempt), [level, attempt]);
+  const daily = useMemo(() => dailyConfig(), []);
+  const [dailyTry, setDailyTry] = useState(0);
+  const scene = useMemo(
+    () => (mode === "daily" ? makeLevel(daily.lvl, daily.attempt + dailyTry) : makeLevel(level, attempt)),
+    [mode, level, attempt, daily, dailyTry]
+  );
 
   const [found, setFound] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -274,10 +290,11 @@ export default function SpotTheDifference() {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [stars, setStars] = useState(0);
   const [lang, setLang] = useState("ja");
-  const [prog, setProg] = useState({ bestLevel: 0, stars: {} });
+  const [prog, setProg] = useState({ bestLevel: 0, stars: {}, daily: {} });
   const { user } = useAuth();
   const timeRef = useRef(0);
   const t = STR[lang] || STR.ja;
+  const dailyDoneStars = prog.daily?.[daily.key]?.stars || 0;
 
   // ヘッダーの言語切替に追従（同タブ反映のため軽くポーリング）
   useEffect(() => {
@@ -291,14 +308,14 @@ export default function SpotTheDifference() {
 
   // ログインユーザーの進捗を読み込み（未ログインはスキップ）
   useEffect(() => {
-    if (!user?.uid) { setProg({ bestLevel: 0, stars: {} }); return; }
+    if (!user?.uid) { setProg({ bestLevel: 0, stars: {}, daily: {} }); return; }
     let cancel = false;
     (async () => {
       try {
         const snap = await getDoc(doc(db, "users", user.uid, "games", "spotTheDifference"));
         if (!cancel && snap.exists()) {
           const d = snap.data();
-          setProg({ bestLevel: d.bestLevel || 0, stars: d.stars || {} });
+          setProg({ bestLevel: d.bestLevel || 0, stars: d.stars || {}, daily: d.daily || {} });
         }
       } catch (e) { /* オフライン等は無視 */ }
     })();
@@ -346,7 +363,7 @@ export default function SpotTheDifference() {
         const s = ratio >= 0.5 && hintsUsed === 0 ? 3 : ratio >= 0.25 ? 2 : 1;
         setStars(s);
         setStatus("won");
-        saveProgress(level, s);
+        if (mode === "daily") saveDaily(s, timeRef.current); else saveProgress(level, s);
       }
     } else {
       setTimeLeft((tl) => Math.max(0, tl - 4));
@@ -366,9 +383,26 @@ export default function SpotTheDifference() {
     setTimeout(() => setHint(null), 1400);
   };
 
-  const retry = () => setAttempt((a) => a + 1);
+  const retry = () => (mode === "daily" ? setDailyTry((x) => x + 1) : setAttempt((a) => a + 1));
   const next = () => { if (level < 20) { setLevel(level + 1); setAttempt((a) => a + 1); } };
   const jump = (L) => { setLevel(L); setAttempt((a) => a + 1); };
+  const switchMode = (m) => { setMode(m); if (m === "daily") setDailyTry((x) => x + 1); };
+
+  // デイリーの結果を保存（ベストのみ更新。本人ドキュメント内＝既存ルールで許可済み）
+  const saveDaily = async (s, secLeft) => {
+    const prev = prog.daily?.[daily.key];
+    const better = !prev || s > prev.stars || (s === prev.stars && secLeft > (prev.sec || 0));
+    const rec = better ? { stars: s, sec: secLeft } : prev;
+    setProg((p) => ({ ...p, daily: { ...p.daily, [daily.key]: rec } }));
+    if (!user?.uid || !better) return;
+    try {
+      await setDoc(
+        doc(db, "users", user.uid, "games", "spotTheDifference"),
+        { daily: { [daily.key]: rec }, updatedAt: serverTimestamp() },
+        { merge: true }
+      );
+    } catch (e) { /* 保存失敗してもプレイは継続 */ }
+  };
 
   // ベスト星数＆到達最高レベルを保存（星は下げない／到達レベルは下げない）
   const saveProgress = async (lv, s) => {
@@ -399,11 +433,23 @@ export default function SpotTheDifference() {
         @media (prefers-reduced-motion:reduce){*{animation:none!important}}
       `}</style>
 
+      {/* モード切替 */}
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 12 }}>
+        {[["levels", t.modeLevels], ["daily", t.modeDaily + (dailyDoneStars ? " ✓" : "")]].map(([m, lbl]) => (
+          <button key={m} className="std-btn" onClick={() => switchMode(m)}
+            style={{ background: mode === m ? "#3A2E26" : "#EDE6D8", color: mode === m ? "#fff" : "#6B5C4D", padding: "8px 18px", fontSize: 14, borderRadius: 999 }}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+
       {/* ヘッダー */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ background: b.c, color: "#fff", fontWeight: 900, fontSize: 13, padding: "4px 12px", borderRadius: 999 }}>{t.band[b.k]}</span>
-          <span style={{ fontWeight: 900, fontSize: 20, color: "#3A2E26" }}>{t.level} {level}</span>
+          {mode === "daily"
+            ? <span style={{ fontWeight: 900, fontSize: 18, color: "#3A2E26" }}>🗓 {t.daily} <span style={{ fontWeight: 700, fontSize: 13, color: "#9C8B7A" }}>{daily.key}</span></span>
+            : <span style={{ fontWeight: 900, fontSize: 20, color: "#3A2E26" }}>{t.level} {level}</span>}
         </div>
         <div style={{ flex: 1 }} />
         {/* 差分カウンター */}
@@ -439,9 +485,11 @@ export default function SpotTheDifference() {
                   <div style={{ color: "#6B5C4D", fontWeight: 700, fontSize: 14, margin: "4px 0 16px" }}>{t.leftTime} {fmt(timeLeft)}{hintsUsed ? ` ・ ${t.hintsN(hintsUsed)}` : ""}</div>
                   <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
                     <button className="std-btn" style={{ background: "#FFEFE0", color: "#C8693A" }} onClick={retry}>{t.retry}</button>
-                    {level < 20
-                      ? <button className="std-btn" style={{ background: "#FF6B1A", color: "#fff", boxShadow: "0 4px 0 #D4540E" }} onClick={next}>{t.next}</button>
-                      : <span style={{ alignSelf: "center", fontWeight: 900, color: "#E23B5A" }}>{t.allclear}</span>}
+                    {mode === "daily"
+                      ? <span style={{ alignSelf: "center", fontWeight: 900, color: "#1FB07A" }}>🗓 {t.dailyDone}</span>
+                      : level < 20
+                        ? <button className="std-btn" style={{ background: "#FF6B1A", color: "#fff", boxShadow: "0 4px 0 #D4540E" }} onClick={next}>{t.next}</button>
+                        : <span style={{ alignSelf: "center", fontWeight: 900, color: "#E23B5A" }}>{t.allclear}</span>}
                   </div>
                 </>
               ) : (
@@ -464,21 +512,27 @@ export default function SpotTheDifference() {
         <button className="std-btn" style={{ background: "#EDE6D8", color: "#6B5C4D" }} onClick={retry}>↻ {t.reset}</button>
       </div>
 
-      {/* レベルレール */}
-      <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "12px 2px 2px", marginTop: 6 }}>
-        {Array.from({ length: 20 }).map((_, i) => {
-          const L = i + 1; const bb = BAND(L); const on = L === level; const earned = prog.stars?.[L] || 0;
-          return (
-            <div key={L} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flex: "0 0 auto" }}>
-              <button className="std-lv" onClick={() => jump(L)}
-                style={{ background: on ? bb.c : "#fff", color: on ? "#fff" : bb.c, border: `2px solid ${bb.c}` }}>
-                {L}
-              </button>
-              <div style={{ fontSize: 8, lineHeight: 1, height: 9, letterSpacing: -1 }}>{earned > 0 ? "⭐".repeat(earned) : ""}</div>
-            </div>
-          );
-        })}
-      </div>
+      {/* レベルレール（レベルモードのみ） */}
+      {mode === "levels" ? (
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "12px 2px 2px", marginTop: 6 }}>
+          {Array.from({ length: 20 }).map((_, i) => {
+            const L = i + 1; const bb = BAND(L); const on = L === level; const earned = prog.stars?.[L] || 0;
+            return (
+              <div key={L} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flex: "0 0 auto" }}>
+                <button className="std-lv" onClick={() => jump(L)}
+                  style={{ background: on ? bb.c : "#fff", color: on ? "#fff" : bb.c, border: `2px solid ${bb.c}` }}>
+                  {L}
+                </button>
+                <div style={{ fontSize: 8, lineHeight: 1, height: 9, letterSpacing: -1 }}>{earned > 0 ? "⭐".repeat(earned) : ""}</div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ textAlign: "center", marginTop: 12, fontWeight: 800, color: dailyDoneStars ? "#1FB07A" : "#9C8B7A", fontSize: 13 }}>
+          {dailyDoneStars ? `🗓 ${t.dailyDone} ${"⭐".repeat(dailyDoneStars)}` : `🗓 ${t.daily} — ${daily.key}`}
+        </div>
+      )}
       {user && prog.bestLevel > 0 && (
         <div style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: "#9C8B7A", marginTop: 8 }}>
           {t.best}: {t.level} {prog.bestLevel} ・ ⭐{Object.values(prog.stars).reduce((a, b) => a + (b || 0), 0)}
