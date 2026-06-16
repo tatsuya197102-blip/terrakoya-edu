@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 
 /**
  * まちがいさがし 20 — TERRAKOYA-edu 用プロトタイプ
@@ -210,10 +210,10 @@ const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 // ---------- 多言語（JA / EN / AR / VI） ----------
 const STR = {
-  ja: { level: "レベル", left: "ひだり", right: "みぎ", cleared: "クリア！", timeup: "じかんぎれ！", retry: "もう一度", next: "つぎへ ▶", allclear: "ぜんクリア！🏆", leftTime: "のこり", hintsN: (n) => `ヒント${n}回`, hint: "ヒント", hintCost: "(−12秒)", reset: "リセット", instr: "ちがうところを 2まいの えから さがして タップ！", modeLevels: "レベル", modeDaily: "デイリー", daily: "きょうのお題", dailyDone: "きょうはクリアずみ", toLevels: "レベルへ", best: "さいこう", band: { beg: "初級", int: "中級", adv: "上級", mas: "達人" } },
-  en: { level: "LEVEL", left: "Left", right: "Right", cleared: "Cleared!", timeup: "Time's up!", retry: "Retry", next: "Next ▶", allclear: "All cleared! 🏆", leftTime: "Time left", hintsN: (n) => `${n} hint${n > 1 ? "s" : ""}`, hint: "Hint", hintCost: "(−12s)", reset: "Reset", instr: "Find the differences between the two pictures and tap!", modeLevels: "Levels", modeDaily: "Daily", daily: "Today's puzzle", dailyDone: "Done today!", toLevels: "Levels", best: "Best", band: { beg: "Beginner", int: "Intermediate", adv: "Advanced", mas: "Master" } },
-  ar: { level: "المستوى", left: "يسار", right: "يمين", cleared: "أحسنت!", timeup: "انتهى الوقت!", retry: "إعادة", next: "التالي", allclear: "أكملت الكل! 🏆", leftTime: "الوقت المتبقي", hintsN: (n) => `${n} تلميح`, hint: "تلميح", hintCost: "(−12 ث)", reset: "إعادة تعيين", instr: "ابحث عن الاختلافات بين الصورتين وانقر!", modeLevels: "المستويات", modeDaily: "اليومي", daily: "تحدي اليوم", dailyDone: "أُكمل اليوم!", toLevels: "المستويات", best: "الأفضل", band: { beg: "مبتدئ", int: "متوسط", adv: "متقدم", mas: "محترف" } },
-  vi: { level: "CẤP", left: "Trái", right: "Phải", cleared: "Hoàn thành!", timeup: "Hết giờ!", retry: "Chơi lại", next: "Tiếp ▶", allclear: "Hoàn tất! 🏆", leftTime: "Còn lại", hintsN: (n) => `${n} gợi ý`, hint: "Gợi ý", hintCost: "(−12 giây)", reset: "Đặt lại", instr: "Tìm điểm khác nhau giữa hai bức tranh và chạm!", modeLevels: "Cấp độ", modeDaily: "Hằng ngày", daily: "Thử thách hôm nay", dailyDone: "Đã xong hôm nay!", toLevels: "Cấp độ", best: "Tốt nhất", band: { beg: "Cơ bản", int: "Trung cấp", adv: "Nâng cao", mas: "Bậc thầy" } },
+  ja: { level: "レベル", left: "ひだり", right: "みぎ", cleared: "クリア！", timeup: "じかんぎれ！", retry: "もう一度", next: "つぎへ ▶", allclear: "ぜんクリア！🏆", leftTime: "のこり", hintsN: (n) => `ヒント${n}回`, hint: "ヒント", hintCost: "(−12秒)", reset: "リセット", instr: "ちがうところを 2まいの えから さがして タップ！", modeLevels: "レベル", modeDaily: "デイリー", daily: "きょうのお題", dailyDone: "きょうはクリアずみ", toLevels: "レベルへ", rankingTitle: "きょうのランキング", rankEmpty: "まだ記録がありません", you: "あなた", player: "プレイヤー", best: "さいこう", band: { beg: "初級", int: "中級", adv: "上級", mas: "達人" } },
+  en: { level: "LEVEL", left: "Left", right: "Right", cleared: "Cleared!", timeup: "Time's up!", retry: "Retry", next: "Next ▶", allclear: "All cleared! 🏆", leftTime: "Time left", hintsN: (n) => `${n} hint${n > 1 ? "s" : ""}`, hint: "Hint", hintCost: "(−12s)", reset: "Reset", instr: "Find the differences between the two pictures and tap!", modeLevels: "Levels", modeDaily: "Daily", daily: "Today's puzzle", dailyDone: "Done today!", toLevels: "Levels", rankingTitle: "Today's Ranking", rankEmpty: "No scores yet", you: "You", player: "Player", best: "Best", band: { beg: "Beginner", int: "Intermediate", adv: "Advanced", mas: "Master" } },
+  ar: { level: "المستوى", left: "يسار", right: "يمين", cleared: "أحسنت!", timeup: "انتهى الوقت!", retry: "إعادة", next: "التالي", allclear: "أكملت الكل! 🏆", leftTime: "الوقت المتبقي", hintsN: (n) => `${n} تلميح`, hint: "تلميح", hintCost: "(−12 ث)", reset: "إعادة تعيين", instr: "ابحث عن الاختلافات بين الصورتين وانقر!", modeLevels: "المستويات", modeDaily: "اليومي", daily: "تحدي اليوم", dailyDone: "أُكمل اليوم!", toLevels: "المستويات", rankingTitle: "ترتيب اليوم", rankEmpty: "لا نتائج بعد", you: "أنت", player: "لاعب", best: "الأفضل", band: { beg: "مبتدئ", int: "متوسط", adv: "متقدم", mas: "محترف" } },
+  vi: { level: "CẤP", left: "Trái", right: "Phải", cleared: "Hoàn thành!", timeup: "Hết giờ!", retry: "Chơi lại", next: "Tiếp ▶", allclear: "Hoàn tất! 🏆", leftTime: "Còn lại", hintsN: (n) => `${n} gợi ý`, hint: "Gợi ý", hintCost: "(−12 giây)", reset: "Đặt lại", instr: "Tìm điểm khác nhau giữa hai bức tranh và chạm!", modeLevels: "Cấp độ", modeDaily: "Hằng ngày", daily: "Thử thách hôm nay", dailyDone: "Đã xong hôm nay!", toLevels: "Cấp độ", rankingTitle: "Bảng xếp hạng hôm nay", rankEmpty: "Chưa có điểm", you: "Bạn", player: "Người chơi", best: "Tốt nhất", band: { beg: "Cơ bản", int: "Trung cấp", adv: "Nâng cao", mas: "Bậc thầy" } },
 };
 // ヘッダーの言語切替（i18next / <html lang> / ?lang=）に自動追従。未検出時は ja。
 function detectLang() {
@@ -291,9 +291,12 @@ export default function SpotTheDifference() {
   const [stars, setStars] = useState(0);
   const [lang, setLang] = useState("ja");
   const [prog, setProg] = useState({ bestLevel: 0, stars: {}, daily: {} });
-  const { user } = useAuth();
+  const [board, setBoard] = useState([]);
+  const [boardLoading, setBoardLoading] = useState(false);
+  const { user, userDoc } = useAuth();
   const timeRef = useRef(0);
   const t = STR[lang] || STR.ja;
+  const displayName = userDoc?.displayName || user?.displayName || t.player;
   const dailyDoneStars = prog.daily?.[daily.key]?.stars || 0;
 
   // ヘッダーの言語切替に追従（同タブ反映のため軽くポーリング）
@@ -321,6 +324,11 @@ export default function SpotTheDifference() {
     })();
     return () => { cancel = true; };
   }, [user]);
+
+  // デイリーのランキングを読み込み
+  useEffect(() => {
+    if (mode === "daily") loadBoard();
+  }, [mode, daily.key, user]);
 
   // 新しいシーンで初期化
   useEffect(() => {
@@ -401,8 +409,25 @@ export default function SpotTheDifference() {
         { daily: { [daily.key]: rec }, updatedAt: serverTimestamp() },
         { merge: true }
       );
+      // ランキングへ反映（rank = 星*100000 + 残り秒 の単一フィールドで並べ替え＝複合インデックス不要）
+      await setDoc(doc(db, "leaderboard_daily", daily.key, "scores", user.uid), {
+        name: displayName, stars: s, sec: secLeft, rank: s * 100000 + secLeft, at: serverTimestamp(),
+      });
+      loadBoard();
     } catch (e) { /* 保存失敗してもプレイは継続 */ }
   };
+
+  // きょうのランキング上位10件を読み込み
+  async function loadBoard() {
+    if (!daily?.key) return;
+    setBoardLoading(true);
+    try {
+      const qy = query(collection(db, "leaderboard_daily", daily.key, "scores"), orderBy("rank", "desc"), limit(10));
+      const snap = await getDocs(qy);
+      setBoard(snap.docs.map((d) => ({ uid: d.id, ...d.data() })));
+    } catch (e) { setBoard([]); }
+    setBoardLoading(false);
+  }
 
   // ベスト星数＆到達最高レベルを保存（星は下げない／到達レベルは下げない）
   const saveProgress = async (lv, s) => {
@@ -529,8 +554,29 @@ export default function SpotTheDifference() {
           })}
         </div>
       ) : (
-        <div style={{ textAlign: "center", marginTop: 12, fontWeight: 800, color: dailyDoneStars ? "#1FB07A" : "#9C8B7A", fontSize: 13 }}>
-          {dailyDoneStars ? `🗓 ${t.dailyDone} ${"⭐".repeat(dailyDoneStars)}` : `🗓 ${t.daily} — ${daily.key}`}
+        <div style={{ marginTop: 12 }}>
+          <div style={{ textAlign: "center", fontWeight: 800, color: dailyDoneStars ? "#1FB07A" : "#9C8B7A", fontSize: 13, marginBottom: 10 }}>
+            {dailyDoneStars ? `🗓 ${t.dailyDone} ${"⭐".repeat(dailyDoneStars)}` : `🗓 ${t.daily} — ${daily.key}`}
+          </div>
+          <div style={{ fontWeight: 900, color: "#3A2E26", fontSize: 14, textAlign: "center", marginBottom: 8 }}>🏆 {t.rankingTitle}</div>
+          {boardLoading
+            ? <div style={{ textAlign: "center", color: "#9C8B7A", fontSize: 13 }}>…</div>
+            : board.length === 0
+              ? <div style={{ textAlign: "center", color: "#9C8B7A", fontSize: 13 }}>{t.rankEmpty}</div>
+              : <div style={{ maxWidth: 420, margin: "0 auto" }}>
+                  {board.map((r, i) => {
+                    const me = user && r.uid === user.uid;
+                    const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`;
+                    return (
+                      <div key={r.uid} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 10, background: me ? "#FFF1C9" : "#FFFDF8", border: me ? "2px solid #FF9F1A" : "1px solid #EFE6D6", marginBottom: 4 }}>
+                        <span style={{ width: 24, textAlign: "center", fontWeight: 900 }}>{medal}</span>
+                        <span style={{ flex: 1, fontWeight: 800, color: "#3A2E26", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name || t.player}{me ? ` (${t.you})` : ""}</span>
+                        <span style={{ fontWeight: 800 }}>{"⭐".repeat(r.stars || 0)}</span>
+                        <span style={{ fontVariantNumeric: "tabular-nums", color: "#6B5C4D", fontWeight: 700, fontSize: 13 }}>{fmt(r.sec || 0)}</span>
+                      </div>
+                    );
+                  })}
+                </div>}
         </div>
       )}
       {user && prog.bestLevel > 0 && (

@@ -111,5 +111,12 @@ service cloud.firestore {
       allow delete: if request.auth != null
                     && resource.data.get('studentId', '') == request.auth.uid;
     }
+
+    // daily leaderboard: signed-in users can read; each user writes only their own row
+    match /leaderboard_daily/{dateKey}/scores/{userId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
   }
 }
