@@ -301,7 +301,7 @@ export default function DashboardPage() {
             { href: '/courses',     label: t('nav.courses'),   icon: '📚' },
             { href: '/lessons',     label: t('nav.lessons'),   icon: '🎓' },
             { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
-            { href: '/auto-animate',label: t('nav.anime'),     icon: '🎬' },
+            { href: '/game-spot', label: t('nav.game'),     icon: '🔍' },
             { href: '/live',        label: t('nav.live'),      icon: '📡' },
             { href: '/portfolio',   label: t('nav.portfolio'), icon: '💎' },
           ].map((action, i) => (
