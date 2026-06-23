@@ -24,7 +24,9 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const ASYM = new Set(["speechbubble", "sweat", "musicnote", "flame", "bolt"]);
 const PAIR = { star: "sparkle", sparkle: "star", chibiface: "nekomimi", nekomimi: "chibiface", heart: "drop", drop: "heart" };
-const SPRITES = ["chibiface", "nekomimi", "star", "sparkle", "heart", "speechbubble", "sweat", "musicnote", "flame", "onigiri", "drop", "ribbon", "bolt"];
+const SPRITES = ["chibiface", "nekomimi", "star", "sparkle", "heart", "speechbubble", "sweat", "musicnote", "flame", "onigiri", "drop", "ribbon", "bolt", "rabbit", "cat", "bird"];
+// マスコット（画像スプライト）。色相・形ペア差分は効かないので見える差分のみ割り当てる
+const MASCOT = new Set(["rabbit", "cat", "bird"]);
 const DIFFS = [3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 9, 9, 10];
 
 function lvlParams(level) {
@@ -76,6 +78,8 @@ function makeLevel(level, attempt) {
     if (ty === "flip" && !ASYM.has(bt.type)) ty = "rotate";
     if (ty === "rotate" && bt.type === "circle") ty = "color";
     if (ty === "shape" && !PAIR[bt.type]) ty = "color";
+    // マスコット画像は色相・形ペアが効かない → 見える差分に振り替え
+    if (MASCOT.has(bt.type) && (ty === "color" || ty === "shape")) ty = (rng() < 0.5 ? "size" : "move");
     let center = { x: bt.x, y: bt.y };
     switch (ty) {
       case "color": it.h = bt.h + (rng() < 0.5 ? 1 : -1) * sC; break;
@@ -196,6 +200,10 @@ function shape(type, f) {
       </g>
     );
     case "bolt": return <path d="M10,-46 L-22,8 L-2,8 L-10,46 L26,-12 L4,-12 Z" fill={f} />;
+    // マスコット（画像）。正方形透過PNGを中央配置。flip/rotate/size はラッパーの変形で効く
+    case "rabbit": return <image href="/mascots/rabbit_256.png" x={-52} y={-54} width={104} height={104} preserveAspectRatio="xMidYMid meet" />;
+    case "cat":    return <image href="/mascots/cat_256.png" x={-52} y={-54} width={104} height={104} preserveAspectRatio="xMidYMid meet" />;
+    case "bird":   return <image href="/mascots/bird_256.png" x={-52} y={-50} width={104} height={104} preserveAspectRatio="xMidYMid meet" />;
     default: return <circle r={42} fill={f} />;
   }
 }
