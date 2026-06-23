@@ -9,6 +9,7 @@ import { getLevelInfo, BADGES, getBadgeLabel } from '@/lib/gamification';
 import { recordLogin } from '@/lib/gamificationActions';
 import XPToast from '@/components/XPToast';
 import WeeklyChallengeCard from '@/components/WeeklyChallengeCard';
+import Mascot from '@/components/Mascot';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
@@ -122,6 +123,7 @@ export default function DashboardPage() {
   if (loading) return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">
       <div className="text-center">
+        <Mascot size={72} alt="" className="mx-auto mb-3 animate-bounce" />
         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"/>
         <p className="text-gray-400 text-sm">{t('common.loading')}</p>
       </div>
@@ -140,9 +142,12 @@ export default function DashboardPage() {
         {/* ウェルカムバナー + レベル */}
         <div className="bg-gradient-to-r from-blue-700 to-blue-900 rounded-2xl p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold mb-1">{t('dashboard.welcome', { name: userName })}</h1>
-              <p className="text-blue-200 text-sm">{t('dashboard.subtitle')}</p>
+            <div className="flex items-center gap-4">
+              <Mascot seed={userName || 'dashboard'} size={76} alt="" className="shrink-0 drop-shadow-lg" />
+              <div>
+                <h1 className="text-2xl font-bold mb-1">{t('dashboard.welcome', { name: userName })}</h1>
+                <p className="text-blue-200 text-sm">{t('dashboard.subtitle')}</p>
+              </div>
             </div>
             {/* レベル表示 */}
             {(() => {
@@ -259,7 +264,7 @@ export default function DashboardPage() {
           </div>
           {enrolledCourses.length === 0 ? (
             <div className="text-center py-8 space-y-4">
-              <p className="text-5xl">🎌</p>
+              <Mascot seed="welcome-empty" size={88} alt="" className="mx-auto drop-shadow-lg" />
               <p className="text-gray-300 font-medium">{t('dashboard.welcomeTitle')}</p>
               <p className="text-gray-400 text-sm">{t('dashboard.welcomeNote')}</p>
               <div className="flex gap-3 justify-center flex-wrap">

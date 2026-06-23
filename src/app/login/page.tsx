@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { signInWithEmail, signInWithGoogle } from '@/lib/auth';
+import Mascot from '@/components/Mascot';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -40,6 +41,9 @@ export default function LoginPage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
+        <div className="flex justify-center mb-3">
+          <Mascot seed="login" size={96} alt="" className="drop-shadow" />
+        </div>
         <h1 className="text-2xl font-bold text-center text-gray-900 mb-8">{t('common.appName')}</h1>
         {error && <div className="bg-red-50 text-red-600 text-sm rounded-lg p-3 mb-4">{error}</div>}
         <button onClick={handleGoogleLogin} disabled={loading}
