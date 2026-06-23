@@ -7,6 +7,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import Mascot from '@/components/Mascot';
 import { useTranslation } from 'react-i18next';
 
 const ADMIN_EMAIL = 'tatsuya197102@gmail.com';
@@ -54,8 +55,9 @@ export default function Navbar() {
   return (
     <nav className="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
-        {/* ロゴ */}
+        {/* ロゴ + マスコット（ページごとに3キャラが切り替わる） */}
         <Link href="/dashboard" className="flex items-center gap-2 font-bold text-lg shrink-0">
+          <Mascot seed={pathname || 'home'} size={38} alt="" className="shrink-0" />
           <span className="text-white tracking-wide">TERRAKOYA</span>
         </Link>
 
@@ -106,9 +108,7 @@ export default function Navbar() {
                 {user.photoURL ? (
                   <img src={user.photoURL} className="w-6 h-6 rounded-full" alt="avatar" />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold shrink-0">
-                    {user.displayName[0]}
-                  </div>
+                  <Mascot seed={user.email || user.displayName} size={26} rounded alt="" className="shrink-0" />
                 )}
                 <span className="text-sm text-gray-300 hidden md:block whitespace-nowrap">{user.displayName}</span>
                 <span className="text-gray-500 text-xs">{menuOpen ? '▲' : '▼'}</span>
