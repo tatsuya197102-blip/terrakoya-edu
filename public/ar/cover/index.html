@@ -1,0 +1,34 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+</head>
+<body>
+<a-scene mindar-image="imageTargetSrc: /ar/targets/cover.mind;"
+  color-space="sRGB" renderer="colorManagement: true" vr-mode-ui="enabled: false"
+  device-orientation-permission-ui="enabled: false">
+
+  <a-assets>
+    <video id="greeting" src="/ar/assets/greeting_cover.mp4"
+      preload="auto" loop muted playsinline webkit-playsinline crossorigin="anonymous"></video>
+  </a-assets>
+
+  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+  <a-entity id="target" mindar-image-target="targetIndex: 0">
+    <!-- width/height はマーカーの縦横比に合わせる(表紙: 縦長なので 1 x 1.41) -->
+    <a-video src="#greeting" position="0 0 0" width="1" height="1.41"></a-video>
+  </a-entity>
+
+  <script>
+    // 表紙を見つけたら再生、外れたら停止(無駄な再生と電池消費を防ぐ)
+    const video = document.querySelector("#greeting");
+    const target = document.querySelector("#target");
+    target.addEventListener("targetFound", () => video.play());
+    target.addEventListener("targetLost", () => video.pause());
+  </script>
+</body>
+</html>
+
