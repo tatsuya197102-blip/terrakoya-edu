@@ -513,7 +513,30 @@ const VIDEO_URLS = {
   1: '/ar/fuji/movie.mp4',
   2: '/ar/asakusa/movie.mp4',
   3: '/ar/kyoto/movie.mp4',
-  23: '/ar/pyramids/movie.mp4',  // 2026-07-04公開: ピラミッド&スフィンクス(帰郷)
+  // ---- 2026-07-04 一括公開(22本) ----
+  5: '/ar/akihabara/movie.mp4',
+  6: '/ar/school/movie.mp4',
+  7: '/ar/osaka/movie.mp4',
+  8: '/ar/sapporo/movie.mp4',
+  9: '/ar/greatwall/movie.mp4',
+  10: '/ar/halongbay/movie.mp4',
+  11: '/ar/cappadocia/movie.mp4',
+  12: '/ar/dubai/movie.mp4',
+  13: '/ar/tajmahal/movie.mp4',
+  14: '/ar/eiffel/movie.mp4',
+  15: '/ar/venice/movie.mp4',
+  16: '/ar/bigben/movie.mp4',
+  17: '/ar/stbasil/movie.mp4',
+  18: '/ar/liberty/movie.mp4',
+  19: '/ar/machupicchu/movie.mp4',
+  20: '/ar/rio/movie.mp4',
+  21: '/ar/savanna/movie.mp4',
+  22: '/ar/australia/movie.mp4',
+  23: '/ar/pyramids/movie.mp4',
+  24: '/ar/mask/movie.mp4',
+  25: '/ar/felucca/movie.mp4',
+  26: '/ar/abusimbel/movie.mp4',
+  // 4(スタジオ実写)・27(360°)・28(音声)は別パイプライン、29/30は文字検収後
 };
 const vurl = v => VIDEO_URLS[v.no] || null;
 
@@ -829,18 +852,13 @@ refresh();
 //   /ar/map/?t=world  → 世界の章扉QR(地図全体の中央)
 //   /ar/map/?t=egypt  → エジプトの章扉QR(エジプトを中央に)
 // ※古いWebView互換のため ?? や ?. は使わない
-const THEME_FOCUS = {japan:'jp', egypt:'eg'};
+const THEME_FOCUS = {japan:'jp', egypt:'eg', world:'us'};  // world=地球の反対側から見渡す
 let qtheme = null;
 try{ qtheme = new URLSearchParams(location.search).get('t'); }catch(e){}
 const wrap=document.getElementById('mapWrap');
 function focusScroll(){
-  let ratio;
-  if(qtheme === 'world'){
-    ratio = 0.5;
-  } else {
-    const focus = COUNTRIES.find(c=>c.id===(THEME_FOCUS[qtheme] || 'eg'));
-    ratio = focus.x/1000;
-  }
+  const focus = COUNTRIES.find(c=>c.id===(THEME_FOCUS[qtheme] || 'eg'));
+  const ratio = focus.x/1000;
   const max = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
   wrap.scrollLeft = Math.min(Math.max(ratio*wrap.scrollWidth - wrap.clientWidth/2, 0), max);
 }
