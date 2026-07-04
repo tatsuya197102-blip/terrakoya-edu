@@ -215,7 +215,7 @@
   </div>
   <div class="spacer"></div>
   <div class="chip"><span class="flag-ico">&#x1F6A9;</span><span data-i18n="flags"></span>&nbsp;<span id="prog">0 / 16</span></div>
-  <button class="lang-btn" id="langBtn" aria-label="Language">日本語</button>
+  <button class="lang-btn" id="langBtn" aria-label="Language">English</button>
 </header>
 
 <div class="map-wrap" id="mapWrap">
@@ -516,64 +516,64 @@ const VIDEO_URLS = {
 const vurl = v => VIDEO_URLS[v.no] || null;
 
 const COUNTRIES = [
- {id:'jp', name:{ar:'اليابان', ja:'日本'}, videos:[
-   {no:1, char:'tori',  t:{ar:'جبل فوجي والقطار السريع', ja:'富士山×新幹線'}},
-   {no:2, char:'neko',  t:{ar:'أساكوسا والفانوس الكبير', ja:'浅草(雷門・大提灯)'}},
-   {no:3, char:'usagi', t:{ar:'كيوتو وأزهار الساكورا', ja:'京都(八坂の塔・桜)'}},
-   {no:4, char:'camera',t:{ar:'زيارة استوديو JMC', ja:'JMCスタジオ見学(実写)'}},
-   {no:5, char:'tori',  t:{ar:'أكيهابارا: مدينة الأنمي والألعاب', ja:'秋葉原'}},
-   {no:6, char:'trio',  t:{ar:'يوم في مدرسة يابانية', ja:'日本の学校の一日'}},
-   {no:7, char:'neko',  t:{ar:'أوساكا وتاكوياكي', ja:'大阪・たこ焼き'}},
-   {no:8, char:'trio',  t:{ar:'الثلج في هوكايدو', ja:'雪の北海道'}},
+ {id:'jp', name:{ar:'اليابان', ja:'日本', en:'Japan'}, videos:[
+   {no:1, char:'tori',  t:{ar:'جبل فوجي والقطار السريع', ja:'富士山×新幹線', en:'Mt. Fuji & the Bullet Train'}},
+   {no:2, char:'neko',  t:{ar:'أساكوسا والفانوس الكبير', ja:'浅草(雷門・大提灯)', en:'Asakusa & the Giant Lantern'}},
+   {no:3, char:'usagi', t:{ar:'كيوتو وأزهار الساكورا', ja:'京都(八坂の塔・桜)', en:'Kyoto & Cherry Blossoms'}},
+   {no:4, char:'camera',t:{ar:'زيارة استوديو JMC', ja:'JMCスタジオ見学(実写)', en:'JMC Studio Tour (Live)'}},
+   {no:5, char:'tori',  t:{ar:'أكيهابارا: مدينة الأنمي والألعاب', ja:'秋葉原', en:'Akihabara: City of Anime & Games'}},
+   {no:6, char:'trio',  t:{ar:'يوم في مدرسة يابانية', ja:'日本の学校の一日', en:'A Day at a Japanese School'}},
+   {no:7, char:'neko',  t:{ar:'أوساكا وتاكوياكي', ja:'大阪・たこ焼き', en:'Osaka & Takoyaki'}},
+   {no:8, char:'trio',  t:{ar:'الثلج في هوكايدو', ja:'雪の北海道', en:'Snowy Hokkaido'}},
  ]},
- {id:'cn', name:{ar:'الصين', ja:'中国'}, videos:[
-   {no:9, char:'usagi', t:{ar:'سور الصين العظيم', ja:'万里の長城'}},
+ {id:'cn', name:{ar:'الصين', ja:'中国', en:'China'}, videos:[
+   {no:9, char:'usagi', t:{ar:'سور الصين العظيم', ja:'万里の長城', en:'The Great Wall of China'}},
  ]},
- {id:'vn', name:{ar:'فيتنام', ja:'ベトナム'}, videos:[
-   {no:10, char:'neko', t:{ar:'خليج ها لونغ', ja:'ハロン湾'}},
+ {id:'vn', name:{ar:'فيتنام', ja:'ベトナム', en:'Vietnam'}, videos:[
+   {no:10, char:'neko', t:{ar:'خليج ها لونغ', ja:'ハロン湾', en:'Ha Long Bay'}},
  ]},
- {id:'tr', name:{ar:'تركيا', ja:'トルコ'}, videos:[
-   {no:11, char:'tori', t:{ar:'مناطيد كابادوكيا', ja:'カッパドキア気球'}},
+ {id:'tr', name:{ar:'تركيا', ja:'トルコ', en:'Türkiye'}, videos:[
+   {no:11, char:'tori', t:{ar:'مناطيد كابادوكيا', ja:'カッパドキア気球', en:'Hot-Air Balloons of Cappadocia'}},
  ]},
- {id:'ae', name:{ar:'الإمارات', ja:'ドバイ(UAE)'}, videos:[
-   {no:12, char:'trio', t:{ar:'برج خليفة في دبي', ja:'ブルジュ・ハリファ'}},
+ {id:'ae', name:{ar:'الإمارات', ja:'ドバイ(UAE)', en:'Dubai (UAE)'}, videos:[
+   {no:12, char:'trio', t:{ar:'برج خليفة في دبي', ja:'ブルジュ・ハリファ', en:'Burj Khalifa in Dubai'}},
  ]},
- {id:'in', name:{ar:'الهند', ja:'インド'}, videos:[
-   {no:13, char:'usagi', t:{ar:'تاج محل', ja:'タージマハル'}},
+ {id:'in', name:{ar:'الهند', ja:'インド', en:'India'}, videos:[
+   {no:13, char:'usagi', t:{ar:'تاج محل', ja:'タージマハル', en:'The Taj Mahal'}},
  ]},
- {id:'fr', name:{ar:'فرنسا', ja:'フランス'}, videos:[
-   {no:14, char:'tori', t:{ar:'برج إيفل', ja:'エッフェル塔'}},
+ {id:'fr', name:{ar:'فرنسا', ja:'フランス', en:'France'}, videos:[
+   {no:14, char:'tori', t:{ar:'برج إيفل', ja:'エッフェル塔', en:'The Eiffel Tower'}},
  ]},
- {id:'it', name:{ar:'إيطاليا', ja:'イタリア'}, videos:[
-   {no:15, char:'neko', t:{ar:'البندقية والجندول', ja:'ベネチア'}},
+ {id:'it', name:{ar:'إيطاليا', ja:'イタリア', en:'Italy'}, videos:[
+   {no:15, char:'neko', t:{ar:'البندقية والجندول', ja:'ベネチア', en:'Venice & Gondolas'}},
  ]},
- {id:'uk', name:{ar:'بريطانيا', ja:'イギリス'}, videos:[
-   {no:16, char:'usagi', t:{ar:'بيغ بن في لندن', ja:'ビッグベン'}},
+ {id:'uk', name:{ar:'بريطانيا', ja:'イギリス', en:'United Kingdom'}, videos:[
+   {no:16, char:'usagi', t:{ar:'بيغ بن في لندن', ja:'ビッグベン', en:'Big Ben in London'}},
  ]},
- {id:'ru', name:{ar:'روسيا', ja:'ロシア'}, videos:[
-   {no:17, char:'tori', t:{ar:'كاتدرائية القديس باسيل', ja:'聖ワシリー大聖堂'}},
+ {id:'ru', name:{ar:'روسيا', ja:'ロシア', en:'Russia'}, videos:[
+   {no:17, char:'tori', t:{ar:'كاتدرائية القديس باسيل', ja:'聖ワシリー大聖堂', en:'St. Basil\'s Cathedral'}},
  ]},
- {id:'us', name:{ar:'أمريكا', ja:'アメリカ'}, videos:[
-   {no:18, char:'tori', t:{ar:'تمثال الحرية', ja:'自由の女神'}},
+ {id:'us', name:{ar:'أمريكا', ja:'アメリカ', en:'USA'}, videos:[
+   {no:18, char:'tori', t:{ar:'تمثال الحرية', ja:'自由の女神', en:'The Statue of Liberty'}},
  ]},
- {id:'pe', name:{ar:'بيرو', ja:'ペルー'}, videos:[
-   {no:19, char:'neko', t:{ar:'ماتشو بيتشو', ja:'マチュピチュ'}},
+ {id:'pe', name:{ar:'بيرو', ja:'ペルー', en:'Peru'}, videos:[
+   {no:19, char:'neko', t:{ar:'ماتشو بيتشو', ja:'マチュピチュ', en:'Machu Picchu'}},
  ]},
- {id:'br', name:{ar:'البرازيل', ja:'ブラジル'}, videos:[
-   {no:20, char:'trio', t:{ar:'كرنفال ريو', ja:'リオのカーニバル'}},
+ {id:'br', name:{ar:'البرازيل', ja:'ブラジル', en:'Brazil'}, videos:[
+   {no:20, char:'trio', t:{ar:'كرنفال ريو', ja:'リオのカーニバル', en:'Rio Carnival'}},
  ]},
- {id:'ke', name:{ar:'كينيا', ja:'ケニア'}, videos:[
-   {no:21, char:'trio', t:{ar:'السافانا في كينيا', ja:'サバンナ'}},
+ {id:'ke', name:{ar:'كينيا', ja:'ケニア', en:'Kenya'}, videos:[
+   {no:21, char:'trio', t:{ar:'السافانا في كينيا', ja:'サバンナ', en:'Safari in Kenya'}},
  ]},
- {id:'au', name:{ar:'أستراليا', ja:'オーストラリア'}, videos:[
-   {no:22, char:'usagi', t:{ar:'الكوالا والكنغر', ja:'コアラとカンガルー'}},
+ {id:'au', name:{ar:'أستراليا', ja:'オーストラリア', en:'Australia'}, videos:[
+   {no:22, char:'usagi', t:{ar:'الكوالا والكنغر', ja:'コアラとカンガルー', en:'Koalas & Kangaroos'}},
  ]},
- {id:'eg', home:true, name:{ar:'مصر', ja:'エジプト'}, videos:[
-   {no:23, char:'trio',  t:{ar:'الأهرامات وأبو الهول', ja:'ピラミッド＆スフィンクス'}},
-   {no:24, char:'tori',  t:{ar:'قناع توت عنخ آمون الذهبي', ja:'ツタンカーメンの黄金マスク'}},
-   {no:25, char:'neko',  t:{ar:'فلوكة في النيل', ja:'ナイル川のファルーカ'}},
-   {no:26, char:'usagi', t:{ar:'معبد أبو سمبل', ja:'アブシンベル神殿'}},
-   {no:27, char:'camera',t:{ar:'بانوراما الجيزة 360°', ja:'360°ギザ・パノラマ'}},
+ {id:'eg', home:true, name:{ar:'مصر', ja:'エジプト', en:'Egypt'}, videos:[
+   {no:23, char:'trio',  t:{ar:'الأهرامات وأبو الهول', ja:'ピラミッド＆スフィンクス', en:'The Pyramids & the Sphinx'}},
+   {no:24, char:'tori',  t:{ar:'قناع توت عنخ آمون الذهبي', ja:'ツタンカーメンの黄金マスク', en:'The Golden Mask of Tutankhamun'}},
+   {no:25, char:'neko',  t:{ar:'فلوكة في النيل', ja:'ナイル川のファルーカ', en:'A Felucca on the Nile'}},
+   {no:26, char:'usagi', t:{ar:'معبد أبو سمبل', ja:'アブシンベル神殿', en:'Abu Simbel Temple'}},
+   {no:27, char:'camera',t:{ar:'بانوراما الجيزة 360°', ja:'360°ギザ・パノラマ', en:'Giza 360° Panorama'}},
  ]},
 ];
 /* 実在ランドマーク座標を投影したピン位置(ビルド時に自動生成) */
@@ -596,7 +596,19 @@ const I18N = {
   rewardTitle:'مبروك!', rewardBody:'جمعت كل الأعلام المتاحة! بلاد جديدة قادمة قريباً… تابع الرحلة!',
   close:'إغلاق', home:'\u2764 الوطن',
   videoError:'عذراً، الفيديو غير متاح الآن. حاول مرة أخرى لاحقاً.',
-  langBtn:'日本語', dir:'rtl', lang:'ar',
+  langBtn:'English', dir:'rtl', lang:'ar',
+ },
+ en:{
+  title:'Journey Around the World', subtitle:'with the Rabbit, the Cat & the Bird',
+  hint:'Drag the map… and tap any country to start the journey! 🌍',
+  flags:'Flags', soon:'Coming Soon', watch:'Watch ▶', watched:'✓ Watched',
+  privacy:'We collect no personal data — your flags are saved only on this device.',
+  credit:'J-MANGA CREATE × TERRAKOYA', reset:'Reset the journey',
+  resetConfirm:'Clear all flags and start over?',
+  rewardTitle:'Congratulations!', rewardBody:'You collected every available flag! New countries are coming soon… keep traveling!',
+  close:'Close', home:'❤ Home',
+  videoError:'Sorry, this video is not available right now. Please try again later.',
+  langBtn:'日本語', dir:'ltr', lang:'en',
  },
  ja:{
   title:'世界の旅', subtitle:'うさぎ・ねこ・とりと一緒に',
@@ -795,7 +807,7 @@ function applyLang(){
   if(currentCountry){ document.getElementById('sheetTitle').textContent=currentCountry.name[lang]; renderVList(); }
 }
 document.getElementById('langBtn').addEventListener('click', ()=>{
-  lang = lang==='ar' ? 'ja' : 'ar'; applyLang();
+  lang = lang==='ar' ? 'en' : (lang==='en' ? 'ja' : 'ar'); applyLang();
 });
 document.getElementById('resetBtn').addEventListener('click', ()=>{
   if(confirm(I18N[lang].resetConfirm)){
