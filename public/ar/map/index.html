@@ -197,6 +197,7 @@
     border-radius:999px;padding:8px 30px;font-family:inherit;
     font-weight:700;font-size:1rem;cursor:pointer;
   }
+#mapWrap{direction:ltr}
 </style>
 </head>
 <body>
@@ -509,9 +510,10 @@
    例) 9:'/ar/videos/greatwall.mp4' を1行追加→長城が公開。
    ===================================================== */
 const VIDEO_URLS = {
-  1: '/ar/fuji/movie.mp4',     // ★要確認: 実パスに差し替え
-  2: '/ar/asakusa/movie.mp4',  // ★要確認: 実パスに差し替え
-  3: '/ar/kyoto/movie.mp4',    // ★要確認: 実パスに差し替え
+  1: '/ar/fuji/movie.mp4',
+  2: '/ar/asakusa/movie.mp4',
+  3: '/ar/kyoto/movie.mp4',
+  23: '/ar/pyramids/movie.mp4',  // 2026-07-04公開: ピラミッド&スフィンクス(帰郷)
 };
 const vurl = v => VIDEO_URLS[v.no] || null;
 
@@ -831,7 +833,7 @@ const THEME_FOCUS = {japan:'jp', egypt:'eg'};
 let qtheme = null;
 try{ qtheme = new URLSearchParams(location.search).get('t'); }catch(e){}
 const wrap=document.getElementById('mapWrap');
-requestAnimationFrame(()=>{
+function focusScroll(){
   let ratio;
   if(qtheme === 'world'){
     ratio = 0.5;
@@ -839,8 +841,11 @@ requestAnimationFrame(()=>{
     const focus = COUNTRIES.find(c=>c.id===(THEME_FOCUS[qtheme] || 'eg'));
     ratio = focus.x/1000;
   }
-  wrap.scrollLeft = Math.max(0, ratio*wrap.scrollWidth - wrap.clientWidth/2);
-});
+  const max = Math.max(0, wrap.scrollWidth - wrap.clientWidth);
+  wrap.scrollLeft = Math.min(Math.max(ratio*wrap.scrollWidth - wrap.clientWidth/2, 0), max);
+}
+requestAnimationFrame(focusScroll);
+window.addEventListener('load', focusScroll);
 </script>
 </body>
 </html>
