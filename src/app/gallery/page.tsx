@@ -2,11 +2,12 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import {
   collection, getDocs, query, where, orderBy, doc,
   updateDoc, arrayUnion, arrayRemove, getDoc, limit, deleteDoc
 } from 'firebase/firestore';
+import { ref as storageRef, deleteObject } from 'firebase/storage';
 import { useTranslation } from 'react-i18next';
 
 interface Comment { uid: string; name: string; phraseId: string; }
@@ -15,6 +16,7 @@ interface GalleryWork {
   id: string;
   title: string;
   imageUrl: string;
+  storagePath?: string;
   studentId: string;
   studentName: string;
   likes: string[];
@@ -191,7 +193,16 @@ export default function GalleryPage() {
     if (!window.confirm(L('delConfirm', lang))) return;
     setDeleteLoading(workId);
     try {
+      const work = works.find(w => w.id === workId);
       await deleteDoc(doc(db, 'submissions', workId));
+      // Storage上の画像もベストエフォートで削除（旧base64投稿はスキップ）
+      try {
+        if (work?.storagePath) {
+          await deleteObject(storageRef(storage, work.storagePath));
+        } else if (work?.imageUrl && work.imageUrl.includes('firebasestorage')) {
+          await deleteObject(storageRef(storage, work.imageUrl));
+        }
+      } catch (e) { console.warn('storage delete skipped:', e); }
       setWorks(prev => prev.filter(w => w.id !== workId));
     } catch (err) { console.error(err); }
     setDeleteLoading(null);
@@ -326,7 +337,7 @@ export default function GalleryPage() {
                 <div key={work.id} className="bg-gray-900 rounded-xl overflow-hidden border border-gray-800 hover:border-blue-500 transition-all group">
                   {/* 画像 */}
                   <div className="relative aspect-square bg-gray-800">
-                    <img src={work.imageUrl} alt={work.title}
+                    <img src={work.imageUrl} alt={work.title} loading="lazy"
                       className="w-full h-full object-cover" />
                     {isOwn && (
                       <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">

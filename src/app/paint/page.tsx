@@ -14,8 +14,9 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 type Lang = "ja" | "en" | "ar";
 type Tool = "pen" | "pencil" | "air" | "eraser" | "fill";
@@ -169,7 +170,8 @@ interface Layer { id: number; name: string; canvas: HTMLCanvasElement; ctx: Canv
 interface PanelLayer { id: number; name: string; visible: boolean; opacity: number; }
 interface Theme { ja?: string; en?: string; ar?: string; active?: boolean; }
 
-function toDataUrl(src: HTMLCanvasElement): string {
+// 投稿用JPEG Blob（長辺1000pxに縮小）。base64をFirestoreに入れる方式は廃止し、Storageにアップする。
+function toJpegBlob(src: HTMLCanvasElement): Promise<Blob> {
   const maxSide = 1000;
   const scale = Math.min(1, maxSide / Math.max(src.width, src.height));
   const w = Math.round(src.width * scale), h = Math.round(src.height * scale);
@@ -177,10 +179,7 @@ function toDataUrl(src: HTMLCanvasElement): string {
   const ctx = c.getContext("2d")!;
   ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
   ctx.drawImage(src, 0, 0, w, h);
-  let q = 0.85;
-  let url = c.toDataURL("image/jpeg", q);
-  while (url.length > 900000 && q > 0.4) { q -= 0.15; url = c.toDataURL("image/jpeg", q); }
-  return url;
+  return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error("toBlob failed"))), "image/jpeg", 0.85));
 }
 
 export default function PaintPage() {
@@ -534,13 +533,22 @@ export default function PaintPage() {
     setPublishing(true);
     try {
       const out = eng.current.api.flatten() as HTMLCanvasElement;
-      const imageUrl = toDataUrl(out);
+      // Storageへアップロード → FirestoreにはURLのみ保存（読み取りコスト削減）
+      const blob = await toJpegBlob(out);
+      const path = `submissions/${user.uid}/${Date.now()}.jpg`;
+      const sref = storageRef(storage, path);
+      await Promise.race([
+        uploadBytes(sref, blob, { contentType: "image/jpeg" }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error(t.timeout)), 30000)),
+      ]);
+      const imageUrl = await getDownloadURL(sref);
       const themeSnapshot = theme && theme.active
         ? { ja: theme.ja || "", en: theme.en || "", ar: theme.ar || "" }
         : null;
       const write = addDoc(collection(db, "submissions"), {
         title: title.trim() || t.untitled,
         imageUrl,
+        storagePath: path,
         studentId: user.uid,
         studentName: user.displayName || "名無し",
         isPublic: true,

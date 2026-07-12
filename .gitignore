@@ -54,3 +54,5 @@ debug-*.json
 fix-*.py
 patch-*.py
 service-account.json
+
+certificates
