@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
 const DEFAULT_COURSES = [
+  { id: 'manga-textbook-ar', href: '/books/manga-textbook-ar', title: { ja: 'マンガの教科書(アラビア語版)', en: 'Manga Textbook (Arabic)', ar: 'لنرسم المانجا!' }, description: { ja: 'エジプト向けマンガ教科書 ダイジェスト版・全19ページ', en: 'Manga textbook digest for Egypt (19 pages)', ar: 'دليلك الأول لإتقان فن رسم المانجا' }, level: 'beginner', category: 'manga', lessons: 19, duration: '19p', thumbnail: '📖', rating: 5.0, students: 0, tags: ['アラビア語', 'エジプト', '閲覧版'] },
   { id: 'manga-basics',    title: { ja: '漫画基礎講座', en: 'Manga Basics', ar: 'أساسيات المانغا' }, description: { ja: 'キャラクターデザインから背景まで', en: 'From character design to backgrounds', ar: 'من تصميم الشخصيات إلى الخلفيات' }, level: 'beginner',     category: 'manga',         lessons: 12, duration: '6h', thumbnail: '🎨', rating: 4.8, students: 1250, tags: ['キャラクター','背景','コマ割り'] },
   { id: 'digital-illust',  title: { ja: 'デジタルイラスト入門', en: 'Digital Illustration', ar: 'الرسم الرقمي' }, description: { ja: 'CLIPSTUDIOの基礎', en: 'CLIPSTUDIO basics', ar: 'أساسيات CLIPSTUDIO' }, level: 'beginner',     category: 'illustration',  lessons: 8,  duration: '4h', thumbnail: '🖌️', rating: 4.6, students: 890,  tags: ['CLIPSTUDIO','レイヤー','色塗り'] },
   { id: 'story-making',    title: { ja: 'ストーリー作り', en: 'Story Creation', ar: 'كتابة القصص' }, description: { ja: '読者を引きつけるストーリーの作り方', en: 'How to create compelling stories', ar: 'كيفية إنشاء قصص جذابة' }, level: 'intermediate', category: 'story',         lessons: 10, duration: '5h', thumbnail: '📖', rating: 4.9, students: 650,  tags: ['構成','キャラクター設定','起承転結'] },
@@ -122,7 +123,7 @@ export default function CoursesPage() {
                     <span>⏱️ {course.duration}</span>
                     <span>⭐ {course.rating}</span>
                   </div>
-                  <Link href={`/courses/${course.id}`}
+                  <Link href={(course as any).href || `/courses/${course.id}`}
                     className="block w-full text-center bg-blue-600 hover:bg-blue-700 py-2.5 rounded-lg text-sm font-medium transition-colors">
                     {t('courses.viewCourse')}
                   </Link>
@@ -135,3 +136,4 @@ export default function CoursesPage() {
     </div>
   );
 }
+
