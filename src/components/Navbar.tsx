@@ -24,6 +24,7 @@ export default function Navbar() {
   // ペイントだけロケール未登録でも翻訳表示（言語に応じて切替）
   const lng = (i18n.language || 'ja').split('-')[0];
   const paintLabel = ({ ja: 'ペイント', en: 'Paint', ar: 'الرسم' } as Record<string, string>)[lng] || 'Paint';
+  const singLabel = ({ ja: 'うた', en: 'Sing', ar: 'غنِّ' } as Record<string, string>)[lng] || 'Sing';
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (u) => {
@@ -72,6 +73,7 @@ export default function Navbar() {
           { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
           { href: '/game-spot', label: t('nav.game'),     icon: '🔍' },
           { href: '/paint',       label: paintLabel,         icon: '🎨' },
+          { href: '/sing',        label: singLabel,          icon: '🎤' },
           { href: '/contest',     label: t('nav.contest'),   icon: '🏆' },
           { href: '/gallery',     label: t('nav.gallery'),   icon: '🖼️' },
           { href: '/ai-consult',  label: t('nav.aiConsult'), icon: '🤖' },
@@ -160,6 +162,7 @@ export default function Navbar() {
             { href: '/auto-4manga', label: t('nav.manga4'),    icon: '📖' },
             { href: '/game-spot', label: t('nav.game'),     icon: '🔍' },
             { href: '/paint',       label: paintLabel,         icon: '🎨' },
+          { href: '/sing',        label: singLabel,          icon: '🎤' },
             { href: '/contest',     label: t('nav.contest'),   icon: '🏆' },
             { href: '/gallery',     label: t('nav.gallery'),   icon: '🖼️' },
             { href: '/ai-consult',  label: t('nav.aiConsult'), icon: '🤖' },

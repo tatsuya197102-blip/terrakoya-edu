@@ -12,7 +12,7 @@ import { usePathname } from "next/navigation";
 import Mascot from "@/components/Mascot";
 
 // 出したくないページ（前方一致）
-const HIDE_ON = ["/paint", "/auto-animate"];
+const HIDE_ON = ["/paint", "/auto-animate", "/sing"];
 
 function hash(s: string): number {
   let h = 0;
