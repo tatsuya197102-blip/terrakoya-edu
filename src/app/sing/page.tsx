@@ -2,8 +2,8 @@
 
 // src/app/sing/page.tsx
 // 「うたって!マスコット」— 子どもが書いた歌詞をマスコットが歌ってくれるページ
-// 多言語対応: react-i18next の i18n.language を参照(辞書はページ内に保持)
-// 言語に応じて歌声も切替(ja/en/ar) — API側に lang を渡す
+// v3: スマホのダークモードで白カード内の文字が白くなり見えなくなる問題を修正
+//     (カード・入力欄に文字色/背景色を明示指定)
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -47,7 +47,7 @@ const STRINGS: Record<Lang, {
     stopButton: "⏹ とめる",
     errorEmpty: "歌詞を1行いじょう書いてね",
     errorPlay: "うたの再生に失敗しました。もういちど試してね",
-    footNote: "※ 悪い言葉や個人情報(電話番号など)は歌にできません",
+    footNote: "※ 悪い言葉や個人情報(電話番号など)は歌にできません。ひらがな・カタカナで書くと、いちばん歌っぽくなるよ!",
     charNames: { rabbit: "うさぎ", cat: "ねこ", bird: "とり" },
   },
   en: {
@@ -108,6 +108,9 @@ type CharId = (typeof CHARACTERS)[number]["id"];
 
 const MAX_LINES = 6;
 const MAX_LINE_LEN = 30;
+
+// ダークモードでも読めるように明示指定する文字色
+const TEXT_DARK = "#1F2937";
 
 export default function SingPage() {
   const { i18n } = useTranslation();
@@ -243,12 +246,13 @@ export default function SingPage() {
         @media (prefers-reduced-motion: reduce) {
           .sing-anim { animation: none !important; }
         }
+        .sing-input::placeholder { color: #9CA3AF; }
       `}</style>
 
       <h1 style={{ fontSize: isNarrow ? 22 : 28, margin: "0 0 4px" }}>
         {s.title}
       </h1>
-      <p style={{ color: "#666", margin: "0 0 20px", fontSize: 14 }}>
+      <p style={{ color: "#9CA3AF", margin: "0 0 20px", fontSize: 14 }}>
         {s.subtitle}
       </p>
 
@@ -269,6 +273,7 @@ export default function SingPage() {
             border: "2px solid #FED7AA",
             borderRadius: 16,
             padding: 20,
+            color: TEXT_DARK,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -359,6 +364,7 @@ export default function SingPage() {
             border: "2px solid #E5E7EB",
             borderRadius: 16,
             padding: isNarrow ? 16 : 20,
+            color: TEXT_DARK,
           }}
         >
           <div style={{ fontWeight: 700, marginBottom: 10, fontSize: 15 }}>
@@ -393,6 +399,7 @@ export default function SingPage() {
                 placeholder={s.placeholders[i] ?? ""}
                 disabled={singing}
                 dir={isRtl ? "rtl" : "ltr"}
+                className="sing-input"
                 style={{
                   flex: 1,
                   padding: "10px 12px",
@@ -400,6 +407,10 @@ export default function SingPage() {
                   borderRadius: 10,
                   fontSize: 15,
                   outline: "none",
+                  color: "#111827",
+                  background: "#fff",
+                  WebkitTextFillColor: "#111827",
+                  caretColor: "#F97316",
                 }}
                 onFocus={(e) =>
                   (e.currentTarget.style.borderColor = "#F97316")
