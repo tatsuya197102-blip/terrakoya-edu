@@ -2,31 +2,123 @@
 
 // src/app/sing/page.tsx
 // 「うたって!マスコット」— 子どもが書いた歌詞をマスコットが歌ってくれるページ
-// ペイント画面と同じくインラインstyle + 幅820px未満で縦積みに切替
+// 多言語対応: react-i18next の i18n.language を参照(辞書はページ内に保持)
+// 言語に応じて歌声も切替(ja/en/ar) — API側に lang を渡す
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+type Lang = "ja" | "en" | "ar";
+
+const STRINGS: Record<Lang, {
+  title: string;
+  subtitle: string;
+  lyricsHeader: string;
+  placeholders: string[];
+  addLine: (n: number) => string;
+  removeLine: (n: number) => string;
+  selectChar: (name: string) => string;
+  singingNow: (name: string) => string;
+  singButton: string;
+  loading: string;
+  stopButton: string;
+  errorEmpty: string;
+  errorPlay: string;
+  footNote: string;
+  charNames: Record<string, string>;
+}> = {
+  ja: {
+    title: "🎤 うたって!マスコット",
+    subtitle: "歌詞を書くと、えらんだマスコットが歌ってくれるよ",
+    lyricsHeader: "✏️ 歌詞をかこう(1行30文字まで)",
+    placeholders: [
+      "たとえば: おひさま きらきら",
+      "たとえば: きょうも げんきだ",
+      "たとえば: みんなで うたおう",
+      "たとえば: らんらんらん♪",
+      "", "",
+    ],
+    addLine: (n) => `+ 行をふやす(あと${n}行)`,
+    removeLine: (n) => `${n}行目をけす`,
+    selectChar: (name) => `${name}をえらぶ`,
+    singingNow: (name) => `${name}が歌ってるよ♪`,
+    singButton: "🎵 うたってもらう!",
+    loading: "じゅんびちゅう…",
+    stopButton: "⏹ とめる",
+    errorEmpty: "歌詞を1行いじょう書いてね",
+    errorPlay: "うたの再生に失敗しました。もういちど試してね",
+    footNote: "※ 悪い言葉や個人情報(電話番号など)は歌にできません",
+    charNames: { rabbit: "うさぎ", cat: "ねこ", bird: "とり" },
+  },
+  en: {
+    title: "🎤 Sing It, Mascot!",
+    subtitle: "Write some lyrics and your mascot will sing them!",
+    lyricsHeader: "✏️ Write your lyrics (up to 30 letters per line)",
+    placeholders: [
+      "e.g. The sun is shining bright",
+      "e.g. Today is a happy day",
+      "e.g. Let's all sing together",
+      "e.g. La la la la la ♪",
+      "", "",
+    ],
+    addLine: (n) => `+ Add a line (${n} left)`,
+    removeLine: (n) => `Remove line ${n}`,
+    selectChar: (name) => `Choose ${name}`,
+    singingNow: (name) => `${name} is singing! ♪`,
+    singButton: "🎵 Sing it!",
+    loading: "Getting ready…",
+    stopButton: "⏹ Stop",
+    errorEmpty: "Please write at least one line",
+    errorPlay: "Couldn't play the song. Please try again!",
+    footNote: "※ Bad words and personal info (like phone numbers) can't be sung",
+    charNames: { rabbit: "Rabbit", cat: "Cat", bird: "Bird" },
+  },
+  ar: {
+    title: "🎤 غنِّ يا صديقي!",
+    subtitle: "اكتب كلمات الأغنية وسيغنيها صديقك المفضل!",
+    lyricsHeader: "✏️ اكتب الكلمات (حتى 30 حرفًا في السطر)",
+    placeholders: [
+      "مثال: الشمس تلمع في السماء",
+      "مثال: اليوم يوم سعيد",
+      "مثال: هيا نغني معًا",
+      "مثال: لا لا لا لا ♪",
+      "", "",
+    ],
+    addLine: (n) => `+ أضف سطرًا (${n} متبقٍ)`,
+    removeLine: (n) => `احذف السطر ${n}`,
+    selectChar: (name) => `اختر ${name}`,
+    singingNow: (name) => `${name} يغني! ♪`,
+    singButton: "🎵 غنِّها!",
+    loading: "جارٍ التحضير…",
+    stopButton: "⏹ إيقاف",
+    errorEmpty: "اكتب سطرًا واحدًا على الأقل",
+    errorPlay: "تعذّر تشغيل الأغنية. حاول مرة أخرى!",
+    footNote: "※ لا يمكن غناء الكلمات السيئة أو المعلومات الشخصية (مثل رقم الهاتف)",
+    charNames: { rabbit: "الأرنب", cat: "القط", bird: "الطائر" },
+  },
+};
 
 const CHARACTERS = [
-  { id: "rabbit", label: "うさぎ", img: "/mascots/rabbit_256.png" },
-  { id: "cat", label: "ねこ", img: "/mascots/cat_256.png" },
-  { id: "bird", label: "とり", img: "/mascots/bird_256.png" },
+  { id: "rabbit", img: "/mascots/rabbit_256.png" },
+  { id: "cat", img: "/mascots/cat_256.png" },
+  { id: "bird", img: "/mascots/bird_256.png" },
 ] as const;
 
 type CharId = (typeof CHARACTERS)[number]["id"];
 
 const MAX_LINES = 6;
-const MAX_LINE_LEN = 20;
-
-const PLACEHOLDERS = [
-  "たとえば: おひさま きらきら",
-  "たとえば: きょうも げんきだ",
-  "たとえば: みんなで うたおう",
-  "たとえば: らんらんらん♪",
-  "",
-  "",
-];
+const MAX_LINE_LEN = 30;
 
 export default function SingPage() {
+  const { i18n } = useTranslation();
+  const lang: Lang = (["ja", "en", "ar"] as const).includes(
+    i18n.language as Lang
+  )
+    ? (i18n.language as Lang)
+    : "ja";
+  const s = STRINGS[lang];
+  const isRtl = lang === "ar";
+
   const [isNarrow, setIsNarrow] = useState(false);
   const [character, setCharacter] = useState<CharId>("rabbit");
   const [lines, setLines] = useState<string[]>(["", "", "", ""]);
@@ -77,7 +169,7 @@ export default function SingPage() {
     setError("");
     const filled = lines.map((l) => l.trim()).filter((l) => l.length > 0);
     if (filled.length === 0) {
-      setError("歌詞を1行いじょう書いてね");
+      setError(s.errorEmpty);
       return;
     }
     setLoading(true);
@@ -85,11 +177,11 @@ export default function SingPage() {
       const res = await fetch("/api/sing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lines: filled, character }),
+        body: JSON.stringify({ lines: filled, character, lang }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "エラーが起きました");
+        setError(data.error || s.errorPlay);
         return;
       }
 
@@ -104,7 +196,6 @@ export default function SingPage() {
       bgmRef.current = bgm;
 
       voice.onended = () => {
-        // 声が終わったら少し余韻を残してBGM停止
         setTimeout(() => {
           bgm.pause();
           bgm.currentTime = 0;
@@ -118,7 +209,7 @@ export default function SingPage() {
       });
       await voice.play();
     } catch {
-      setError("うたの再生に失敗しました。もういちど試してね");
+      setError(s.errorPlay);
       setSinging(false);
     } finally {
       setLoading(false);
@@ -126,9 +217,11 @@ export default function SingPage() {
   };
 
   const selected = CHARACTERS.find((c) => c.id === character)!;
+  const selectedName = s.charNames[selected.id];
 
   return (
     <div
+      dir={isRtl ? "rtl" : "ltr"}
       style={{
         maxWidth: 960,
         margin: "0 auto",
@@ -153,10 +246,10 @@ export default function SingPage() {
       `}</style>
 
       <h1 style={{ fontSize: isNarrow ? 22 : 28, margin: "0 0 4px" }}>
-        🎤 うたって!マスコット
+        {s.title}
       </h1>
       <p style={{ color: "#666", margin: "0 0 20px", fontSize: 14 }}>
-        歌詞を書くと、えらんだマスコットが歌ってくれるよ
+        {s.subtitle}
       </p>
 
       <div
@@ -167,7 +260,7 @@ export default function SingPage() {
           alignItems: "stretch",
         }}
       >
-        {/* ---- 左: ステージ ---- */}
+        {/* ---- ステージ ---- */}
         <div
           style={{
             flex: isNarrow ? undefined : "0 0 340px",
@@ -207,7 +300,7 @@ export default function SingPage() {
 
           <img
             src={selected.img}
-            alt={selected.label}
+            alt={selectedName}
             className="sing-anim"
             style={{
               width: isNarrow ? 140 : 180,
@@ -226,7 +319,7 @@ export default function SingPage() {
               fontSize: 15,
             }}
           >
-            {singing ? `${selected.label}が歌ってるよ♪` : selected.label}
+            {singing ? s.singingNow(selectedName) : selectedName}
           </div>
 
           {/* キャラ選択 */}
@@ -246,11 +339,11 @@ export default function SingPage() {
                   cursor: singing ? "default" : "pointer",
                   opacity: singing && c.id !== character ? 0.4 : 1,
                 }}
-                aria-label={`${c.label}をえらぶ`}
+                aria-label={s.selectChar(s.charNames[c.id])}
               >
                 <img
                   src={c.img}
-                  alt={c.label}
+                  alt={s.charNames[c.id]}
                   style={{ width: 44, height: 44, objectFit: "contain" }}
                 />
               </button>
@@ -258,7 +351,7 @@ export default function SingPage() {
           </div>
         </div>
 
-        {/* ---- 右: 歌詞入力 ---- */}
+        {/* ---- 歌詞入力 ---- */}
         <div
           style={{
             flex: 1,
@@ -269,7 +362,7 @@ export default function SingPage() {
           }}
         >
           <div style={{ fontWeight: 700, marginBottom: 10, fontSize: 15 }}>
-            ✏️ 歌詞をかこう(1行{MAX_LINE_LEN}文字まで)
+            {s.lyricsHeader}
           </div>
 
           {lines.map((line, i) => (
@@ -285,7 +378,7 @@ export default function SingPage() {
               <span
                 style={{
                   width: 22,
-                  textAlign: "right",
+                  textAlign: isRtl ? "left" : "right",
                   color: "#9CA3AF",
                   fontSize: 13,
                   flexShrink: 0,
@@ -297,8 +390,9 @@ export default function SingPage() {
                 value={line}
                 maxLength={MAX_LINE_LEN}
                 onChange={(e) => setLine(i, e.target.value)}
-                placeholder={PLACEHOLDERS[i] ?? ""}
+                placeholder={s.placeholders[i] ?? ""}
                 disabled={singing}
+                dir={isRtl ? "rtl" : "ltr"}
                 style={{
                   flex: 1,
                   padding: "10px 12px",
@@ -318,7 +412,7 @@ export default function SingPage() {
                 <button
                   onClick={() => removeLine(i)}
                   disabled={singing}
-                  aria-label={`${i + 1}行目をけす`}
+                  aria-label={s.removeLine(i + 1)}
                   style={{
                     border: "none",
                     background: "transparent",
@@ -349,7 +443,7 @@ export default function SingPage() {
                 marginBottom: 12,
               }}
             >
-              + 行をふやす(あと{MAX_LINES - lines.length}行)
+              {s.addLine(MAX_LINES - lines.length)}
             </button>
           )}
 
@@ -386,7 +480,7 @@ export default function SingPage() {
                   cursor: loading ? "wait" : "pointer",
                 }}
               >
-                {loading ? "じゅんびちゅう…" : "🎵 うたってもらう!"}
+                {loading ? s.loading : s.singButton}
               </button>
             ) : (
               <button
@@ -403,13 +497,13 @@ export default function SingPage() {
                   cursor: "pointer",
                 }}
               >
-                ⏹ とめる
+                {s.stopButton}
               </button>
             )}
           </div>
 
           <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 10 }}>
-            ※ 悪い言葉や個人情報(電話番号など)は歌にできません
+            {s.footNote}
           </p>
         </div>
       </div>
