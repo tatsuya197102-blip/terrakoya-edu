@@ -1,12 +1,36 @@
 "use client";
 
 // src/app/sing/page.tsx
-// 「うたって!マスコット」— 子どもが書いた歌詞をマスコットが歌ってくれるページ
-// v3: スマホのダークモードで白カード内の文字が白くなり見えなくなる問題を修正
-//     (カード・入力欄に文字色/背景色を明示指定)
+// 「うたって!マスコット」v5
+// - 歌の保存(Firebase Storage songs/{uid}/ + Firestore songs コレクション)
+// - みんなの歌リスト(最新20件、再生・自分の歌の削除)
+// - ダークモード文字色対応、JP/EN/AR、RTL(v4までの機能を含む)
+//
+// 必要な設定(初回のみ):
+// - Firestore ルールに songs コレクションの read/create/delete を追加
+// - Storage ルールに songs/{uid}/** の read/write を追加
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { auth, db } from "@/lib/firebase";
+import {
+  collection,
+  addDoc,
+  deleteDoc,
+  doc,
+  query,
+  orderBy,
+  limit,
+  getDocs,
+  serverTimestamp,
+} from "firebase/firestore";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
 
 type Lang = "ja" | "en" | "ar";
 
@@ -26,6 +50,15 @@ const STRINGS: Record<Lang, {
   errorPlay: string;
   footNote: string;
   charNames: Record<string, string>;
+  saveButton: string;
+  saving: string;
+  saved: string;
+  needLogin: string;
+  songsHeader: string;
+  noSongs: string;
+  deleteBtn: string;
+  anonymous: string;
+  saveFail: string;
 }> = {
   ja: {
     title: "🎤 うたって!マスコット",
@@ -49,6 +82,15 @@ const STRINGS: Record<Lang, {
     errorPlay: "うたの再生に失敗しました。もういちど試してね",
     footNote: "※ 悪い言葉や個人情報(電話番号など)は歌にできません。ひらがな・カタカナで書くと、いちばん歌っぽくなるよ!",
     charNames: { rabbit: "うさぎ", cat: "ねこ", bird: "とり" },
+    saveButton: "💾 この歌をほぞんする",
+    saving: "ほぞんちゅう…",
+    saved: "ほぞんしたよ!下のリストに出てくるよ♪",
+    needLogin: "ほぞんするにはログインしてね",
+    songsHeader: "🎧 みんなの歌",
+    noSongs: "まだ歌がないよ。さいしょの1曲を作ろう!",
+    deleteBtn: "けす",
+    anonymous: "だれか",
+    saveFail: "ほぞんに失敗しました。もういちど試してね",
   },
   en: {
     title: "🎤 Sing It, Mascot!",
@@ -72,6 +114,15 @@ const STRINGS: Record<Lang, {
     errorPlay: "Couldn't play the song. Please try again!",
     footNote: "※ Bad words and personal info (like phone numbers) can't be sung",
     charNames: { rabbit: "Rabbit", cat: "Cat", bird: "Bird" },
+    saveButton: "💾 Save this song",
+    saving: "Saving…",
+    saved: "Saved! It will appear in the list below ♪",
+    needLogin: "Please log in to save songs",
+    songsHeader: "🎧 Everyone's Songs",
+    noSongs: "No songs yet. Make the first one!",
+    deleteBtn: "Delete",
+    anonymous: "Someone",
+    saveFail: "Couldn't save. Please try again!",
   },
   ar: {
     title: "🎤 غنِّ يا صديقي!",
@@ -95,6 +146,15 @@ const STRINGS: Record<Lang, {
     errorPlay: "تعذّر تشغيل الأغنية. حاول مرة أخرى!",
     footNote: "※ لا يمكن غناء الكلمات السيئة أو المعلومات الشخصية (مثل رقم الهاتف)",
     charNames: { rabbit: "الأرنب", cat: "القط", bird: "الطائر" },
+    saveButton: "💾 احفظ هذه الأغنية",
+    saving: "جارٍ الحفظ…",
+    saved: "تم الحفظ! ستظهر في القائمة أدناه ♪",
+    needLogin: "سجّل الدخول لحفظ الأغاني",
+    songsHeader: "🎧 أغاني الجميع",
+    noSongs: "لا توجد أغانٍ بعد. اصنع الأولى!",
+    deleteBtn: "حذف",
+    anonymous: "شخص ما",
+    saveFail: "تعذّر الحفظ. حاول مرة أخرى!",
   },
 };
 
@@ -106,11 +166,26 @@ const CHARACTERS = [
 
 type CharId = (typeof CHARACTERS)[number]["id"];
 
+type Song = {
+  id: string;
+  uid: string;
+  name: string;
+  lyrics: string[];
+  character: string;
+  audioUrl: string;
+  storagePath?: string;
+};
+
 const MAX_LINES = 6;
 const MAX_LINE_LEN = 30;
-
-// ダークモードでも読めるように明示指定する文字色
 const TEXT_DARK = "#1F2937";
+
+function base64ToBlob(b64: string): Blob {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: "audio/mpeg" });
+}
 
 export default function SingPage() {
   const { i18n } = useTranslation();
@@ -129,8 +204,20 @@ export default function SingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // 保存まわり
+  const [user, setUser] = useState<{ uid: string; name: string } | null>(null);
+  const [lastAudio, setLastAudio] = useState<string | null>(null);
+  const [lastLyrics, setLastLyrics] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [savedMsg, setSavedMsg] = useState("");
+
+  // みんなの歌
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
   const voiceRef = useRef<HTMLAudioElement | null>(null);
   const bgmRef = useRef<HTMLAudioElement | null>(null);
+  const listAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const check = () => setIsNarrow(window.innerWidth < 820);
@@ -139,13 +226,38 @@ export default function SingPage() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // ページ離脱時に音を止める
   useEffect(() => {
+    const unsub = auth.onAuthStateChanged((u) => {
+      setUser(u ? { uid: u.uid, name: u.displayName || "" } : null);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    loadSongs();
     return () => {
       voiceRef.current?.pause();
       bgmRef.current?.pause();
+      listAudioRef.current?.pause();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadSongs = async () => {
+    try {
+      const q = query(
+        collection(db, "songs"),
+        orderBy("createdAt", "desc"),
+        limit(20)
+      );
+      const snap = await getDocs(q);
+      setSongs(
+        snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Song, "id">) }))
+      );
+    } catch (e) {
+      console.error("loadSongs error:", e);
+    }
+  };
 
   const setLine = (i: number, v: string) => {
     setLines((prev) => prev.map((l, idx) => (idx === i ? v : l)));
@@ -168,8 +280,16 @@ export default function SingPage() {
     setSinging(false);
   };
 
+  const stopListAudio = () => {
+    listAudioRef.current?.pause();
+    listAudioRef.current = null;
+    setPlayingId(null);
+  };
+
   const sing = async () => {
     setError("");
+    setSavedMsg("");
+    stopListAudio();
     const filled = lines.map((l) => l.trim()).filter((l) => l.length > 0);
     if (filled.length === 0) {
       setError(s.errorEmpty);
@@ -188,11 +308,12 @@ export default function SingPage() {
         return;
       }
 
-      // 声
+      setLastAudio(data.audioContent);
+      setLastLyrics(filled);
+
       const voice = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
       voiceRef.current = voice;
 
-      // BGM(public/bgm/sing_loop.mp3 があれば流す。無ければ声だけ)
       const bgm = new Audio("/bgm/sing_loop.mp3");
       bgm.loop = true;
       bgm.volume = 0.22;
@@ -207,9 +328,7 @@ export default function SingPage() {
       };
 
       setSinging(true);
-      bgm.play().catch(() => {
-        /* BGMが無い/再生不可でも声だけで続行 */
-      });
+      bgm.play().catch(() => {});
       await voice.play();
     } catch {
       setError(s.errorPlay);
@@ -219,8 +338,74 @@ export default function SingPage() {
     }
   };
 
+  const saveSong = async () => {
+    if (!lastAudio || !user) return;
+    setSaving(true);
+    setSavedMsg("");
+    try {
+      const storage = getStorage();
+      const path = `songs/${user.uid}/${Date.now()}.mp3`;
+      const sRef = storageRef(storage, path);
+      await uploadBytes(sRef, base64ToBlob(lastAudio), {
+        contentType: "audio/mpeg",
+      });
+      const url = await getDownloadURL(sRef);
+      await addDoc(collection(db, "songs"), {
+        uid: user.uid,
+        name: user.name,
+        lyrics: lastLyrics,
+        character,
+        lang,
+        audioUrl: url,
+        storagePath: path,
+        createdAt: serverTimestamp(),
+      });
+      setSavedMsg(s.saved);
+      setLastAudio(null); // 二重保存防止
+      await loadSongs();
+    } catch (e) {
+      console.error("saveSong error:", e);
+      setSavedMsg(s.saveFail);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const playSong = (song: Song) => {
+    stopAll();
+    if (playingId === song.id) {
+      stopListAudio();
+      return;
+    }
+    stopListAudio();
+    const a = new Audio(song.audioUrl);
+    listAudioRef.current = a;
+    a.onended = () => setPlayingId(null);
+    setPlayingId(song.id);
+    a.play().catch(() => setPlayingId(null));
+  };
+
+  const deleteSong = async (song: Song) => {
+    if (!user || song.uid !== user.uid) return;
+    try {
+      if (playingId === song.id) stopListAudio();
+      await deleteDoc(doc(db, "songs", song.id));
+      // Storage はベストエフォート削除(ギャラリーと同方式)
+      if (song.storagePath) {
+        try {
+          await deleteObject(storageRef(getStorage(), song.storagePath));
+        } catch {}
+      }
+      setSongs((prev) => prev.filter((x) => x.id !== song.id));
+    } catch (e) {
+      console.error("deleteSong error:", e);
+    }
+  };
+
   const selected = CHARACTERS.find((c) => c.id === character)!;
   const selectedName = s.charNames[selected.id];
+  const charImg = (id: string) =>
+    CHARACTERS.find((c) => c.id === id)?.img || CHARACTERS[0].img;
 
   return (
     <div
@@ -283,7 +468,6 @@ export default function SingPage() {
             overflow: "hidden",
           }}
         >
-          {/* 音符(歌唱中のみ) */}
           {singing &&
             ["♪", "♫", "♪"].map((n, i) => (
               <span
@@ -327,7 +511,6 @@ export default function SingPage() {
             {singing ? s.singingNow(selectedName) : selectedName}
           </div>
 
-          {/* キャラ選択 */}
           <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
             {CHARACTERS.map((c) => (
               <button
@@ -513,10 +696,148 @@ export default function SingPage() {
             )}
           </div>
 
+          {/* 保存ボタン(歌った後に表示) */}
+          {lastAudio && !singing && (
+            <button
+              onClick={saveSong}
+              disabled={saving || !user}
+              title={!user ? s.needLogin : undefined}
+              style={{
+                width: "100%",
+                marginTop: 10,
+                background: saving ? "#93C5FD" : user ? "#3B82F6" : "#D1D5DB",
+                color: "#fff",
+                border: "none",
+                borderRadius: 12,
+                padding: "12px 0",
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: saving || !user ? "default" : "pointer",
+              }}
+            >
+              {saving ? s.saving : user ? s.saveButton : s.needLogin}
+            </button>
+          )}
+
+          {savedMsg && (
+            <div
+              style={{
+                background: "#EFF6FF",
+                border: "1px solid #BFDBFE",
+                color: "#1D4ED8",
+                borderRadius: 10,
+                padding: "10px 12px",
+                fontSize: 14,
+                marginTop: 10,
+              }}
+            >
+              {savedMsg}
+            </div>
+          )}
+
           <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 10 }}>
             {s.footNote}
           </p>
         </div>
+      </div>
+
+      {/* ---- みんなの歌 ---- */}
+      <div
+        style={{
+          marginTop: 28,
+          background: "#fff",
+          border: "2px solid #E5E7EB",
+          borderRadius: 16,
+          padding: isNarrow ? 16 : 20,
+          color: TEXT_DARK,
+        }}
+      >
+        <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 16 }}>
+          {s.songsHeader}
+        </div>
+
+        {songs.length === 0 ? (
+          <p style={{ color: "#9CA3AF", fontSize: 14 }}>{s.noSongs}</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {songs.map((song) => (
+              <div
+                key={song.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "8px 10px",
+                  background: playingId === song.id ? "#FFF7ED" : "#F9FAFB",
+                  border:
+                    playingId === song.id
+                      ? "2px solid #FED7AA"
+                      : "2px solid transparent",
+                  borderRadius: 12,
+                }}
+              >
+                <button
+                  onClick={() => playSong(song)}
+                  aria-label="play"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    border: "none",
+                    background: playingId === song.id ? "#F97316" : "#3B82F6",
+                    color: "#fff",
+                    fontSize: 16,
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  {playingId === song.id ? "⏸" : "▶"}
+                </button>
+                <img
+                  src={charImg(song.character)}
+                  alt=""
+                  style={{
+                    width: 34,
+                    height: 34,
+                    objectFit: "contain",
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {(song.lyrics && song.lyrics[0]) || "♪"}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#9CA3AF" }}>
+                    {song.name || s.anonymous}
+                  </div>
+                </div>
+                {user && song.uid === user.uid && (
+                  <button
+                    onClick={() => deleteSong(song)}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: "#EF4444",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {s.deleteBtn}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
