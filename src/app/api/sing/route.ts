@@ -1,7 +1,7 @@
 // src/app/api/sing/route.ts
 // 子どもが入力した歌詞を Google Cloud TTS で「歌風」に読み上げる API
-// v3: 音符単位メロディ — 日本語はモーラ(文字)単位、英/亜は単語単位でピッチを割り当て
-//     童謡風ペンタトニック音階で上下するので、行単位ピッチより格段に歌らしくなる
+// v4: 抑揚強化 — 音符に「長さ」を導入(リズム)、フレーズ末の音を「ー」で実際に伸ばし、
+//     高音をわずかに強く(強弱)。v3(音符単位ピッチ)からの上積み
 //
 // 必要な環境変数: GOOGLE_TTS_API_KEY
 
@@ -77,23 +77,31 @@ const CHARACTER_PITCH: Record<string, number> = {
 };
 
 // ---- メロディ定義 ----
-// ペンタトニック(ド=0, レ=2, ミ=4, ソ=7, ラ=9)ベースの童謡風フレーズ。
-// 行ごとにフレーズを切り替え、行内は音符単位で巡回する。
-const PHRASES: number[][] = [
-  [0, 0, 7, 7, 9, 9, 7],    // 起: 上行フレーズ
-  [4, 4, 2, 2, 0, 0, 2],    // 承: 下行で応答
-  [7, 7, 9, 9, 7, 4, 2],    // 転: 高めで動きをつける
-  [4, 2, 0, 2, 4, 2, 0],    // 結: ドに戻って着地
+// [ピッチ(semitone), 長さ] の列。長さ 1=ふつうの音、2=伸ばす音。
+// きらきら星型のリズム(♩♩♩♩♩♩♩̅)をベースにした童謡風4フレーズ
+type Note = [number, number];
+const PHRASES: Note[][] = [
+  // 起: 上行して高音で伸ばす
+  [[0, 1], [0, 1], [7, 1], [7, 1], [9, 1], [9, 1], [7, 2]],
+  // 承: 下行して落ち着く
+  [[4, 1], [4, 1], [2, 1], [2, 1], [0, 1], [0, 1], [2, 2]],
+  // 転: 高めで動きをつける
+  [[7, 1], [9, 1], [7, 1], [4, 1], [7, 1], [4, 1], [2, 2]],
+  // 結: ドに戻って着地
+  [[4, 1], [2, 1], [0, 1], [2, 1], [4, 1], [2, 1], [0, 2]],
 ];
 
-// 音符ごとの読み上げ速度(遅いほど1音が伸びて歌らしい)
-const NOTE_RATE = "70%";
+// 音の長さ → 読み上げ速度(遅い=1音が長い)
+const RATE_NORMAL = "70%";
+const RATE_LONG = "45%";
 
 // 日本語: この正規表現に完全一致する行のみ文字(モーラ)単位で歌う。
 // 漢字が混ざる行は文字分割すると読みが壊れるため行単位ピッチにフォールバック
 const KANA_ONLY = /^[\u3040-\u309F\u30A0-\u30FF\u30FC〜、。!!??・♪♫\s]+$/;
 // 拗音・促音・長音は前の文字とくっつけて1モーラにする
 const SMALL_KANA = "ぁぃぅぇぉゃゅょっァィゥェォャュョッ";
+// 「ー」を付けて伸ばせない文字(撥音・促音・記号)
+const NO_STRETCH = "んンっッ、。!!??・♪♫ー";
 
 function escapeSsml(text: string): string {
   return text
@@ -128,31 +136,54 @@ function clampPitch(p: number): number {
   return Math.max(-4, Math.min(14, p));
 }
 
+// 日本語の音を「ー」で実際に伸ばす(伸ばせる文字のみ)
+function stretchJa(unit: string): string {
+  const last = unit[unit.length - 1];
+  if (NO_STRETCH.includes(last)) return unit;
+  return unit + "ー";
+}
+
 function buildSsml(lines: string[], basePitch: number, lang: Lang): string {
   const lineParts = lines.map((line, li) => {
     const phrase = PHRASES[li % PHRASES.length];
     const units = splitUnits(line, lang);
 
     if (units) {
-      // 音符単位: 1音ずつピッチを割り当てる
       const noteParts = units.map((u, ni) => {
-        const note = phrase[ni % phrase.length];
-        // 最終行の最後の音はドに着地させる
-        const isVeryLast =
-          li === lines.length - 1 && ni === units.length - 1;
-        const p = clampPitch(basePitch + (isVeryLast ? 0 : note));
-        return `<prosody pitch="+${p}st" rate="${NOTE_RATE}">${escapeSsml(
-          u
+        const [notePitch, noteLenRaw] = phrase[ni % phrase.length];
+        const isLineLast = ni === units.length - 1;
+        const isVeryLast = li === lines.length - 1 && isLineLast;
+
+        // 行末の音は必ず伸ばす(パターン上の長さに関わらず)
+        const noteLen = isLineLast ? 2 : noteLenRaw;
+        // 曲の最後の音はドに着地
+        const pitch = clampPitch(basePitch + (isVeryLast ? 0 : notePitch));
+        const rate = noteLen === 2 ? RATE_LONG : RATE_NORMAL;
+        // 高い音(ソ以上)はわずかに強く=サビ感。着地音も少し強く
+        const vol =
+          notePitch >= 7 && !isVeryLast
+            ? ` volume="+2dB"`
+            : isVeryLast
+            ? ` volume="+1dB"`
+            : "";
+
+        // 伸ばす音は日本語なら「ー」を足して物理的に母音を伸ばす
+        const text =
+          lang === "ja" && noteLen === 2 ? stretchJa(u) : u;
+
+        return `<prosody pitch="+${pitch}st" rate="${rate}"${vol}>${escapeSsml(
+          text
         )}</prosody>`;
       });
-      return noteParts.join("") + `<break time="400ms"/>`;
+      // 行間はブレス(息継ぎ)
+      return noteParts.join("") + `<break time="450ms"/>`;
     }
 
     // フォールバック(漢字混じり日本語): 行単位ピッチ
-    const p = clampPitch(basePitch + phrase[0]);
+    const p = clampPitch(basePitch + phrase[0][0]);
     return (
       `<prosody pitch="+${p}st" rate="85%">${escapeSsml(line)}</prosody>` +
-      `<break time="400ms"/>`
+      `<break time="450ms"/>`
     );
   });
   return `<speak>${lineParts.join("")}</speak>`;
