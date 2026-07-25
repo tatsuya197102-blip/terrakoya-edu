@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { auth, db } from "@/lib/firebase";
+import { feedPet } from "@/lib/pet";
 import {
   collection,
   addDoc,
@@ -361,6 +362,7 @@ export default function SingPage() {
         createdAt: serverTimestamp(),
       });
       setSavedMsg(s.saved);
+      feedPet(user.uid).catch(() => {}); // 学校ペットに♥(失敗しても保存は成功扱い)
       setLastAudio(null); // 二重保存防止
       await loadSongs();
     } catch (e) {

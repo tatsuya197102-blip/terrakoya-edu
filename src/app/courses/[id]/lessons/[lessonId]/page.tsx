@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
+import { feedPet } from '@/lib/pet';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
@@ -94,11 +95,13 @@ export default function LessonPage() {
     const snap = await getDoc(ref);
     const data = snap.data() || {};
     const currentCompleted = [...(data.completedLessons?.[courseId] || [])];
+    const isNewCompletion = !currentCompleted.includes(lessonId);
     const activityDates = [...(data.activityDates || [])];
     if (!currentCompleted.includes(lessonId)) currentCompleted.push(lessonId);
     if (!activityDates.includes(today)) activityDates.push(today);
     const newProgress = Math.round((currentCompleted.length / (course?.lessons.length || 1)) * 100);
     await updateDoc(ref, { [`completedLessons.${courseId}`]: currentCompleted, activityDates, lastAccessedAt: serverTimestamp() });
+    if (isNewCompletion) feedPet(user.uid).catch(() => {}); // 学校ペットに♥(初回完了のみ)
     setCompleted(true);
     setCompletedLessons(currentCompleted);
     setProgress(newProgress);

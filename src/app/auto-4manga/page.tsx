@@ -549,6 +549,7 @@ export default function Auto4MangaPage() {
         aiFeedback: null, feedbackStatus: 'pending',
         gradeResult: null, gradingStatus: 'idle',
       });
+      import('@/lib/pet').then(m => m.feedPet(user.uid)).catch(() => {}); // 学校ペットに♥
 
       setSubmitMsg(tr('manga4.analyzing'));
 
@@ -615,6 +616,7 @@ export default function Auto4MangaPage() {
         aiFeedback: null, feedbackStatus: 'pending',
         gradeResult: null, gradingStatus: 'idle',
       });
+      import('@/lib/pet').then(m => m.feedPet(user.uid)).catch(() => {}); // 学校ペットに♥
 
       setSubmitMsg(tr('manga4.analyzing'));
 

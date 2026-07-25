@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { auth, db, storage } from "@/lib/firebase";
+import { feedPet } from "@/lib/pet";
 import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -562,6 +563,7 @@ export default function PaintPage() {
         new Promise((_, rej) => setTimeout(() => rej(new Error(t.timeout)), 20000)),
       ]);
       setPosted(true);
+      feedPet(user.uid).catch(() => {}); // 学校ペットに♥
       setShowPublish(false);
       setTitle("");
       showToast(t.published);
