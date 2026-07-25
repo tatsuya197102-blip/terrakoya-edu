@@ -1,9 +1,7 @@
-// src/components/SchoolPet.tsx
-// ダッシュボード用「がっこうの子」カード(Phase 1)
-// - pets/school を購読して今日の様子を表示
-// - 日付が変わっていれば表示上リセット(書き込みは feedPet 側で実施)
-// - ja/en/ar インライン辞書(/sing と同方式)、AR時 RTL
-// - 白背景カードのためダークモードでも文字色を明示指定
+// src/components/SchoolPet.tsx (v2: マスコット画像対応)
+// - /pets/{usagi|neko|tori}.png を表示、読み込み失敗時は絵文字フォールバック
+// - ねんね中はキャラを薄く + 💤バッジ
+// - ja/en/ar インライン辞書、AR時 RTL、白背景カードは文字色明示(ダークモード対策)
 
 "use client";
 
@@ -57,6 +55,11 @@ const STRINGS: Record<string, Record<string, string>> = {
 };
 
 const EMOJI: Record<string, string> = { rabbit: "🐰", cat: "🐱", bird: "🐦" };
+const IMG: Record<string, string> = {
+  rabbit: "/pets/usagi.png",
+  cat: "/pets/neko.png",
+  bird: "/pets/tori.png",
+};
 
 export default function SchoolPet() {
   const { i18n } = useTranslation();
@@ -71,19 +74,18 @@ export default function SchoolPet() {
   const [pet, setPet] = useState<any | null>(null);
   const [myToday, setMyToday] = useState(0);
   const [welcomeBack, setWelcomeBack] = useState(false);
+  const [imgOk, setImgOk] = useState(true);
 
   const today = todayStr();
 
   useEffect(() => onAuthStateChanged(auth, (u) => setUid(u?.uid ?? null)), []);
 
-  // pets/school を購読
   useEffect(() => {
     return onSnapshot(doc(db, "pets", "school"), (snap) => {
       setPet(snap.exists() ? snap.data() : null);
     });
   }, []);
 
-  // 自分の今日の給餌数を購読
   useEffect(() => {
     if (!uid) return;
     return onSnapshot(doc(db, "pets", "school", "feeds", today), (snap) => {
@@ -92,7 +94,6 @@ export default function SchoolPet() {
     });
   }, [uid, today]);
 
-  // 7日以上ぶりの再会演出(users/{uid}.lastActiveDay 基準)
   useEffect(() => {
     if (!uid) return;
     const unsub = onSnapshot(doc(db, "users", uid), (snap) => {
@@ -102,13 +103,12 @@ export default function SchoolPet() {
           (new Date(today).getTime() - new Date(last).getTime()) / 86400000;
         if (diff >= 7) setWelcomeBack(true);
       }
-      unsub(); // 初回だけ判定
+      unsub();
     });
   }, [uid, today]);
 
   const view = useMemo(() => {
     const character: string = pet?.character ?? "cat";
-    // 日付が古いドキュメントは表示上0扱い(書き込みは feedPet が行う)
     const hearts = pet && pet.todayDate === today ? pet.todayHearts ?? 0 : 0;
     const goal = pet?.dailyGoal ?? 20;
     const mood: PetMood = moodFor(hearts, goal);
@@ -117,7 +117,8 @@ export default function SchoolPet() {
 
   const name = t[`name_${view.character}`] ?? t.name_cat;
   const moodText = welcomeBack && view.mood === "sleeping" ? t.welcomeBack : t[view.mood];
-  const showGauge = view.mood !== "satisfied"; // 達成後は「あと◯」を出さない
+  const sleeping = view.mood === "sleeping";
+  const showGauge = view.mood !== "satisfied";
 
   return (
     <div
@@ -137,28 +138,61 @@ export default function SchoolPet() {
     >
       <div
         style={{
-          fontSize: 48,
-          lineHeight: 1,
-          animation:
-            view.mood === "sleeping" ? undefined : "petBounce 1.6s ease-in-out infinite",
+          position: "relative",
+          width: 72,
+          height: 72,
+          flexShrink: 0,
+          animation: sleeping ? undefined : "petBounce 1.6s ease-in-out infinite",
         }}
         aria-hidden
       >
-        {view.mood === "sleeping" ? "💤" : ""}
-        {EMOJI[view.character] ?? "🐱"}
+        {imgOk ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={IMG[view.character] ?? IMG.cat}
+            alt=""
+            width={72}
+            height={72}
+            onError={() => setImgOk(false)}
+            style={{
+              width: 72,
+              height: 72,
+              objectFit: "contain",
+              filter: sleeping ? "grayscale(35%) opacity(0.75)" : undefined,
+            }}
+          />
+        ) : (
+          <span
+            style={{
+              fontSize: 56,
+              lineHeight: "72px",
+              display: "block",
+              textAlign: "center",
+              filter: sleeping ? "grayscale(35%) opacity(0.75)" : undefined,
+            }}
+          >
+            {EMOJI[view.character] ?? "🐱"}
+          </span>
+        )}
+        {sleeping && (
+          <span
+            style={{
+              position: "absolute",
+              top: -6,
+              insetInlineEnd: -10,
+              fontSize: 22,
+            }}
+          >
+            💤
+          </span>
+        )}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: 15 }}>{name}</div>
         <div style={{ fontSize: 14, marginTop: 2 }}>{moodText}</div>
-        {showGauge ? (
-          <div style={{ fontSize: 13, marginTop: 6, color: "#6b7280", WebkitTextFillColor: "#6b7280" }}>
-            ♥ {view.hearts} / {view.goal}({t.together})
-          </div>
-        ) : (
-          <div style={{ fontSize: 13, marginTop: 6, color: "#6b7280", WebkitTextFillColor: "#6b7280" }}>
-            ♥ {view.hearts}({t.together})
-          </div>
-        )}
+        <div style={{ fontSize: 13, marginTop: 6, color: "#6b7280", WebkitTextFillColor: "#6b7280" }}>
+          ♥ {view.hearts}{showGauge ? ` / ${view.goal}` : ""}({t.together})
+        </div>
         <div style={{ fontSize: 12, marginTop: 4, color: "#6b7280", WebkitTextFillColor: "#6b7280" }}>
           {t.yourToday}: {myToday} / {DAILY_USER_CAP}
           {myToday === 0 ? ` — ${t.hint}` : ""}
