@@ -1,5 +1,4 @@
 'use client';
-import SchoolPet from "@/components/SchoolPet";
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
@@ -302,7 +301,6 @@ export default function DashboardPage() {
         </div>
 
         {/* クイックアクション */}
-        <SchoolPet />
         <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
           {[
             { href: '/courses',     label: t('nav.courses'),   icon: '📚' },
