@@ -56,3 +56,5 @@ patch-*.py
 service-account.json
 
 certificates
+*.bak_*
+tts_test.json
