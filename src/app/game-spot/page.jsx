@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
+import { feedPet } from "@/lib/pet";
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 
 /**
@@ -379,6 +380,7 @@ export default function SpotTheDifference() {
         const s = ratio >= 0.5 && hintsUsed === 0 ? 3 : ratio >= 0.25 ? 2 : 1;
         setStars(s);
         setStatus("won");
+        if (user?.uid) feedPet(user.uid).catch(() => {}); // 学校ペットに♥(1人1日3回上限はfeedPet側で担保)
         if (mode === "daily") saveDaily(s, timeRef.current); else saveProgress(level, s);
       }
     } else {
