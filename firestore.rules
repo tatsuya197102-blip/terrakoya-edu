@@ -118,5 +118,38 @@ service cloud.firestore {
       allow create, update: if request.auth != null && request.auth.uid == userId;
       allow delete: if false;
     }
+
+    // === 学校ペット(Phase 2) ===
+    // 読み取り: ログインユーザー全員(ダッシュボードのカード表示用)
+    // 書き込み: 給餌トランザクション(feedPet)のため create/update を許可。
+    //           削除は不可。差分の厳密検証(+1のみ等)は将来の硬化で対応。
+    match /pets/{petId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null;
+      allow delete: if false;
+
+      // 日別の給餌記録
+      match /feeds/{day} {
+        allow read: if request.auth != null;
+        allow create, update: if request.auth != null;
+        allow delete: if false;
+      }
+    }
+
+    // ── たまご引換コード (E-12) ──────────────────────────────
+    // 児童は自分名義のコードを「作る」ことだけできる。
+    // 使用済みフラグ(usedAt)は Study からの検証API(Admin SDK)だけが書く。
+    match /eggCodes/{code} {
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.usedAt == null
+                    && request.resource.data.keys().hasOnly(
+                         ['uid', 'term', 'character', 'termHearts', 'createdAt', 'usedAt']
+                       );
+      allow read: if request.auth != null
+                  && resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
   }
 }
