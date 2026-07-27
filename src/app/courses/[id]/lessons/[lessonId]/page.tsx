@@ -1,3 +1,4 @@
+// MARKER: TERRAKOYA_EDU_LESSON_CTA_V1
 'use client';
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,7 @@ import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
 import { useTranslation } from 'react-i18next';
+import StudyCta from '@/components/StudyCta';
 
 const COURSES: Record<string, {
   title: Record<string,string>;
@@ -205,6 +207,13 @@ export default function LessonPage() {
             </Link>
           </div>
         </div>
+
+        {/* Study送客: レッスン完了後のみ (E-9) */}
+        {completed && (
+          <div className="mb-6">
+            <StudyCta subject="mw" />
+          </div>
+        )}
 
         <div className="flex justify-between gap-4">
           {prevLesson ? (
