@@ -1,13 +1,20 @@
 // src/lib/eggCode.ts
 // TERRAKOYA-edu Phase 3-3: たまご引換コード — 児童1人につき1コード・使用上限1
-// マーカー: TERRAKOYA_EGG_CODE_V1
+// マーカー: TERRAKOYA_EGG_CODE_V2
+//
+// V1からの修正:
+//  発行前の衝突チェック getDoc(eggCodes/{code}) を廃止した。
+//  ルールは「自分のuidのコードだけ読める」であり、存在しないドキュメントには
+//  resource が無いためこの読み取りは必ず permission-denied になる(V1が発行に
+//  失敗していた原因)。32^8 ≈ 1.1兆通りで衝突は事実上起きず、万一衝突しても
+//  既存ドキュメントへの setDoc は update 扱いでルールに拒否されるため、
+//  失敗したら次のコードで再試行すれば安全性は変わらない。
 //
 // 設計メモ:
 //  - コードは学期ごとに1つ。users/{uid}.eggCode に「今の学期のコード」を控えるので、
-//    発行済みかどうかの判定は getDoc 1回で済む(uid+学期の複合クエリを避ける)
-//  - eggCodes/{code} が引換の実体。クライアントは create のみ許可、update/delete は禁止。
+//    発行済みかどうかの判定は getDoc 1回で済む
+//  - eggCodes/{code} が引換の実体。クライアントは create のみ許可。
 //    使用済みフラグ(usedAt)は Study からの検証API(Admin SDK)だけが書ける
-//  - 紛らわしい 0/O/1/I を除いた32文字。TKS-XXXX-XXXX で 32^8 ≈ 1.1兆通り
 //  - 失敗しても null を返すだけ。アルバム本体の表示は絶対に巻き込まない
 
 import { db } from '@/lib/firebase';
@@ -61,28 +68,36 @@ export async function ensureEggCode(
       }
     }
 
-    // 新規発行(衝突したら振り直す)
+    // 新規発行: 事前読み取りなしで create を試み、拒否されたら振り直す
     for (let i = 0; i < MAX_TRIES; i += 1) {
       const code = newCode();
-      const cRef = doc(db, 'eggCodes', code);
-      const cSnap = await getDoc(cRef);
-      if (cSnap.exists()) continue;
+      try {
+        await setDoc(doc(db, 'eggCodes', code), {
+          uid,
+          term,
+          character,
+          termHearts,
+          createdAt: serverTimestamp(),
+          usedAt: null,
+        });
+      } catch (e) {
+        // 衝突(既存docへのupdate扱い)や一時的な失敗 → 次のコードで再試行
+        console.warn('eggCode create rejected, retrying', e);
+        continue;
+      }
 
-      await setDoc(cRef, {
-        uid,
-        term,
-        character,
-        termHearts,
-        createdAt: serverTimestamp(),
-        usedAt: null,
-      });
-
-      await setDoc(uRef, { eggCode: { code, term, createdAt: serverTimestamp() } }, { merge: true });
+      // 児童側に控えを書く。ここが失敗してもコード自体は有効なので返す
+      try {
+        await setDoc(uRef, { eggCode: { code, term, createdAt: serverTimestamp() } }, { merge: true });
+      } catch (e) {
+        console.warn('users.eggCode memo failed (code is still valid)', e);
+      }
       return code;
     }
     return null;
-  } catch {
+  } catch (e) {
     // 発行に失敗してもアルバムは出す
+    console.warn('ensureEggCode failed', e);
     return null;
   }
 }
