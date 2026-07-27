@@ -1,7 +1,7 @@
 "use client";
 // src/app/album/page.tsx
 // TERRAKOYA-edu Phase 3-2: 学期末アルバム(印刷 / PDF保存対応)
-// マーカー: TERRAKOYA_ALBUM_PAGE_V2
+// マーカー: TERRAKOYA_ALBUM_PAGE_V3
 //
 // PDF化はブラウザの印刷機能に任せる(jsPDF / Puppeteer は使わない):
 //  - アラビア語の字形整形・双方向テキストをブラウザが処理するため ar が崩れない
@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { loadAlbum, type AlbumData, type AlbumItem, type AlbumKind } from "@/lib/album";
+import { ensureEggCode } from "@/lib/eggCode";
 
 const DICT = {
   ja: {
@@ -36,6 +37,8 @@ const DICT = {
     save: "🖨 PDFで ほぞんする",
     saveHint: "「いんさつ」の がめんで「PDFに ほぞん」を えらんでね",
     printFooter: "TERRAKOYA がっこうの おもいで",
+    eggTitle: "たまご ひきかえコード",
+    eggHint: "おうちの人と いっしょに TERRAKOYA Study で つかってね",
   },
   en: {
     title: "School Memories",
@@ -56,6 +59,8 @@ const DICT = {
     save: "🖨 Save as PDF",
     saveHint: "Choose \"Save as PDF\" in the print dialog",
     printFooter: "TERRAKOYA School Memories",
+    eggTitle: "Egg redemption code",
+    eggHint: "Use it in TERRAKOYA Study together with a grown-up",
   },
   ar: {
     title: "ذكريات المدرسة",
@@ -76,6 +81,8 @@ const DICT = {
     save: "🖨 احفظ بصيغة PDF",
     saveHint: "اختر «حفظ بصيغة PDF» في نافذة الطباعة",
     printFooter: "TERRAKOYA ذكريات المدرسة",
+    eggTitle: "رمز استبدال البيضة",
+    eggHint: "استخدمه في TERRAKOYA Study مع أحد الوالدين",
   },
 } as const;
 
@@ -157,6 +164,7 @@ export default function AlbumPage() {
   const [authReady, setAuthReady] = useState(false);
   const [data, setData] = useState<AlbumData | null>(null);
   const [err, setErr] = useState<string>("");
+  const [eggCode, setEggCode] = useState<string | null>(null);
 
   useEffect(() => {
     const off = onAuthStateChanged(auth, (u) => {
@@ -175,6 +183,16 @@ export default function AlbumPage() {
       .catch((e) => { if (alive) setErr(String(e?.message || e)); });
     return () => { alive = false; };
   }, [uid]);
+
+  // 引換コードは学期ごとに1つ。失敗しても null のままでアルバムは出す
+  useEffect(() => {
+    if (!uid || !data) return;
+    let alive = true;
+    ensureEggCode(uid, data.termStartDate, data.character, data.termHearts)
+      .then((c) => { if (alive) setEggCode(c); })
+      .catch(() => { if (alive) setEggCode(null); });
+    return () => { alive = false; };
+  }, [uid, data]);
 
   if (!authReady) return <Shell rtl={rtl}><p style={{ color: "#111827" }}>{t.loading}</p></Shell>;
   if (!uid) return <Shell rtl={rtl}><div style={CARD}>{t.needLogin}</div></Shell>;
@@ -201,6 +219,32 @@ export default function AlbumPage() {
         <p style={{ margin: "4px 0 0", fontSize: 13 }}>
           {t.hearts}: ♥ {data.termHearts}
         </p>
+
+        {eggCode ? (
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px dashed #d1d5db" }}>
+            <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 700 }}>🥚 {t.eggTitle}</p>
+            <p
+              dir="ltr"
+              style={{
+                margin: 0,
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                fontSize: 22,
+                fontWeight: 700,
+                letterSpacing: 2,
+                color: "#0E3B4A",
+                WebkitTextFillColor: "#0E3B4A",
+                background: "#EAF6F8",
+                border: "2px solid #1B7A8C",
+                borderRadius: 10,
+                padding: "10px 12px",
+                display: "inline-block",
+              }}
+            >
+              {eggCode}
+            </p>
+            <p style={{ margin: "8px 0 0", fontSize: 12, opacity: 0.75 }}>{t.eggHint}</p>
+          </div>
+        ) : null}
       </div>
 
       {/* 保存ボタン(印刷時は消える) */}
