@@ -288,5 +288,10 @@
     "playDesc": "ゲームであそぶ",
     "chooseLang": "ことばをえらぼう",
     "skip": "スキップ"
+  },
+  "studyCta": {
+    "title": "もっとまなびたい？",
+    "body": "TERRAKOYA Study なら、おうちでもべんきょうできるよ",
+    "cta": "むりょうではじめる"
   }
 }

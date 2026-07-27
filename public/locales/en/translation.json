@@ -288,5 +288,10 @@
     "playDesc": "Play a game",
     "chooseLang": "Choose your language",
     "skip": "Skip"
+  },
+  "studyCta": {
+    "title": "Want to learn more?",
+    "body": "With TERRAKOYA Study you can keep learning at home",
+    "cta": "Start for free"
   }
 }

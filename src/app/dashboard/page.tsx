@@ -1,5 +1,7 @@
+// MARKER: TERRAKOYA_EDU_DASHBOARD_CTA_V1
 'use client';
 import SchoolPet from "@/components/SchoolPet";
+import StudyCta from "@/components/StudyCta";
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
@@ -320,6 +322,9 @@ export default function DashboardPage() {
             </Link>
           ))}
         </div>
+
+        {/* Study送客 (E-8) */}
+        <StudyCta />
       </div>
     </div>
   );
