@@ -1,13 +1,13 @@
-// MARKER: TERRAKOYA_EDU_I18N_SWFR_V1
+// MARKER: TERRAKOYA_EDU_I18N_V3
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import HttpBackend from 'i18next-http-backend';
 
-// 対応言語: ja(日本語) / en(英語) / ar(アラビア語) / sw(スワヒリ語) / fr(フランス語)
-const languages = ['ja', 'en', 'ar', 'sw', 'fr'];
+// 対応言語: ja(日本語) / en(英語) / ar(アラビア語)
+const languages = ['ja', 'en', 'ar'];
 
-// RTL(右から左)言語。ar のみ。sw/fr は LTR。
+// RTL(右から左)言語。ar のみ。
 const RTL_LANGUAGES = ['ar'];
 
 /** 言語コードからテキスト方向を返す。'ja-JP' のような地域付きコードにも対応 */
