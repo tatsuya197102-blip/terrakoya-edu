@@ -274,5 +274,19 @@
     "stop": "■ Stop",
     "howItWorks": "How It Works",
     "howItWorksDesc": "A skeleton system with 13 joints. Smooth movement through frame interpolation."
+  },
+  "welcome": {
+    "hello": "Hi! I'm Bunbun!",
+    "greeting": "What do you want to do?",
+    "learn": "Learn",
+    "learnDesc": "See the lessons",
+    "sing": "Sing",
+    "singDesc": "Make a song",
+    "paint": "Draw",
+    "paintDesc": "Make a drawing",
+    "play": "Play",
+    "playDesc": "Play a game",
+    "chooseLang": "Choose your language",
+    "skip": "Skip"
   }
 }

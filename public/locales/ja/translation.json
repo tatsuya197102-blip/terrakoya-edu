@@ -274,5 +274,19 @@
     "stop": "■ 停止",
     "howItWorks": "アニメーションの仕組み",
     "howItWorksDesc": "13の関節をリグで接続した骨格システム。フレーム間を補間してなめらかに動かしています。"
+  },
+  "welcome": {
+    "hello": "こんにちは！ぼく、ブンブン！",
+    "greeting": "なにしたい？",
+    "learn": "まなぶ",
+    "learnDesc": "レッスンをみる",
+    "sing": "うたう",
+    "singDesc": "うたをつくる",
+    "paint": "えをかく",
+    "paintDesc": "おえかきする",
+    "play": "あそぶ",
+    "playDesc": "ゲームであそぶ",
+    "chooseLang": "ことばをえらぼう",
+    "skip": "スキップ"
   }
 }
