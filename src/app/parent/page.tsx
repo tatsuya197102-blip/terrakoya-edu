@@ -1,4 +1,4 @@
-// MARKER: TERRAKOYA_EDU_PARENT_CTA_V1
+// MARKER: TERRAKOYA_EDU_PARENT_ALBUM_V2
 'use client';
 export const dynamic = 'force-dynamic';
 
@@ -116,6 +116,12 @@ export default function ParentDashboard() {
             <p>4. {lang === 'ar' ? 'لا تقارن بالآخرين' : '他の人と比べず、個人の成長に注目しましょう'}</p>
           </div>
         </div>
+
+        {/* 学期末アルバム (E-11) */}
+        <a href="/album" className="block bg-slate-900 border border-slate-800 hover:border-slate-600 rounded-2xl p-6 mb-8 transition-colors">
+          <h3 className="text-lg font-bold mb-2">📔 {lang === 'ar' ? 'ألبوم نهاية الفصل' : 'がっこうの おもいで（学期末アルバム）'}</h3>
+          <p className="text-gray-300 text-sm">{lang === 'ar' ? 'شاهد أعمال طفلك في هذا الفصل واحفظها بصيغة PDF' : 'この学期にお子様がつくった作品をまとめて見られます。PDFで保存して残せます。'}</p>
+        </a>
 
         {/* Study送客 (E-8) */}
         <div className="mb-8">

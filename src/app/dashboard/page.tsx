@@ -1,4 +1,4 @@
-// MARKER: TERRAKOYA_EDU_DASHBOARD_CTA_V1
+// MARKER: TERRAKOYA_EDU_DASHBOARD_ALBUM_V2
 'use client';
 import SchoolPet from "@/components/SchoolPet";
 import StudyCta from "@/components/StudyCta";
@@ -305,7 +305,7 @@ export default function DashboardPage() {
 
         {/* クイックアクション */}
         <SchoolPet />
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-8 gap-3">
           {[
             { href: '/courses',     label: t('nav.courses'),   icon: '📚' },
             { href: '/lessons',     label: t('nav.lessons'),   icon: '🎓' },
@@ -314,6 +314,7 @@ export default function DashboardPage() {
             { href: '/live',        label: t('nav.live'),      icon: '📡' },
             { href: '/portfolio',   label: t('nav.portfolio'), icon: '💎' },
             { href: '/sing', label: ({ ja: 'うた', en: 'Sing', ar: 'غنِّ' } as Record<string, string>)[lang] || 'Sing', icon: '🎤' },
+            { href: '/album', label: ({ ja: 'アルバム', en: 'Album', ar: 'الألبوم' } as Record<string, string>)[lang] || 'Album', icon: '📔' },
           ].map((action, i) => (
             <Link key={i} href={action.href}
               className="bg-gray-800 hover:bg-gray-700 rounded-xl p-4 text-center transition-colors">
