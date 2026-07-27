@@ -1,12 +1,14 @@
 "use client";
 // src/app/album/page.tsx
-// TERRAKOYA-edu Phase 3-1: 学期末アルバム(プレビュー)
-// マーカー: TERRAKOYA_ALBUM_PAGE_V1
+// TERRAKOYA-edu Phase 3-2: 学期末アルバム(印刷 / PDF保存対応)
+// マーカー: TERRAKOYA_ALBUM_PAGE_V2
 //
-// この段階の目的は「集計が正しいか目視できること」。PDF出力は次ステップ。
-// - 文言はページ内インライン辞書(言語コードのみ i18n から借用)
-// - AR時は dir="rtl"
-// - 白背景カードは文字色を明示(ダークモードで白文字化する既知の問題への対応)
+// PDF化はブラウザの印刷機能に任せる(jsPDF / Puppeteer は使わない):
+//  - アラビア語の字形整形・双方向テキストをブラウザが処理するため ar が崩れない
+//  - 追加ライブラリゼロ。低スペック端末でも重くならない
+//  - Storage画像を canvas に載せないので CORS 制約を受けない
+//  - 文字が画像にならず選択・検索できる
+// 印刷時のレイアウトは下部の PRINT_CSS で制御する。
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,6 +33,9 @@ const DICT = {
     assignment: "かだい",
     noImage: "(がぞうなし)",
     listen: "きく",
+    save: "🖨 PDFで ほぞんする",
+    saveHint: "「いんさつ」の がめんで「PDFに ほぞん」を えらんでね",
+    printFooter: "TERRAKOYA がっこうの おもいで",
   },
   en: {
     title: "School Memories",
@@ -48,6 +53,9 @@ const DICT = {
     assignment: "Assignments",
     noImage: "(no image)",
     listen: "Listen",
+    save: "🖨 Save as PDF",
+    saveHint: "Choose \"Save as PDF\" in the print dialog",
+    printFooter: "TERRAKOYA School Memories",
   },
   ar: {
     title: "ذكريات المدرسة",
@@ -65,6 +73,9 @@ const DICT = {
     assignment: "الواجبات",
     noImage: "(بدون صورة)",
     listen: "استمع",
+    save: "🖨 احفظ بصيغة PDF",
+    saveHint: "اختر «حفظ بصيغة PDF» في نافذة الطباعة",
+    printFooter: "TERRAKOYA ذكريات المدرسة",
   },
 } as const;
 
@@ -87,6 +98,53 @@ const CARD: React.CSSProperties = {
   marginBottom: 16,
   boxShadow: "0 2px 10px rgba(0,0,0,.08)",
 };
+
+/**
+ * 印刷時のレイアウト。
+ *  - A4 縦・余白12mm
+ *  - 表紙のあとで改ページ、作品カードは途中で切らない
+ *  - 背景色と絵文字の色を印刷に反映(print-color-adjust)
+ *  - 画面用の影・角丸・ボタンは落とす
+ */
+const PRINT_CSS = `
+@media print {
+  @page { size: A4 portrait; margin: 12mm; }
+
+  html, body {
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .tk-noprint { display: none !important; }
+
+  .tk-album { max-width: none !important; padding: 0 !important; }
+
+  .tk-card {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    margin-bottom: 10px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .tk-cover {
+    break-after: page;
+    page-break-after: always;
+    border: none !important;
+    text-align: center;
+    padding-top: 24mm !important;
+  }
+
+  .tk-item img { max-height: 150mm; object-fit: contain; }
+
+  .tk-printfoot { display: block !important; }
+}
+@media screen {
+  .tk-printfoot { display: none; }
+}
+`;
 
 export default function AlbumPage() {
   const { i18n } = useTranslation();
@@ -126,7 +184,7 @@ export default function AlbumPage() {
   return (
     <Shell rtl={rtl}>
       {/* 表紙 */}
-      <div style={{ ...CARD, textAlign: "center" }}>
+      <div className="tk-card tk-cover" style={{ ...CARD, textAlign: "center" }}>
         <div style={{ fontSize: 56, lineHeight: 1 }}>
           <img
             src={`/pets/${data.character === "rabbit" ? "usagi" : data.character === "bird" ? "tori" : "neko"}.png`}
@@ -145,8 +203,29 @@ export default function AlbumPage() {
         </p>
       </div>
 
-      {/* 件数サマリー(集計の目視確認用) */}
-      <div style={{ ...CARD }}>
+      {/* 保存ボタン(印刷時は消える) */}
+      <div className="tk-noprint" style={{ ...CARD, textAlign: "center" }}>
+        <button
+          onClick={() => window.print()}
+          style={{
+            background: "#1B7A8C",
+            color: "#ffffff",
+            WebkitTextFillColor: "#ffffff",
+            border: "none",
+            borderRadius: 12,
+            padding: "12px 24px",
+            fontSize: 16,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          {t.save}
+        </button>
+        <p style={{ margin: "10px 0 0", fontSize: 13, opacity: 0.7 }}>{t.saveHint}</p>
+      </div>
+
+      {/* 件数サマリー */}
+      <div className="tk-card" style={{ ...CARD }}>
         <p style={{ margin: "0 0 10px", fontWeight: 700 }}>
           {t.total}: {data.items.length} {t.unit}
         </p>
@@ -171,19 +250,27 @@ export default function AlbumPage() {
 
       {/* 作品一覧 */}
       {data.items.length === 0 ? (
-        <div style={CARD}>{t.empty}</div>
+        <div className="tk-card" style={CARD}>{t.empty}</div>
       ) : (
         data.items.map((it) => <ItemCard key={`${it.kind}-${it.id}`} item={it} t={t} />)
       )}
+
+      {/* 印刷物の締め(画面では出ない) */}
+      <p className="tk-printfoot" style={{ textAlign: "center", fontSize: 11, color: "#6b7280", marginTop: 12 }}>
+        {t.printFooter} — {data.termStartDate} 〜 {data.termEndDate}
+      </p>
     </Shell>
   );
 }
 
 function Shell({ rtl, children }: { rtl: boolean; children: React.ReactNode }) {
   return (
-    <div dir={rtl ? "rtl" : "ltr"} style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
-      {children}
-    </div>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
+      <div className="tk-album" dir={rtl ? "rtl" : "ltr"} style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
+        {children}
+      </div>
+    </>
   );
 }
 
@@ -193,7 +280,7 @@ function ItemCard({ item, t }: { item: AlbumItem; t: (typeof DICT)[LangKey] }) {
   const dateStr = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 
   return (
-    <div style={CARD}>
+    <div className="tk-card tk-item" style={CARD}>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, opacity: 0.7, marginBottom: 8 }}>
         <span>{KIND_EMOJI[item.kind]} {t[item.kind]}</span>
         <span>{dateStr}</span>
@@ -225,7 +312,7 @@ function ItemCard({ item, t }: { item: AlbumItem; t: (typeof DICT)[LangKey] }) {
             {item.lyrics || ""}
           </pre>
           {item.audioUrl ? (
-            <a href={item.audioUrl} target="_blank" rel="noreferrer" style={{ fontSize: 14, display: "inline-block", marginTop: 8 }}>
+            <a className="tk-noprint" href={item.audioUrl} target="_blank" rel="noreferrer" style={{ fontSize: 14, display: "inline-block", marginTop: 8 }}>
               ▶ {t.listen}
             </a>
           ) : null}
