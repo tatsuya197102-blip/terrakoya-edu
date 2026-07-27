@@ -1,5 +1,8 @@
+// MARKER: TERRAKOYA_EDU_PARENT_CTA_V1
 'use client';
 export const dynamic = 'force-dynamic';
+
+import StudyCta from '@/components/StudyCta';
 
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
@@ -112,6 +115,11 @@ export default function ParentDashboard() {
             <p>3. {lang === 'ar' ? 'شارك في المسابقات معاً' : 'コンテストに一緒に参加してみましょう'}</p>
             <p>4. {lang === 'ar' ? 'لا تقارن بالآخرين' : '他の人と比べず、個人の成長に注目しましょう'}</p>
           </div>
+        </div>
+
+        {/* Study送客 (E-8) */}
+        <div className="mb-8">
+          <StudyCta />
         </div>
 
         <div className="bg-emerald-900/30 border border-emerald-800 rounded-2xl p-6">
