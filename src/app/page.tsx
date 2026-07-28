@@ -1,4 +1,4 @@
-// MARKER: TERRAKOYA_EDU_WELCOME_V1
+// MARKER: TERRAKOYA_EDU_WELCOME_V2
 'use client';
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +29,46 @@ const C = {
   paint: '#3F7F52',
   play: '#7A4E9E',
 };
+
+/**
+ * 音声ガイド (E-3)。
+ * scripts/generate_welcome_tts.js で事前生成した MP3 を
+ * public/audio/welcome/{lang}/{key}.mp3 から再生する。
+ * 実行時のTTS API呼び出しは無い(費用ゼロ・低スペック端末でも即時)。
+ * ファイルが無い場合は何も起きない(画面は壊さない)。
+ */
+let currentAudio: HTMLAudioElement | null = null;
+
+function speak(lang: string, key: string) {
+  try {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+    const a = new Audio(`/audio/welcome/${lang}/${key}.mp3`);
+    currentAudio = a;
+    a.play().catch(() => { /* 未生成・自動再生ブロック時は黙って諦める */ });
+  } catch {
+    /* noop */
+  }
+}
+
+/** 読み上げボタン(タイル本体のタップを邪魔しない) */
+function SpeakButton({ onSpeak, label, color }: { onSpeak: () => void; label: string; color: string }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={(e) => { e.stopPropagation(); onSpeak(); }}
+      style={{
+        background: 'transparent', border: 'none', cursor: 'pointer',
+        fontSize: '1.15rem', lineHeight: 1, padding: '.3rem', color,
+      }}
+    >
+      🔊
+    </button>
+  );
+}
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -116,9 +156,19 @@ export default function Home() {
             <p style={{ color: C.inkSoft, fontSize: '.95rem', margin: '0 0 .25rem' }}>
               {t('welcome.hello')}
             </p>
-            <p style={{ color: C.ink, fontSize: 'clamp(1.4rem,5vw,1.9rem)', fontWeight: 800, margin: 0, lineHeight: 1.25 }}>
-              {t('welcome.greeting')}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.4rem' }}>
+              <p style={{ color: C.ink, fontSize: 'clamp(1.4rem,5vw,1.9rem)', fontWeight: 800, margin: 0, lineHeight: 1.25 }}>
+                {t('welcome.greeting')}
+              </p>
+              <SpeakButton
+                label={t('welcome.greeting')}
+                color={C.learn}
+                onSpeak={() => {
+                  speak(lang, 'hello');
+                  window.setTimeout(() => speak(lang, 'greeting'), 1400);
+                }}
+              />
+            </div>
           </div>
 
           {/* 4つのボタン */}
@@ -127,15 +177,27 @@ export default function Home() {
             width: '100%', maxWidth: '30rem',
           }}>
             {activities.map(a => (
-              <button key={a.key} className="tk-tile"
+              <div key={a.key} className="tk-tile"
+                role="button" tabIndex={0}
                 onClick={() => router.push(a.href)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(a.href); }
+                }}
                 aria-label={t(`welcome.${a.key}`)}
                 style={{
+                  position: 'relative',
                   background: C.card, border: `3px solid ${a.color}`, borderRadius: '1.25rem',
                   padding: '1.4rem .75rem', cursor: 'pointer', textAlign: 'center',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.4rem',
                   boxShadow: '0 2px 10px rgba(14,59,74,.08)', minHeight: '9rem',
                 }}>
+                <div style={{ position: 'absolute', top: '.2rem', insetInlineEnd: '.2rem' }}>
+                  <SpeakButton
+                    label={t(`welcome.${a.key}`)}
+                    color={a.color}
+                    onSpeak={() => speak(lang, a.key)}
+                  />
+                </div>
                 <span style={{ fontSize: '2.6rem', lineHeight: 1 }} aria-hidden="true">{a.icon}</span>
                 <span style={{ color: a.color, fontSize: 'clamp(1.1rem,4vw,1.35rem)', fontWeight: 800 }}>
                   {t(`welcome.${a.key}`)}
@@ -143,7 +205,7 @@ export default function Home() {
                 <span style={{ color: C.inkSoft, fontSize: '.8rem' }}>
                   {t(`welcome.${a.key}Desc`)}
                 </span>
-              </button>
+              </div>
             ))}
           </div>
         </main>
