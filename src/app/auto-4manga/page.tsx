@@ -68,6 +68,7 @@ export default function Auto4MangaPage() {
 
   const panelLabels = [t.ki, t.sho, t.ten, t.ketsu];
 
+  // MARKER: TERRAKOYA_EDU_GEN_LIMIT_CLIENT_V1
   const generateStories = async () => {
     if (!characterName || !theme) return;
     setLoading(true);
@@ -75,17 +76,31 @@ export default function Auto4MangaPage() {
     setSelectedStory(null);
 
     try {
+      const { auth } = await import('@/lib/firebase');
+      const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : '';
       const response = await fetch('/api/generate-4manga', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
         body: JSON.stringify({ characterName, theme, lang }),
       });
+      if (response.status === 429) {
+        // きょうのAI生成ぶんはおしまい -> ローカルのお話で続行(子供の体験は止めない)
+        setStories(generateFallbackStories(characterName, theme));
+        setLoading(false);
+        return;
+      }
       const data = await response.json();
-      setStories(data.stories || []);
+      if (Array.isArray(data.stories) && data.stories.length > 0) {
+        setStories(data.stories);
+      } else {
+        setStories(generateFallbackStories(characterName, theme));
+      }
     } catch (err) {
       console.error('Error:', err);
-      const fallbackStories = generateFallbackStories(characterName, theme);
-      setStories(fallbackStories);
+      setStories(generateFallbackStories(characterName, theme));
     }
     setLoading(false);
   };
@@ -510,6 +525,26 @@ export default function Auto4MangaPage() {
     return themeStories[themeId] || themeStories.free;
   };
 
+  // MARKER: TERRAKOYA_EDU_SUBMIT_STORAGE_V1
+  // 画像はStorageへ直行保存し、FirestoreにはURLのみ書く(base64のDB格納を廃止)。
+  // Storage側が拒否した場合はnullを返し、従来のbase64保存にフォールバックする。
+  const uploadSubmissionImage = async (uid: string, base64Jpeg: string): Promise<string | null> => {
+    try {
+      const { storage } = await import('@/lib/firebase');
+      const { ref, uploadString, getDownloadURL } = await import('firebase/storage');
+      const path = `submissions_media/${uid}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const r = ref(storage, path);
+      await uploadString(r, base64Jpeg, 'base64', {
+        contentType: 'image/jpeg',
+        cacheControl: 'public,max-age=31536000',
+      });
+      return await getDownloadURL(r);
+    } catch (e) {
+      console.warn('storage upload fallback to base64:', e);
+      return null;
+    }
+  };
+
   const handleMangaSubmit = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -538,13 +573,14 @@ export default function Auto4MangaPage() {
         img.src = url;
       });
 
+      const upUrl = await uploadSubmissionImage(user.uid, base64);
       const { addDoc, updateDoc, doc, collection } = await import('firebase/firestore');
       const docRef = await addDoc(collection(db, 'users', user.uid, 'submissions'), {
         courseId: 'auto-4manga',
         fileName: file.name,
         fileType: 'image/jpeg',
         comment: `4コマ漫画「${selectedStory?.title || ''}」`,
-        imageBase64: base64,
+        ...(upUrl ? { imageUrl: upUrl } : { imageBase64: base64 }),
         submittedAt: new Date().toISOString(),
         aiFeedback: null, feedbackStatus: 'pending',
         gradeResult: null, gradingStatus: 'idle',
@@ -605,13 +641,14 @@ export default function Auto4MangaPage() {
         img.src = paintImage;
       });
 
+      const upUrl = await uploadSubmissionImage(user.uid, base64);
       const { addDoc, updateDoc, doc, collection } = await import('firebase/firestore');
       const docRef = await addDoc(collection(db, 'users', user.uid, 'submissions'), {
         courseId: 'auto-4manga',
         fileName: 'paint.jpg',
         fileType: 'image/jpeg',
         comment: '4コマ漫画（ペイント）',
-        imageBase64: base64,
+        ...(upUrl ? { imageUrl: upUrl } : { imageBase64: base64 }),
         submittedAt: new Date().toISOString(),
         aiFeedback: null, feedbackStatus: 'pending',
         gradeResult: null, gradingStatus: 'idle',

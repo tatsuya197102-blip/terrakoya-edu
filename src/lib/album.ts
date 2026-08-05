@@ -1,6 +1,6 @@
 // src/lib/album.ts
 // TERRAKOYA-edu Phase 3: 学期末アルバム — 児童1人分の学期内作品を集計する
-// マーカー: TERRAKOYA_ALBUM_V1
+// マーカー: TERRAKOYA_ALBUM_V2 (4コマ・課題は imageUrl 優先、base64はフォールバック)
 //
 // 設計メモ:
 //  - 学期範囲は pets/school.termStartDate を正とする(ペットの学期と自動一致)
@@ -160,12 +160,14 @@ export async function loadAlbum(uid: string): Promise<AlbumData> {
       const isManga = x.courseId === 'auto-4manga';
       if (!isManga && !INCLUDE_ASSIGNMENTS) return;
 
+      const url = typeof x.imageUrl === 'string' && x.imageUrl.startsWith('http') ? x.imageUrl : '';
       const b64 = typeof x.imageBase64 === 'string' ? x.imageBase64 : '';
-      const src = b64
+      const b64src = b64
         ? b64.startsWith('data:')
           ? b64
           : `data:${x.fileType || 'image/jpeg'};base64,${b64}`
         : undefined;
+      const src = url || b64src;
 
       items.push({
         id: d.id,
@@ -173,7 +175,7 @@ export async function loadAlbum(uid: string): Promise<AlbumData> {
         title: typeof x.comment === 'string' ? x.comment : typeof x.fileName === 'string' ? x.fileName : '',
         date: date as Date,
         imageSrc: src,
-        needsCors: false,
+        needsCors: !!url,
         comment: typeof x.comment === 'string' ? x.comment : undefined,
       });
     });
