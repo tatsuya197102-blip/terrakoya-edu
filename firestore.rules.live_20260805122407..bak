@@ -1,0 +1,155 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ユーザー自身のデータ
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.get('role', null) == null;
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && (
+                      request.resource.data.get('role', null) == resource.data.get('role', null)
+                      || (request.resource.data.get('role', null) in ['student', 'other']
+                          && resource.data.get('role', null) == null)
+                      || (request.resource.data.get('role', null) in ['teacher', 'parent']
+                          && request.resource.data.get('inviteCodeUsed', '') is string
+                          && request.resource.data.get('inviteCodeUsed', '') != '')
+                    );
+      allow delete: if false;
+
+      match /submissions/{submissionId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // game progress (spot-the-difference, etc.): owner only
+      match /games/{gameId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // 招待コード
+    match /invite_codes/{code} {
+      allow read: if request.auth != null;
+      allow update: if request.auth != null
+                    && resource.data.usedBy == null
+                    && request.resource.data.usedBy == request.auth.uid
+                    && request.resource.data.role == resource.data.role
+                    && resource.data.expiresAt > request.time.toMillis();
+      allow create, delete: if false;
+    }
+
+    // === 設定（週替わりお題など）: 全ログインユーザーが読める / 書き込みは管理者のみ ===
+    match /config/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'tatsuya197102@gmail.com';
+    }
+
+    // コース
+    match /courses/{courseId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'tatsuya197102@gmail.com';
+    }
+
+    // レッスン
+    match /lessons/{lessonId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'tatsuya197102@gmail.com';
+    }
+
+    // 通知
+    match /notifications/{notifId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow create: if request.auth != null && request.auth.token.email == 'tatsuya197102@gmail.com';
+    }
+
+    // ライブ授業
+    match /liveLessons/{lessonId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'tatsuya197102@gmail.com';
+    }
+
+    // コンテスト
+    match /contestEntries/{entryId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
+    match /contest_entries/{entryId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
+
+    // 学校情報
+    match /schools/{schoolId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'tatsuya197102@gmail.com';
+    }
+
+    // ショーケース
+    match /showcase/{itemId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == resource.data.uid;
+    }
+
+    // 作品（ギャラリー）: トップレベル submissions
+    // 更新: 本人は編集可、他人は likes / reactions / comments のみ
+    match /submissions/{submissionId} {
+      allow read: if request.auth != null
+                  && (resource.data.get('isPublic', false) == true
+                      || resource.data.get('studentId', '') == request.auth.uid);
+      allow create: if request.auth != null
+                    && request.resource.data.get('studentId', '') == request.auth.uid;
+      allow update: if request.auth != null
+                    && (
+                      resource.data.get('studentId', '') == request.auth.uid
+                      || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'reactions', 'comments'])
+                    );
+      allow delete: if request.auth != null
+                    && resource.data.get('studentId', '') == request.auth.uid;
+    }
+
+    // daily leaderboard: signed-in users can read; each user writes only their own row
+    match /leaderboard_daily/{dateKey}/scores/{userId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // === 学校ペット(Phase 2) ===
+    // 読み取り: ログインユーザー全員(ダッシュボードのカード表示用)
+    // 書き込み: 給餌トランザクション(feedPet)のため create/update を許可。
+    //           削除は不可。差分の厳密検証(+1のみ等)は将来の硬化で対応。
+    match /pets/{petId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null;
+      allow delete: if false;
+
+      // 日別の給餌記録
+      match /feeds/{day} {
+        allow read: if request.auth != null;
+        allow create, update: if request.auth != null;
+        allow delete: if false;
+      }
+    }
+
+    // ── たまご引換コード (E-12) ──────────────────────────────
+    // 児童は自分名義のコードを「作る」ことだけできる。
+    // 使用済みフラグ(usedAt)は Study からの検証API(Admin SDK)だけが書く。
+    match /eggCodes/{code} {
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.usedAt == null
+                    && request.resource.data.keys().hasOnly(
+                         ['uid', 'term', 'character', 'termHearts', 'createdAt', 'usedAt']
+                       );
+      allow read: if request.auth != null
+                  && resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+  }
+}

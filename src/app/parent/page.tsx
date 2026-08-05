@@ -1,4 +1,10 @@
-// MARKER: TERRAKOYA_EDU_PARENT_ALBUM_V2
+// MARKER: TERRAKOYA_EDU_PARENT_V3
+// 修正(2026-08-05): 提出作品数がトップレベル submissions しか数えておらず、
+// 4コマと課題(users/{uid}/submissions)が永久にカウントされていなかった。
+// album.ts と同じ方式で両方を数え、重複を避ける:
+//   - トップレベル submissions は source==='paint' のみ(課題の公開コピーを除外)
+//   - users/{uid}/submissions は全件(4コマ + 課題)
+// 片方が失敗しても取れた分は表示する(Promise.allSettled)。
 'use client';
 export const dynamic = 'force-dynamic';
 
@@ -23,14 +29,32 @@ export default function ParentDashboard() {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) { router.push('/login'); return; }
       setChildName(user.displayName || 'Student');
-      try {
-        const q = query(collection(db, 'submissions'), where('studentId', '==', user.uid));
-        const snap = await getDocs(q);
-        const works = snap.docs.map(d => d.data());
-        setWorksCount(works.length);
-        const grades = works.filter(w => w.grade).map(w => w.grade as number);
-        setAvgGrade(grades.length > 0 ? Math.round(grades.reduce((a, b) => a + b, 0) / grades.length) : 0);
-      } catch (err) { console.error(err); }
+      const [topRes, mineRes] = await Promise.allSettled([
+        getDocs(query(collection(db, 'submissions'), where('studentId', '==', user.uid))),
+        getDocs(collection(db, 'users', user.uid, 'submissions')),
+      ]);
+
+      const works: Record<string, any>[] = [];
+
+      if (topRes.status === 'fulfilled') {
+        topRes.value.docs.forEach((d) => {
+          const x = d.data() as Record<string, any>;
+          if (x.source !== 'paint') return;
+          works.push(x);
+        });
+      } else {
+        console.error('parent: top-level submissions failed', topRes.reason);
+      }
+
+      if (mineRes.status === 'fulfilled') {
+        mineRes.value.docs.forEach((d) => works.push(d.data() as Record<string, any>));
+      } else {
+        console.error('parent: own submissions failed', mineRes.reason);
+      }
+
+      setWorksCount(works.length);
+      const grades = works.filter(w => typeof w.grade === 'number').map(w => w.grade as number);
+      setAvgGrade(grades.length > 0 ? Math.round(grades.reduce((a, b) => a + b, 0) / grades.length) : 0);
       setLoading(false);
     });
     return () => unsubscribe();
