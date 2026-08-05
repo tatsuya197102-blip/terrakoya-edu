@@ -9,7 +9,7 @@ import { doc, getDoc, collection, addDoc, getDocs, orderBy, query, updateDoc } f
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
 import { useTranslation } from 'react-i18next';
-import { authHeaders } from '@/lib/genLimit';
+import { authHeaders } from '@/lib/authHeaders';
 
 const COURSES: Record<string, { title: string }> = {
   'manga-basics':      { title: '漫画基礎講座' },

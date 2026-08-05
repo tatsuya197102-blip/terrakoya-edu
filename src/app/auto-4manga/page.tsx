@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { authHeaders } from '@/lib/genLimit';
+import { authHeaders } from '@/lib/authHeaders';
 
 const THEMES = [
   { id: 'school',     labelJa: '🏫 学校の日常',       labelEn: '🏫 School Life',       labelAr: '🏫 الحياة المدرسية' },

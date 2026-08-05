@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { authHeaders } from '@/lib/genLimit';
+import { authHeaders } from '@/lib/authHeaders';
 
 interface Message {
   role: 'user' | 'ai';

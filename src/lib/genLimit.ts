@@ -1,4 +1,8 @@
-// MARKER: TERRAKOYA_EDU_GENLIMIT_LIB_V1
+// MARKER: TERRAKOYA_EDU_GENLIMIT_LIB_V2
+// **サーバー専用**。firebase-admin を参照するため、クライアントコンポーネントから
+// import してはいけない(Turbopackがブラウザ向けにバンドルしようとしてビルドが壊れる。
+// 2026-08-05に実際に48件の Module not found で失敗した)。
+// クライアント側でIDトークンを付ける用途は '@/lib/authHeaders' を使うこと。
 // AI APIルート共通の1日あたり生成上限。
 //
 // 設計上の注意(2026-08-05に実地で確認した制約):
@@ -9,6 +13,7 @@
 //    ただし next.config.ts の serverExternalPackages に firebase-admin の指定が必須。
 //  - 動的 import を try 内で行い、失敗しても 500 にせず「上限なしで続行」に落とす。
 //    子供の画面を止めないことを最優先する。
+import 'server-only';
 import type { NextRequest } from 'next/server';
 
 export type LimitVerdict = 'ok' | 'limit' | 'auth' | 'skip';
@@ -96,16 +101,5 @@ export async function consumeDailyQuota(req: NextRequest, kind: string): Promise
     if ((e as Error).message === 'LIMIT') return 'limit';
     console.error('[genLimit] tx failed:', e);
     return 'skip';
-  }
-}
-
-/** クライアント側でIDトークンをヘッダに載せるための共通ヘルパー。 */
-export async function authHeaders(): Promise<Record<string, string>> {
-  try {
-    const { auth } = await import('@/lib/firebase');
-    const t = auth.currentUser ? await auth.currentUser.getIdToken() : '';
-    return t ? { Authorization: `Bearer ${t}` } : {};
-  } catch {
-    return {};
   }
 }
