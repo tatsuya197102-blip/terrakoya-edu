@@ -1,4 +1,4 @@
-// MARKER: TERRAKOYA_EDU_GEN_LIMIT_V4 (adds GET diagnostics; no secrets are returned)
+// MARKER: TERRAKOYA_EDU_GEN_LIMIT_V5 (GET diagnostics now test app/auth/firestore separately)
 // generate-4manga v3 — v2 が 500 を返した件の修正版。
 //
 // v2の問題: firebase-admin をトップレベルで static import していたため、
@@ -78,7 +78,7 @@ async function checkLimit(req: NextRequest): Promise<'ok' | 'limit' | 'auth' | '
 export async function GET() {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
   const out: Record<string, unknown> = {
-    marker: 'TERRAKOYA_EDU_GEN_LIMIT_V4',
+    marker: 'TERRAKOYA_EDU_GEN_LIMIT_V5',
     nodeVersion: process.version,
     hasClaudeKey: !!process.env.CLAUDE_API_KEY,
     hasServiceAccountEnv: !!raw,
@@ -104,23 +104,50 @@ export async function GET() {
     return NextResponse.json(out);
   }
 
-  try {
-    const appMod = await import('firebase-admin/app');
-    out.importOk = true;
+  // POST側と同じ3モジュールを個別にテストする(v4はappしか見ていなかった)
+  const failed: string[] = [];
+  let appMod: typeof import('firebase-admin/app') | null = null;
+
+  for (const name of ['firebase-admin/app', 'firebase-admin/auth', 'firebase-admin/firestore']) {
     try {
-      const apps = appMod.getApps();
-      if (!apps.length) appMod.initializeApp({ credential: appMod.cert(JSON.parse(raw)) });
-      out.initOk = true;
-      out.verdict = 'ALL OK -> limit should be active';
+      const m = await import(/* webpackIgnore: true */ name);
+      out['import_' + name.split('/')[1]] = 'ok';
+      if (name.endsWith('/app')) appMod = m as typeof import('firebase-admin/app');
     } catch (e) {
-      out.initOk = false;
-      out.initError = (e as Error).message;
-      out.verdict = 'initializeApp failed';
+      out['import_' + name.split('/')[1]] = 'FAILED: ' + (e as Error).message;
+      failed.push(name);
     }
+  }
+
+  if (failed.length) {
+    out.verdict = 'import failed for: ' + failed.join(', ');
+    return NextResponse.json(out);
+  }
+
+  try {
+    const apps = appMod!.getApps();
+    if (!apps.length) appMod!.initializeApp({ credential: appMod!.cert(JSON.parse(raw)) });
+    out.initOk = true;
   } catch (e) {
-    out.importOk = false;
-    out.importError = (e as Error).message;
-    out.verdict = 'firebase-admin import failed -> add serverExternalPackages in next.config';
+    out.initOk = false;
+    out.initError = (e as Error).message;
+    out.verdict = 'initializeApp failed';
+    return NextResponse.json(out);
+  }
+
+  // Firestoreに実際に書けるか(ルールはAdmin SDKでは無視されるので接続確認になる)
+  try {
+    const fsMod = await import('firebase-admin/firestore');
+    const db = fsMod.getFirestore(appMod!.getApps()[0]);
+    await db.collection('genLimits').doc('__diag__').set({
+      kind: 'diag', updatedAt: fsMod.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    out.firestoreWriteOk = true;
+    out.verdict = 'ALL OK -> limit should be active';
+  } catch (e) {
+    out.firestoreWriteOk = false;
+    out.firestoreError = (e as Error).message;
+    out.verdict = 'firestore write failed';
   }
 
   return NextResponse.json(out);
