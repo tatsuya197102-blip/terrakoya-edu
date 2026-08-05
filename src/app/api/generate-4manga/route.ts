@@ -1,4 +1,4 @@
-// MARKER: TERRAKOYA_EDU_GEN_LIMIT_V3
+// MARKER: TERRAKOYA_EDU_GEN_LIMIT_V4 (adds GET diagnostics; no secrets are returned)
 // generate-4manga v3 — v2 が 500 を返した件の修正版。
 //
 // v2の問題: firebase-admin をトップレベルで static import していたため、
@@ -69,6 +69,61 @@ async function checkLimit(req: NextRequest): Promise<'ok' | 'limit' | 'auth' | '
     console.error('limit tx failed:', e);
     return 'skip';
   }
+}
+
+/**
+ * GET /api/generate-4manga  -> 診断のみ。秘密情報は返さない(存在有無と長さ、エラーメッセージのみ)。
+ * 上限が効かない原因を切り分けるための一時的なエンドポイント。原因確定後に削除してよい。
+ */
+export async function GET() {
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+  const out: Record<string, unknown> = {
+    marker: 'TERRAKOYA_EDU_GEN_LIMIT_V4',
+    nodeVersion: process.version,
+    hasClaudeKey: !!process.env.CLAUDE_API_KEY,
+    hasServiceAccountEnv: !!raw,
+    serviceAccountLength: raw ? raw.length : 0,
+  };
+
+  if (!raw) {
+    out.verdict = 'FIREBASE_SERVICE_ACCOUNT is missing on this deployment';
+    return NextResponse.json(out);
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    out.parseOk = true;
+    out.projectId = parsed.project_id || null;
+    out.clientEmailPresent = !!parsed.client_email;
+    out.privateKeyPresent = !!parsed.private_key;
+    out.privateKeyHasRealNewline = typeof parsed.private_key === 'string' && parsed.private_key.includes('\n');
+  } catch (e) {
+    out.parseOk = false;
+    out.parseError = (e as Error).message;
+    out.verdict = 'JSON.parse failed -> env value is malformed';
+    return NextResponse.json(out);
+  }
+
+  try {
+    const appMod = await import('firebase-admin/app');
+    out.importOk = true;
+    try {
+      const apps = appMod.getApps();
+      if (!apps.length) appMod.initializeApp({ credential: appMod.cert(JSON.parse(raw)) });
+      out.initOk = true;
+      out.verdict = 'ALL OK -> limit should be active';
+    } catch (e) {
+      out.initOk = false;
+      out.initError = (e as Error).message;
+      out.verdict = 'initializeApp failed';
+    }
+  } catch (e) {
+    out.importOk = false;
+    out.importError = (e as Error).message;
+    out.verdict = 'firebase-admin import failed -> add serverExternalPackages in next.config';
+  }
+
+  return NextResponse.json(out);
 }
 
 export async function POST(req: NextRequest) {
