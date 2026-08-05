@@ -1,4 +1,5 @@
-// MARKER: TERRAKOYA_EDU_ADMIN_V2 (allSettled load + LTR lock)
+// MARKER: TERRAKOYA_EDU_ADMIN_V3 (allSettled load + LTR lock)
+// v2 broke the build: a {/* JSX comment */} placed before the root element inside return() makes it two children. Use // comments outside return instead.
 'use client';
 export const dynamic = 'force-dynamic';
 
@@ -196,9 +197,9 @@ export default function AdminPage() {
 
   if (loading) return <div dir="ltr" className="min-h-screen bg-gray-950 flex items-center justify-center text-white">読み込み中...</div>;
 
+  // dir="ltr": admin UI is for operators. Without it the page inherits the
+  // global <html dir="rtl"> and the nav/tables flip and break.
   return (
-    {/* dir="ltr": admin UI is for operators. Without it the page inherits
-        <html dir="rtl"> and the nav/tables flip and break. */}
     <div dir="ltr" className="min-h-screen bg-gray-950 text-white">
       <div className="bg-gray-900 border-b border-gray-800 px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
