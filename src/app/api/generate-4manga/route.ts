@@ -1,24 +1,73 @@
-// MARKER: TERRAKOYA_EDU_GEN_LIMIT_V1
-// generate-4manga v2: サーバー側で1人1日3回の生成上限を掛ける。
-//  - クライアントはFirebase IDトークンをAuthorizationヘッダで送る(page.tsx v2が対応済み)
-//  - 上限超過は429 {error:'limit'}。クライアントはフォールバックストーリーで続行する
-//  - FIREBASE_SERVICE_ACCOUNT 未設定時は上限なしで従来動作(フェイルオープン、本番を止めない)
-//  - NEXT_PUBLIC_CLAUDE_API_KEY フォールバックは削除(NEXT_PUBLIC_はクライアントに露出するため)
+// MARKER: TERRAKOYA_EDU_GEN_LIMIT_V3
+// generate-4manga v3 — v2 が 500 を返した件の修正版。
+//
+// v2の問題: firebase-admin をトップレベルで static import していたため、
+//           Vercelのバンドル/ランタイムで解決に失敗するとモジュール読込段階で落ち、
+//           POST内のtry/catchに到達せず 500 になっていた。
+// v3の対策: (1) export const runtime = 'nodejs' を明示
+//           (2) firebase-admin は try 内で動的 import する
+//           -> 何が起きても 500 にはならず、最悪でも「上限なしで従来動作」に落ちる
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const DAILY_LIMIT = 3;
 
-function adminApp(): App | null {
-  if (getApps().length) return getApps()[0];
+/** 上限チェック。'ok' | 'limit' | 'auth' | 'skip'(admin使用不可=フェイルオープン) */
+async function checkLimit(req: NextRequest): Promise<'ok' | 'limit' | 'auth' | 'skip'> {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!raw) return null;
+  if (!raw) return 'skip';
+
+  let appMod, authMod, fsMod;
   try {
-    return initializeApp({ credential: cert(JSON.parse(raw)) });
+    appMod = await import('firebase-admin/app');
+    authMod = await import('firebase-admin/auth');
+    fsMod = await import('firebase-admin/firestore');
+  } catch (e) {
+    console.error('firebase-admin import failed:', e);
+    return 'skip';
+  }
+
+  let app;
+  try {
+    const apps = appMod.getApps();
+    app = apps.length ? apps[0] : appMod.initializeApp({ credential: appMod.cert(JSON.parse(raw)) });
+  } catch (e) {
+    console.error('firebase-admin init failed:', e);
+    return 'skip';
+  }
+
+  const header = req.headers.get('authorization') || '';
+  const idToken = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (!idToken) return 'auth';
+
+  let uid = '';
+  try {
+    uid = (await authMod.getAuth(app).verifyIdToken(idToken)).uid;
   } catch {
-    return null;
+    return 'auth';
+  }
+
+  try {
+    const db = fsMod.getFirestore(app);
+    const day = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const ref = db.collection('genLimits').doc(uid + '_' + day);
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const n = snap.exists ? ((snap.data() as { count?: number }).count ?? 0) : 0;
+      if (n >= DAILY_LIMIT) throw new Error('LIMIT');
+      tx.set(
+        ref,
+        { count: n + 1, kind: 'generate-4manga', updatedAt: fsMod.FieldValue.serverTimestamp() },
+        { merge: true }
+      );
+    });
+    return 'ok';
+  } catch (e) {
+    if ((e as Error).message === 'LIMIT') return 'limit';
+    console.error('limit tx failed:', e);
+    return 'skip';
   }
 }
 
@@ -26,48 +75,11 @@ export async function POST(req: NextRequest) {
   try {
     const { characterName, theme, lang } = await req.json();
     const apiKey = process.env.CLAUDE_API_KEY;
+    if (!apiKey) return NextResponse.json({ stories: [] });
 
-    if (!apiKey) {
-      return NextResponse.json({ stories: [] });
-    }
-
-    // --- 1日あたりの生成上限(サーバー側で強制) ---------------------------
-    const app = adminApp();
-    if (app) {
-      const authHeader = req.headers.get('authorization') || '';
-      const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-      if (!idToken) {
-        return NextResponse.json({ error: 'auth' }, { status: 401 });
-      }
-      let uid = '';
-      try {
-        uid = (await getAuth(app).verifyIdToken(idToken)).uid;
-      } catch {
-        return NextResponse.json({ error: 'auth' }, { status: 401 });
-      }
-
-      const day = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const db = getFirestore(app);
-      const ref = db.collection('genLimits').doc(`${uid}_${day}`);
-      try {
-        await db.runTransaction(async (tx) => {
-          const snap = await tx.get(ref);
-          const n = snap.exists ? ((snap.data() as { count?: number }).count ?? 0) : 0;
-          if (n >= DAILY_LIMIT) throw new Error('LIMIT');
-          tx.set(
-            ref,
-            { count: n + 1, kind: 'generate-4manga', updatedAt: FieldValue.serverTimestamp() },
-            { merge: true }
-          );
-        });
-      } catch (e) {
-        if ((e as Error).message === 'LIMIT') {
-          return NextResponse.json({ error: 'limit' }, { status: 429 });
-        }
-        // トランザクション自体の障害は上限なしで続行(子供の体験を止めない)
-      }
-    }
-    // ---------------------------------------------------------------------
+    const verdict = await checkLimit(req);
+    if (verdict === 'limit') return NextResponse.json({ error: 'limit' }, { status: 429 });
+    if (verdict === 'auth') return NextResponse.json({ error: 'auth' }, { status: 401 });
 
     const prompt = lang === 'ar'
       ? `أنت كاتب مانجا للأطفال. أنشئ 3 قصص مانجا من 4 لوحات للشخصية "${characterName}" حول موضوع "${theme}". أجب بتنسيق JSON فقط بدون أي نص آخر: [{"title":"...","panels":[{"panel":1,"scene":"...","dialogue":"..."},{"panel":2,"scene":"...","dialogue":"..."},{"panel":3,"scene":"...","dialogue":"..."},{"panel":4,"scene":"...","dialogue":"..."}]}]`
@@ -101,11 +113,7 @@ export async function POST(req: NextRequest) {
     const data = await response.json();
     const text = data.content?.[0]?.text || '';
     const jsonMatch = text.match(/\[[\s\S]*\]/);
-
-    if (jsonMatch) {
-      const stories = JSON.parse(jsonMatch[0]);
-      return NextResponse.json({ stories });
-    }
+    if (jsonMatch) return NextResponse.json({ stories: JSON.parse(jsonMatch[0]) });
 
     return NextResponse.json({ stories: [] });
   } catch (error) {

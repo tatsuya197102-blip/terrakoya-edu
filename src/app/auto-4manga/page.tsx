@@ -525,14 +525,14 @@ export default function Auto4MangaPage() {
     return themeStories[themeId] || themeStories.free;
   };
 
-  // MARKER: TERRAKOYA_EDU_SUBMIT_STORAGE_V1
+  // MARKER: TERRAKOYA_EDU_SUBMIT_STORAGE_V2 (path fixed to submissions/{uid}/ = the only path allowed by live storage rules)
   // 画像はStorageへ直行保存し、FirestoreにはURLのみ書く(base64のDB格納を廃止)。
   // Storage側が拒否した場合はnullを返し、従来のbase64保存にフォールバックする。
   const uploadSubmissionImage = async (uid: string, base64Jpeg: string): Promise<string | null> => {
     try {
       const { storage } = await import('@/lib/firebase');
       const { ref, uploadString, getDownloadURL } = await import('firebase/storage');
-      const path = `submissions_media/${uid}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const path = `submissions/${uid}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
       const r = ref(storage, path);
       await uploadString(r, base64Jpeg, 'base64', {
         contentType: 'image/jpeg',
