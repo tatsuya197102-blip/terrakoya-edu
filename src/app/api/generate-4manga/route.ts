@@ -1,4 +1,8 @@
-// MARKER: TERRAKOYA_EDU_GEN_LIMIT_V5 (GET diagnostics now test app/auth/firestore separately)
+// MARKER: TERRAKOYA_EDU_GEN_LIMIT_V6
+// v5の診断で原因確定: firebase-admin/auth は jwks-rsa -> jose(ESM専用) を require するため
+// Node 24 の CommonJS ランタイムで読み込めない ("require() of ES Module ... not supported")。
+// v6の対策: トークン検証を firebase-admin/auth ではなく Firebase Auth REST API で行う。
+//           依存ゼロ・fetchのみ。app と firestore は正常に import できるのでそのまま使う。
 // generate-4manga v3 — v2 が 500 を返した件の修正版。
 //
 // v2の問題: firebase-admin をトップレベルで static import していたため、
@@ -19,10 +23,9 @@ async function checkLimit(req: NextRequest): Promise<'ok' | 'limit' | 'auth' | '
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!raw) return 'skip';
 
-  let appMod, authMod, fsMod;
+  let appMod, fsMod;
   try {
     appMod = await import('firebase-admin/app');
-    authMod = await import('firebase-admin/auth');
     fsMod = await import('firebase-admin/firestore');
   } catch (e) {
     console.error('firebase-admin import failed:', e);
@@ -42,11 +45,27 @@ async function checkLimit(req: NextRequest): Promise<'ok' | 'limit' | 'auth' | '
   const idToken = header.startsWith('Bearer ') ? header.slice(7) : '';
   if (!idToken) return 'auth';
 
+  // Firebase Auth REST API でIDトークンを検証する(firebase-admin/auth を回避)
+  const webKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!webKey) return 'skip';
+
   let uid = '';
   try {
-    uid = (await authMod.getAuth(app).verifyIdToken(idToken)).uid;
-  } catch {
-    return 'auth';
+    const vr = await fetch(
+      'https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + webKey,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      }
+    );
+    if (!vr.ok) return 'auth';
+    const vd = await vr.json();
+    uid = vd?.users?.[0]?.localId || '';
+    if (!uid) return 'auth';
+  } catch (e) {
+    console.error('token verify failed:', e);
+    return 'skip';
   }
 
   try {
@@ -78,10 +97,11 @@ async function checkLimit(req: NextRequest): Promise<'ok' | 'limit' | 'auth' | '
 export async function GET() {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
   const out: Record<string, unknown> = {
-    marker: 'TERRAKOYA_EDU_GEN_LIMIT_V5',
+    marker: 'TERRAKOYA_EDU_GEN_LIMIT_V6',
     nodeVersion: process.version,
     hasClaudeKey: !!process.env.CLAUDE_API_KEY,
     hasServiceAccountEnv: !!raw,
+    hasWebApiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     serviceAccountLength: raw ? raw.length : 0,
   };
 
@@ -108,7 +128,7 @@ export async function GET() {
   const failed: string[] = [];
   let appMod: typeof import('firebase-admin/app') | null = null;
 
-  for (const name of ['firebase-admin/app', 'firebase-admin/auth', 'firebase-admin/firestore']) {
+  for (const name of ['firebase-admin/app', 'firebase-admin/firestore']) {
     try {
       const m = await import(/* webpackIgnore: true */ name);
       out['import_' + name.split('/')[1]] = 'ok';
