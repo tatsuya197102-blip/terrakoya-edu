@@ -1,8 +1,11 @@
+// MARKER: TERRAKOYA_EDU_CHAT_V2 (daily quota + no NEXT_PUBLIC key fallback)
 import { NextRequest, NextResponse } from 'next/server';
+import { consumeDailyQuota } from '@/lib/genLimit';
 
 export const maxDuration = 60;
+export const runtime = 'nodejs';
 
-const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY || process.env.NEXT_PUBLIC_CLAUDE_API_KEY;
+const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   ja: `あなたはTERRAKOYA（漫画・アニメ専門教育プラットフォーム）のAI相談員「テラ先生」です。必ず日本語で回答してください。
@@ -37,6 +40,20 @@ export async function POST(req: NextRequest) {
 
     if (!CLAUDE_API_KEY) {
       return NextResponse.json({ error: 'APIキーが設定されていません' }, { status: 500 });
+    }
+
+    // 1日あたりの利用上限
+    const verdict = await consumeDailyQuota(req, 'chat');
+    if (verdict === 'limit') {
+      const m = lang === 'ar'
+        ? 'لقد تحدثنا كثيراً اليوم! أراك غداً.'
+        : lang === 'en'
+        ? "We've talked a lot today! See you tomorrow."
+        : 'きょうはたくさんお話したね！またあした来てね。';
+      return NextResponse.json({ text: m, limited: true });
+    }
+    if (verdict === 'auth') {
+      return NextResponse.json({ error: 'auth' }, { status: 401 });
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {

@@ -1,8 +1,10 @@
+// MARKER: TERRAKOYA_EDU_AICONSULT_V2 (send ID token so the daily quota applies)
 'use client';
 export const dynamic = 'force-dynamic';
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { authHeaders } from '@/lib/genLimit';
 
 interface Message {
   role: 'user' | 'ai';
@@ -55,7 +57,7 @@ export default function AIConsultPage() {
 
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({
           messages: [...history, { role: 'user', content: userMsg }],
           lang,

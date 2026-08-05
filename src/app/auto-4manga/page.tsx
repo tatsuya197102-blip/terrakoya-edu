@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { authHeaders } from '@/lib/genLimit';
 
 const THEMES = [
   { id: 'school',     labelJa: '🏫 学校の日常',       labelEn: '🏫 School Life',       labelAr: '🏫 الحياة المدرسية' },
@@ -525,7 +526,7 @@ export default function Auto4MangaPage() {
     return themeStories[themeId] || themeStories.free;
   };
 
-  // MARKER: TERRAKOYA_EDU_SUBMIT_STORAGE_V2 (path fixed to submissions/{uid}/ = the only path allowed by live storage rules)
+  // MARKER: TERRAKOYA_EDU_SUBMIT_STORAGE_V3 (analyze-artwork now sends the ID token too) (path fixed to submissions/{uid}/ = the only path allowed by live storage rules)
   // 画像はStorageへ直行保存し、FirestoreにはURLのみ書く(base64のDB格納を廃止)。
   // Storage側が拒否した場合はnullを返し、従来のbase64保存にフォールバックする。
   const uploadSubmissionImage = async (uid: string, base64Jpeg: string): Promise<string | null> => {
@@ -591,7 +592,7 @@ export default function Auto4MangaPage() {
 
       const res = await fetch('/api/analyze-artwork', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({
           courseId: 'auto-4manga',
           fileName: file.name,
@@ -659,7 +660,7 @@ export default function Auto4MangaPage() {
 
       const r = await fetch('/api/analyze-artwork', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({
           courseId: 'auto-4manga',
           fileName: 'paint.jpg',

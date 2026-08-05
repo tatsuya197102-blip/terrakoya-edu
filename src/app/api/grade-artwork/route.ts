@@ -1,8 +1,11 @@
+// MARKER: TERRAKOYA_EDU_GRADE_V2 (daily quota + no NEXT_PUBLIC key fallback + no key logging)
 import { NextRequest, NextResponse } from 'next/server';
+import { consumeDailyQuota } from '@/lib/genLimit';
 
 export const maxDuration = 60;
+export const runtime = 'nodejs';
 
-const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY || process.env.NEXT_PUBLIC_CLAUDE_API_KEY;
+const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 
 const RUBRICS: Record<string, { criteria: { name: string; description: string }[] }> = {
   'manga-basics': {
@@ -61,7 +64,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'APIキーが設定されていません', success: false }, { status: 200 });
     }
 
-    console.log('Grade API Key exists:', !!CLAUDE_API_KEY, CLAUDE_API_KEY?.substring(0, 10));
+    // 1日あたりの利用上限
+    const verdict = await consumeDailyQuota(req, 'grade-artwork');
+    if (verdict === 'limit') {
+      return NextResponse.json(
+        { error: 'きょうの採点はここまで！またあした来てね。', limited: true, success: false },
+        { status: 200 }
+      );
+    }
+    if (verdict === 'auth') {
+      return NextResponse.json({ error: 'auth', success: false }, { status: 401 });
+    }
 
     const rubric = RUBRICS[courseId] || DEFAULT_RUBRIC;
 

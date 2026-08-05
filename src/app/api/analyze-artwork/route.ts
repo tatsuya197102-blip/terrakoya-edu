@@ -1,8 +1,11 @@
+// MARKER: TERRAKOYA_EDU_ANALYZE_V2 (daily quota + no NEXT_PUBLIC key fallback)
 import { NextRequest, NextResponse } from 'next/server';
+import { consumeDailyQuota } from '@/lib/genLimit';
 
 export const maxDuration = 60;
+export const runtime = 'nodejs';
 
-const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY || process.env.NEXT_PUBLIC_CLAUDE_API_KEY;
+const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   ja: 'あなたはTERRAKOYA（漫画・アニメ教育プラットフォーム）のAI講師テラ先生です。エジプトや中東の小中学生が日本の漫画・アニメ技術を学んでいます。提出された作品に対して温かく、具体的で、次の一歩が見えるフィードバックを日本語で短く伝えてください。',
@@ -53,6 +56,20 @@ export async function POST(req: NextRequest) {
     }
 
     const safeLang = ['ja', 'en', 'ar'].includes(lang) ? lang : 'en';
+
+    // 1日あたりの利用上限
+    const verdict = await consumeDailyQuota(req, 'analyze-artwork');
+    if (verdict === 'limit') {
+      const m = safeLang === 'ar'
+        ? 'لقد استخدمت كل مرات التعليق اليوم. أراك غداً!'
+        : safeLang === 'en'
+        ? "That's all the feedback for today. See you tomorrow!"
+        : 'きょうのフィードバックはここまで！またあした来てね。';
+      return NextResponse.json({ feedback: m, limited: true });
+    }
+    if (verdict === 'auth') {
+      return NextResponse.json({ error: 'auth' }, { status: 401 });
+    }
     const courseLabel = COURSE_LABELS[safeLang]?.[courseId] || courseId;
     const systemPrompt = SYSTEM_PROMPTS[safeLang];
     const promptFn = FEEDBACK_PROMPTS[safeLang];

@@ -1,3 +1,4 @@
+// MARKER: TERRAKOYA_EDU_ASSIGNMENT_V2 (send ID token on analyze/grade)
 'use client';
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +9,7 @@ import { doc, getDoc, collection, addDoc, getDocs, orderBy, query, updateDoc } f
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
 import { useTranslation } from 'react-i18next';
+import { authHeaders } from '@/lib/genLimit';
 
 const COURSES: Record<string, { title: string }> = {
   'manga-basics':      { title: '漫画基礎講座' },
@@ -193,7 +195,7 @@ export default function AssignmentPage() {
     try {
       const res = await fetch('/api/analyze-artwork', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({ courseId: cId, fileName, fileType, comment: userComment, imageBase64, lang }),
       });
       const data = await res.json();
@@ -230,7 +232,7 @@ export default function AssignmentPage() {
     try {
       const res = await fetch('/api/grade-artwork', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
         body: JSON.stringify({
           courseId, fileName: sub.fileName, fileType: sub.fileType,
           comment: sub.comment, imageBase64: sub.imageBase64,
