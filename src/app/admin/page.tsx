@@ -1,3 +1,4 @@
+// MARKER: TERRAKOYA_EDU_ADMIN_V2 (allSettled load + LTR lock)
 'use client';
 export const dynamic = 'force-dynamic';
 
@@ -68,18 +69,43 @@ export default function AdminPage() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user: import("firebase/auth").User | null) => {
       if (!user || user.email !== ADMIN_EMAIL) { router.push('/'); return; }
+      // MARKER: TERRAKOYA_EDU_ADMIN_LOAD_V2
+      // Promise.all is all-or-nothing: one permission error made users, courses
+      // and lessons ALL come back empty (found 2026-08-05). allSettled keeps
+      // whatever succeeded and names the collection that failed.
       try {
-        const [uSnap, cSnap, lSnap] = await Promise.all([
+        const [uRes, cRes, lRes] = await Promise.allSettled([
           getDocs(collection(db, 'users')),
           getDocs(collection(db, 'courses')),
           getDocs(collection(db, 'lessons')),
         ]);
-        setUsers(uSnap.docs.map(d => ({ uid: d.id, ...d.data() } as User)));
-        setCourses(cSnap.docs.map(d => ({ id: d.id, ...d.data() } as Course)));
-        setLessons(lSnap.docs.map(d => ({ id: d.id, ...d.data() } as Lesson)));
-      } catch (e) {
-        console.error('Admin load error:', e);
-        showToast('データの読み込みに失敗しました', 'error');
+
+        const failed: string[] = [];
+
+        if (uRes.status === 'fulfilled') {
+          setUsers(uRes.value.docs.map(d => ({ uid: d.id, ...d.data() } as User)));
+        } else {
+          failed.push('users');
+          console.error('Admin load error (users):', uRes.reason);
+        }
+
+        if (cRes.status === 'fulfilled') {
+          setCourses(cRes.value.docs.map(d => ({ id: d.id, ...d.data() } as Course)));
+        } else {
+          failed.push('courses');
+          console.error('Admin load error (courses):', cRes.reason);
+        }
+
+        if (lRes.status === 'fulfilled') {
+          setLessons(lRes.value.docs.map(d => ({ id: d.id, ...d.data() } as Lesson)));
+        } else {
+          failed.push('lessons');
+          console.error('Admin load error (lessons):', lRes.reason);
+        }
+
+        if (failed.length) {
+          showToast(`読み込めなかったデータ: ${failed.join(' / ')}`, 'error');
+        }
       } finally {
         setLoading(false);
       }
@@ -168,10 +194,12 @@ export default function AdminPage() {
     setForm(p => ({ ...p, tags }));
   };
 
-  if (loading) return <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white">読み込み中...</div>;
+  if (loading) return <div dir="ltr" className="min-h-screen bg-gray-950 flex items-center justify-center text-white">読み込み中...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    {/* dir="ltr": admin UI is for operators. Without it the page inherits
+        <html dir="rtl"> and the nav/tables flip and break. */}
+    <div dir="ltr" className="min-h-screen bg-gray-950 text-white">
       <div className="bg-gray-900 border-b border-gray-800 px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/dashboard" className="text-blue-400 hover:underline text-sm">← ダッシュボード</Link>

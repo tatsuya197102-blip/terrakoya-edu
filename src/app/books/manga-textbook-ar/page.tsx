@@ -1,7 +1,11 @@
+// MARKER: TERRAKOYA_EDU_TEXTBOOK_AR_V2
+// PDF download removed: the printed book sells at 200 EGP, so a free full PDF
+// undercuts it. The 19-page digest stays viewable as a sample.
+// Header switched to Arabic (this is the Arabic edition).
 ﻿import Link from "next/link";
 
 export const metadata = {
-  title: "マンガの教科書(アラビア語版)閲覧版 | TERRAKOYA",
+  title: "لنرسم المانجا! | TERRAKOYA",
   description: "لنرسم المانجا! エジプト向けマンガ教科書のダイジェスト版(19ページ)",
 };
 
@@ -17,26 +21,19 @@ export default function MangaTextbookArPage() {
       <div className="sticky top-0 z-10 bg-[#0A0A0A]/90 backdrop-blur border-b border-white/10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
-            <h1 className="text-base sm:text-lg font-bold">
-              マンガの教科書(アラビア語版)
+            <h1 dir="rtl" className="text-base sm:text-lg font-bold">
+              لنرسم المانجا!
             </h1>
-            <p className="text-xs text-gray-400">
-              لنرسم المانجا! ダイジェスト版・全{TOTAL_PAGES}ページ
+            <p dir="rtl" className="text-xs text-gray-400">
+              نسخة مختصرة · {TOTAL_PAGES} صفحة
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <a
-              href="/books/manga-textbook-ar/digest.pdf"
-              download
-              className="text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 transition"
-            >
-              PDF
-            </a>
             <Link
               href="/courses"
               className="text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition"
             >
-              戻る
+              رجوع
             </Link>
           </div>
         </div>
@@ -48,7 +45,7 @@ export default function MangaTextbookArPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={src}
-              alt={`ページ ${i + 1} / ${TOTAL_PAGES}`}
+              alt={`صفحة ${i + 1} / ${TOTAL_PAGES}`}
               loading={i < 2 ? "eager" : "lazy"}
               className="w-full h-auto rounded-lg bg-white"
             />
