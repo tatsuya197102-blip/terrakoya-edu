@@ -58,3 +58,4 @@ service-account.json
 certificates
 *.bak_*
 tts_test.json
+public/books/**/*.pdf
