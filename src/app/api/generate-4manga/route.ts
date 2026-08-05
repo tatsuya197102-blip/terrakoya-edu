@@ -1,4 +1,4 @@
-// MARKER: TERRAKOYA_EDU_GEN_LIMIT_V6
+// MARKER: TERRAKOYA_EDU_GEN_LIMIT_V7 (diagnostics removed; production-clean)
 // v5の診断で原因確定: firebase-admin/auth は jwks-rsa -> jose(ESM専用) を require するため
 // Node 24 の CommonJS ランタイムで読み込めない ("require() of ES Module ... not supported")。
 // v6の対策: トークン検証を firebase-admin/auth ではなく Firebase Auth REST API で行う。
@@ -88,89 +88,6 @@ async function checkLimit(req: NextRequest): Promise<'ok' | 'limit' | 'auth' | '
     console.error('limit tx failed:', e);
     return 'skip';
   }
-}
-
-/**
- * GET /api/generate-4manga  -> 診断のみ。秘密情報は返さない(存在有無と長さ、エラーメッセージのみ)。
- * 上限が効かない原因を切り分けるための一時的なエンドポイント。原因確定後に削除してよい。
- */
-export async function GET() {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-  const out: Record<string, unknown> = {
-    marker: 'TERRAKOYA_EDU_GEN_LIMIT_V6',
-    nodeVersion: process.version,
-    hasClaudeKey: !!process.env.CLAUDE_API_KEY,
-    hasServiceAccountEnv: !!raw,
-    hasWebApiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    serviceAccountLength: raw ? raw.length : 0,
-  };
-
-  if (!raw) {
-    out.verdict = 'FIREBASE_SERVICE_ACCOUNT is missing on this deployment';
-    return NextResponse.json(out);
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    out.parseOk = true;
-    out.projectId = parsed.project_id || null;
-    out.clientEmailPresent = !!parsed.client_email;
-    out.privateKeyPresent = !!parsed.private_key;
-    out.privateKeyHasRealNewline = typeof parsed.private_key === 'string' && parsed.private_key.includes('\n');
-  } catch (e) {
-    out.parseOk = false;
-    out.parseError = (e as Error).message;
-    out.verdict = 'JSON.parse failed -> env value is malformed';
-    return NextResponse.json(out);
-  }
-
-  // POST側と同じ3モジュールを個別にテストする(v4はappしか見ていなかった)
-  const failed: string[] = [];
-  let appMod: typeof import('firebase-admin/app') | null = null;
-
-  for (const name of ['firebase-admin/app', 'firebase-admin/firestore']) {
-    try {
-      const m = await import(/* webpackIgnore: true */ name);
-      out['import_' + name.split('/')[1]] = 'ok';
-      if (name.endsWith('/app')) appMod = m as typeof import('firebase-admin/app');
-    } catch (e) {
-      out['import_' + name.split('/')[1]] = 'FAILED: ' + (e as Error).message;
-      failed.push(name);
-    }
-  }
-
-  if (failed.length) {
-    out.verdict = 'import failed for: ' + failed.join(', ');
-    return NextResponse.json(out);
-  }
-
-  try {
-    const apps = appMod!.getApps();
-    if (!apps.length) appMod!.initializeApp({ credential: appMod!.cert(JSON.parse(raw)) });
-    out.initOk = true;
-  } catch (e) {
-    out.initOk = false;
-    out.initError = (e as Error).message;
-    out.verdict = 'initializeApp failed';
-    return NextResponse.json(out);
-  }
-
-  // Firestoreに実際に書けるか(ルールはAdmin SDKでは無視されるので接続確認になる)
-  try {
-    const fsMod = await import('firebase-admin/firestore');
-    const db = fsMod.getFirestore(appMod!.getApps()[0]);
-    await db.collection('genLimits').doc('__diag__').set({
-      kind: 'diag', updatedAt: fsMod.FieldValue.serverTimestamp(),
-    }, { merge: true });
-    out.firestoreWriteOk = true;
-    out.verdict = 'ALL OK -> limit should be active';
-  } catch (e) {
-    out.firestoreWriteOk = false;
-    out.firestoreError = (e as Error).message;
-    out.verdict = 'firestore write failed';
-  }
-
-  return NextResponse.json(out);
 }
 
 export async function POST(req: NextRequest) {
